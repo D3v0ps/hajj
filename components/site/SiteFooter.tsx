@@ -42,6 +42,7 @@ export function SiteFooter() {
               <li><Link href="/forbered#packlista">Packlista</Link></li>
               <li><Link href="/forbered#ritual">Ritualguide</Link></li>
               <li><Link href="/forbered#faq">Vanliga frågor</Link></li>
+              <li><Link href="/demo" style={{ color: "var(--c-gold)" }}>Demo · 60 sek →</Link></li>
             </ul>
           </div>
 
