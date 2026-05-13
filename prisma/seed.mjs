@@ -4,14 +4,24 @@
 
 import { PrismaClient } from "@prisma/client";
 import { scrypt, randomBytes } from "node:crypto";
-import { promisify } from "node:util";
 
 const prisma = new PrismaClient();
-const scryptAsync = promisify(scrypt);
+
+// MÅSTE matcha lib/auth.ts SCRYPT_OPTS — annars verifierar inte login.
+const SCRYPT_OPTS = { N: 1 << 17, r: 8, p: 1, maxmem: 256 * 1024 * 1024 };
+
+function scryptAsync(password, salt, keylen, options) {
+  return new Promise((resolve, reject) => {
+    scrypt(password, salt, keylen, options, (err, key) => {
+      if (err) reject(err);
+      else resolve(key);
+    });
+  });
+}
 
 async function hashPassword(password) {
   const salt = randomBytes(16).toString("hex");
-  const derived = await scryptAsync(password, salt, 64);
+  const derived = await scryptAsync(password, salt, 64, SCRYPT_OPTS);
   return `${salt}:${derived.toString("hex")}`;
 }
 
@@ -22,23 +32,23 @@ async function main() {
   const adminPassword = process.env.SEED_ADMIN_PASSWORD;
 
   if (adminEmail && adminPassword) {
-    const existing = await prisma.user.findUnique({ where: { email: adminEmail } });
-    if (!existing) {
-      await prisma.user.create({
-        data: {
-          email: adminEmail,
-          name: "Admin",
-          role: "ADMIN",
-          passwordHash: await hashPassword(adminPassword),
-        },
-      });
-      console.log(`  Created admin user ${adminEmail}`);
-    } else if (existing.role !== "ADMIN") {
-      await prisma.user.update({ where: { id: existing.id }, data: { role: "ADMIN" } });
-      console.log(`  Promoted ${adminEmail} to ADMIN`);
-    } else {
-      console.log(`  Admin user already exists.`);
-    }
+    // Upsert: alltid skriv över passwordHash från env-secreten. Gör seed:en
+    // idempotent och säkerställer att en password-reset i secrets propageras
+    // vid nästa deploy. När admin-användaren är skapad och du satt eget
+    // lösenord via UI bör SEED_ADMIN_PASSWORD secret rensas så seed inte
+    // skriver över.
+    const passwordHash = await hashPassword(adminPassword);
+    const user = await prisma.user.upsert({
+      where: { email: adminEmail },
+      update: { passwordHash, role: "ADMIN" },
+      create: {
+        email: adminEmail,
+        name: "Admin",
+        role: "ADMIN",
+        passwordHash,
+      },
+    });
+    console.log(`  Admin user ${user.email} ensured (role=${user.role}, password updated from secret).`);
   } else {
     console.log("  Skipping admin (set SEED_ADMIN_EMAIL + SEED_ADMIN_PASSWORD to create one).");
   }
