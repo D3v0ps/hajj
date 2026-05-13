@@ -1,0 +1,33 @@
+{
+	email {$ACME_EMAIL}
+	# Acme staging endpoint kan användas för test:
+	# acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Säkerhetsheaders
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+
+	# Statiska assets cacheas länge
+	@static path *.css *.js *.svg *.woff2 *.png *.jpg *.webp *.avif *.ico
+	header @static Cache-Control "public, max-age=31536000, immutable"
+
+	# Hälsokoll utan att gå genom Next-routing om så önskas
+	# (men vi kör genom appen för en realistisk koll)
+
+	reverse_proxy app:3000 {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+	}
+}

@@ -1,0 +1,280 @@
+@import "tailwindcss";
+
+/* Designsystem för Hadj Omra Resor.
+   Editorial · svensk · varm · andlig. */
+
+:root {
+  --c-ink: #0C1E3E;
+  --c-ink-soft: #1F324F;
+  --c-gold: #B5894B;
+  --c-gold-soft: #C9A36B;
+  --c-cream: #EFE9DD;
+  --c-paper: #FBFAF6;
+  --c-text: #1A1A1A;
+  --c-text-muted: #5C5C5C;
+  --c-text-faint: #8A857B;
+  --c-line: #D7D2C7;
+  --c-line-soft: #E7E1D4;
+  --c-green: #2D4A3E;
+  --c-green-soft: #3D6A4E;
+  --c-warn: #A14B2F;
+
+  --f-serif: "Newsreader", "Source Serif 4", Georgia, serif;
+  --f-sans: "Manrope", "Public Sans", system-ui, -apple-system, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --w-container: 1280px;
+  --w-narrow: 920px;
+}
+
+@theme inline {
+  --color-ink: var(--c-ink);
+  --color-ink-soft: var(--c-ink-soft);
+  --color-gold: var(--c-gold);
+  --color-gold-soft: var(--c-gold-soft);
+  --color-cream: var(--c-cream);
+  --color-paper: var(--c-paper);
+  --color-text: var(--c-text);
+  --color-text-muted: var(--c-text-muted);
+  --color-text-faint: var(--c-text-faint);
+  --color-line: var(--c-line);
+  --color-line-soft: var(--c-line-soft);
+  --color-green: var(--c-green);
+  --color-green-soft: var(--c-green-soft);
+  --color-warn: var(--c-warn);
+
+  --font-serif: var(--f-serif);
+  --font-sans: var(--f-sans);
+  --font-mono: var(--f-mono);
+
+  --container-narrow: var(--w-narrow);
+  --container-wide: var(--w-container);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--c-paper);
+  color: var(--c-text);
+  font-family: var(--f-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01", "cv01", "tnum";
+}
+
+img, svg { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+
+h1, h2, h3, h4 {
+  font-family: var(--f-serif);
+  font-weight: 460;
+  letter-spacing: -0.012em;
+  margin: 0;
+  color: var(--c-ink);
+  text-wrap: balance;
+}
+
+h1 { font-size: clamp(40px, 5.4vw, 72px); line-height: 1.04; letter-spacing: -0.022em; font-weight: 380; }
+h2 { font-size: clamp(28px, 3.6vw, 48px); line-height: 1.1; font-weight: 400; }
+h3 { font-size: 24px; line-height: 1.2; }
+
+p { margin: 0 0 1em; text-wrap: pretty; }
+
+/* ---------- Återanvändbara klasser ---------- */
+
+.container {
+  max-width: var(--w-container);
+  margin: 0 auto;
+  padding: 0 32px;
+}
+.container.narrow { max-width: var(--w-narrow); }
+
+@media (max-width: 720px) {
+  .container { padding: 0 20px; }
+}
+
+.eyebrow {
+  font-family: var(--f-sans);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  font-weight: 600;
+}
+.eyebrow.gold { color: var(--c-gold); }
+
+.meta {
+  font-size: 13px;
+  color: var(--c-text-muted);
+  letter-spacing: 0.02em;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px;
+  font-family: var(--f-sans);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+  line-height: 1;
+}
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.btn-primary { background: var(--c-ink); color: #fff; }
+.btn-primary:hover { background: #08152e; }
+
+.btn-ghost { background: transparent; color: var(--c-ink); border-color: var(--c-line); }
+.btn-ghost:hover { border-color: var(--c-ink); }
+
+.btn-gold { background: transparent; color: var(--c-ink); border-color: var(--c-gold); position: relative; }
+.btn-gold:hover { background: var(--c-gold); color: #fff; }
+
+.btn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--c-ink);
+  font-weight: 600;
+  font-size: 14px;
+  border-bottom: 1px solid var(--c-gold);
+  padding-bottom: 2px;
+}
+.btn-link:hover { color: var(--c-gold); }
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  border: 1px solid var(--c-line);
+  color: var(--c-text-muted);
+  background: var(--c-paper);
+}
+.tag.gold { color: var(--c-gold); border-color: var(--c-gold); }
+.tag.green { color: var(--c-green-soft); border-color: var(--c-green-soft); }
+.tag.dark { color: #fff; background: var(--c-ink); border-color: var(--c-ink); }
+.tag.warn { color: var(--c-warn); border-color: var(--c-warn); }
+
+.serif { font-family: var(--f-serif); }
+.tnum { font-variant-numeric: tabular-nums; }
+.dim { color: var(--c-text-muted); }
+.center { text-align: center; }
+
+.rule { height: 1px; background: var(--c-line-soft); border: 0; }
+
+.section-mark {
+  font-family: var(--f-mono);
+  font-size: 12px;
+  color: var(--c-gold);
+  letter-spacing: 0.16em;
+}
+
+/* Trust-bar (nyckelvärden under hjälten) */
+.trust-bar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border-top: 1px solid var(--c-line);
+  border-bottom: 1px solid var(--c-line);
+}
+.trust-bar .ti {
+  padding: 22px 24px;
+  border-right: 1px solid var(--c-line);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.trust-bar .ti:last-child { border-right: 0; }
+.trust-bar .ti .v {
+  font-family: var(--f-serif);
+  font-size: 24px;
+  color: var(--c-ink);
+  font-weight: 460;
+  letter-spacing: -0.01em;
+}
+.trust-bar .ti .l {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .trust-bar { grid-template-columns: repeat(2, 1fr); }
+  .trust-bar .ti { border-bottom: 1px solid var(--c-line); }
+}
+
+/* Form-fält */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; color: var(--c-text-muted); }
+.field input, .field select, .field textarea {
+  font-family: var(--f-sans);
+  font-size: 15px;
+  padding: 12px 14px;
+  border: 1px solid var(--c-line);
+  background: #fff;
+  color: var(--c-text);
+  border-radius: 2px;
+  width: 100%;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: none;
+  border-color: var(--c-ink);
+  box-shadow: 0 0 0 3px rgba(12,30,62,0.06);
+}
+.field .hint { font-size: 12px; color: var(--c-text-muted); }
+.field .err { font-size: 12px; color: var(--c-warn); font-weight: 600; }
+
+/* Tabell-grund för admin/portal */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.table th, .table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--c-line-soft);
+}
+.table th {
+  font-family: var(--f-sans);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  font-weight: 700;
+  background: var(--c-cream);
+}
+.table tr:hover td { background: var(--c-cream); }
+
+/* Statusbubblor */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  border-radius: 2px;
+}
+.badge-draft { background: var(--c-cream); color: var(--c-text-muted); }
+.badge-submitted { background: #FFF7E6; color: var(--c-gold); }
+.badge-confirmed { background: #E6F1EA; color: var(--c-green); }
+.badge-paid { background: #DCEAE0; color: var(--c-green); }
+.badge-cancelled { background: #F5E1DC; color: var(--c-warn); }

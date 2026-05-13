@@ -1,0 +1,193 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/db";
+import type { Metadata } from "next";
+
+type Params = Promise<{ slug: string }>;
+
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const { slug } = await params;
+  const pkg = await prisma.package.findUnique({ where: { slug } }).catch(() => null);
+  if (!pkg) return { title: "Paket hittas ej" };
+  return {
+    title: pkg.title,
+    description: pkg.summary ?? `${pkg.type}-paket arrangerat av Hadj Omra Resor.`,
+  };
+}
+
+export const dynamic = "force-dynamic";
+
+export default async function PackageDetailPage({ params }: { params: Params }) {
+  const { slug } = await params;
+  const pkg = await prisma.package
+    .findUnique({
+      where: { slug },
+      include: { tiers: { orderBy: { pricePerPerson: "asc" } } },
+    })
+    .catch(() => null);
+
+  if (!pkg) notFound();
+
+  const fromPrice = pkg.tiers[0]?.pricePerPerson ?? 0;
+  const fmtDate = (d: Date | null) => (d ? new Date(d).toLocaleDateString("sv-SE") : "—");
+
+  return (
+    <>
+      <section style={{ padding: "64px 0 32px", borderBottom: "1px solid var(--c-line)" }}>
+        <div className="container">
+          <div style={{ display: "flex", gap: 12, marginBottom: 24, alignItems: "center" }}>
+            <Link href={`/${pkg.type === "OMRA" ? "omra" : pkg.type === "HAJJ" ? "hajj-2027" : pkg.type === "HADJ_BADAL" ? "hadj-badal" : "visum"}`} className="dim" style={{ fontSize: 13 }}>
+              ← Tillbaka
+            </Link>
+            <span className="tag gold">{pkg.type}</span>
+          </div>
+
+          <h1 style={{ marginBottom: 12, maxWidth: 900 }}>{pkg.title}</h1>
+          {pkg.subtitle && <p style={{ fontSize: 18, color: "var(--c-text-muted)", maxWidth: 720 }}>{pkg.subtitle}</p>}
+        </div>
+      </section>
+
+      <section style={{ padding: "48px 0" }}>
+        <div className="container" style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 56 }}>
+          <div>
+            <div className="pkg-hero-img" />
+
+            <h2 style={{ fontSize: 28, marginTop: 40, marginBottom: 16 }}>Beskrivning</h2>
+            <p style={{ fontSize: 16, lineHeight: 1.7, color: "var(--c-text)" }}>
+              {pkg.description ?? pkg.summary ?? "Beskrivning fylls i av kontoret via admin."}
+            </p>
+
+            {pkg.inclusions.length > 0 && (
+              <>
+                <h2 style={{ fontSize: 28, marginTop: 48, marginBottom: 16 }}>Vad ingår</h2>
+                <ul className="checklist">
+                  {pkg.inclusions.map((it: string, i: number) => (
+                    <li key={i}>{it}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+
+            {pkg.excludeNotes.length > 0 && (
+              <>
+                <h2 style={{ fontSize: 28, marginTop: 48, marginBottom: 16 }}>Tillkommer</h2>
+                <ul className="checklist excl">
+                  {pkg.excludeNotes.map((it: string, i: number) => (
+                    <li key={i}>{it}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+
+            <h2 style={{ fontSize: 28, marginTop: 48, marginBottom: 16 }}>Hotell &amp; logi</h2>
+            <div className="hotels">
+              {pkg.hotelMakkah && (
+                <div>
+                  <span className="eyebrow">Mecka</span>
+                  <p className="serif" style={{ fontSize: 18, margin: "4px 0" }}>{pkg.hotelMakkah}</p>
+                  {pkg.distHaramM && <p className="dim" style={{ fontSize: 13 }}>{pkg.distHaramM} m till Haram</p>}
+                </div>
+              )}
+              {pkg.hotelMadinah && (
+                <div>
+                  <span className="eyebrow">Medina</span>
+                  <p className="serif" style={{ fontSize: 18, margin: "4px 0" }}>{pkg.hotelMadinah}</p>
+                  {pkg.distNabawiM && <p className="dim" style={{ fontSize: 13 }}>{pkg.distNabawiM} m till Nabawi</p>}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <aside>
+            <div className="book-card">
+              <span className="eyebrow gold">Boka direkt</span>
+
+              <div style={{ marginTop: 14 }}>
+                <span className="dim" style={{ fontSize: 12 }}>Pris från</span>
+                <div className="serif tnum" style={{ fontSize: 36, color: "var(--c-ink)", lineHeight: 1 }}>
+                  {fromPrice.toLocaleString("sv-SE")} kr
+                </div>
+                <span className="dim" style={{ fontSize: 12 }}>per person</span>
+              </div>
+
+              <hr className="rule" style={{ margin: "20px 0" }} />
+
+              <dl className="kv">
+                {pkg.startDate && (
+                  <>
+                    <dt>Avresa</dt>
+                    <dd>{fmtDate(pkg.startDate)}</dd>
+                  </>
+                )}
+                {pkg.endDate && (
+                  <>
+                    <dt>Hemkomst</dt>
+                    <dd>{fmtDate(pkg.endDate)}</dd>
+                  </>
+                )}
+                {pkg.durationDays && (
+                  <>
+                    <dt>Dagar</dt>
+                    <dd>{pkg.durationDays}</dd>
+                  </>
+                )}
+                {pkg.departCity && (
+                  <>
+                    <dt>Avgång</dt>
+                    <dd>{pkg.departCity}</dd>
+                  </>
+                )}
+                {pkg.groupSize && (
+                  <>
+                    <dt>Gruppstorlek</dt>
+                    <dd>max {pkg.groupSize}</dd>
+                  </>
+                )}
+              </dl>
+
+              {pkg.tiers.length > 0 && (
+                <>
+                  <hr className="rule" style={{ margin: "20px 0" }} />
+                  <span className="eyebrow">Rumstyper</span>
+                  <ul className="tier-list">
+                    {pkg.tiers.map((t) => (
+                      <li key={t.id}>
+                        <span>{t.name}</span>
+                        <strong className="tnum">{t.pricePerPerson.toLocaleString("sv-SE")} kr</strong>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+
+              <Link href={`/boka/${pkg.id}`} className="btn btn-primary" style={{ width: "100%", justifyContent: "center", marginTop: 24 }}>
+                Påbörja bokning →
+              </Link>
+
+              <p className="dim" style={{ fontSize: 11, marginTop: 12, lineHeight: 1.5, textAlign: "center" }}>
+                Resegaranti hos Kammarkollegiet · Avbeställning enligt resevillkor
+              </p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <style>{`
+        .pkg-hero-img { height: 360px; background: var(--c-cream); border: 1px solid var(--c-line); }
+        .checklist { list-style: none; padding: 0; display: grid; gap: 10px; }
+        .checklist li { padding-left: 24px; position: relative; line-height: 1.6; }
+        .checklist li:before { content: "✓"; position: absolute; left: 0; color: var(--c-gold); font-weight: 700; }
+        .checklist.excl li:before { content: "−"; color: var(--c-warn); }
+        .hotels { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 24px; background: var(--c-cream); }
+        .book-card { background: #fff; border: 1px solid var(--c-line); padding: 28px; position: sticky; top: 100px; }
+        .kv { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; margin: 0; font-size: 14px; }
+        .kv dt { color: var(--c-text-muted); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+        .kv dd { margin: 0; color: var(--c-ink); font-family: var(--f-serif); }
+        .tier-list { list-style: none; padding: 0; display: grid; gap: 8px; margin-top: 8px; }
+        .tier-list li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--c-line-soft); font-size: 14px; }
+        .tier-list strong { color: var(--c-ink); }
+        @media (max-width: 980px) { .container[style*="grid"] { grid-template-columns: 1fr !important; } }
+      `}</style>
+    </>
+  );
+}

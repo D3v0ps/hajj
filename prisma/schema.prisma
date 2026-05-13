@@ -1,0 +1,332 @@
+// Hadj Omra Resor — datamodell
+// Postgres via Prisma. Schema följer designdokumentets entiteter:
+// users, packages, bookings, travelers, documents, payments, messages
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -------- AUTH (Auth.js v5 schema) --------
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  passwordHash  String?
+  phone         String?
+  personnummer  String?
+  role          UserRole  @default(CUSTOMER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts  Account[]
+  sessions  Session[]
+  travelers Traveler[]
+  bookings  Booking[]
+  documents Document[]
+  messages  Message[]
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+  STAFF
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// -------- DOMÄN: PAKET --------
+
+model Package {
+  id           String        @id @default(cuid())
+  slug         String        @unique
+  type         PackageType
+  title        String
+  subtitle     String?
+  summary      String?
+  description  String?
+  city         String?
+  departCity   String?
+  startDate    DateTime?
+  endDate      DateTime?
+  durationDays Int?
+  groupSize    Int?
+  status       PackageStatus @default(DRAFT)
+  inclusions   String[]
+  excludeNotes String[]
+  hotelMakkah  String?
+  hotelMadinah String?
+  distHaramM   Int?
+  distNabawiM  Int?
+  imageUrl     String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  tiers    PackageTier[]
+  bookings Booking[]
+}
+
+enum PackageType {
+  HAJJ
+  OMRA
+  HADJ_BADAL
+  VISUM
+}
+
+enum PackageStatus {
+  DRAFT
+  PUBLISHED
+  SOLD_OUT
+  ARCHIVED
+}
+
+model PackageTier {
+  id        String      @id @default(cuid())
+  packageId String
+  name      String
+  roomType  RoomType
+  pricePerPerson Int
+  available Int         @default(0)
+  notes     String?
+
+  package  Package   @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+}
+
+enum RoomType {
+  DOUBLE
+  TRIPLE
+  QUAD
+  QUINTUPLE
+  FAMILY
+}
+
+// -------- DOMÄN: BOKNING --------
+
+model Booking {
+  id            String        @id @default(cuid())
+  reference     String        @unique @default(cuid())
+  userId        String
+  packageId     String
+  tierId        String?
+  status        BookingStatus @default(DRAFT)
+  step          Int           @default(1)
+  travelerCount Int           @default(1)
+  totalAmount   Int           @default(0)
+  depositAmount Int           @default(5000)
+  notes         String?
+  contactPhone  String?
+  contactEmail  String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  submittedAt   DateTime?
+
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package   Package      @relation(fields: [packageId], references: [id])
+  tier      PackageTier? @relation(fields: [tierId], references: [id])
+  travelers Traveler[]
+  payments  Payment[]
+  messages  Message[]
+
+  @@index([userId])
+  @@index([packageId])
+  @@index([status])
+}
+
+enum BookingStatus {
+  DRAFT
+  SUBMITTED
+  REVIEW
+  CONFIRMED
+  PAID_DEPOSIT
+  PAID_FULL
+  COMPLETED
+  CANCELLED
+}
+
+model Traveler {
+  id           String   @id @default(cuid())
+  userId       String
+  bookingId    String?
+  firstName    String
+  lastName     String
+  personnummer String?
+  passportNo   String?
+  passportExp  DateTime?
+  birthDate    DateTime?
+  gender       String?
+  isMahram     Boolean  @default(false)
+  needsAssist  Boolean  @default(false)
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking   Booking?   @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  documents Document[]
+
+  @@index([userId])
+  @@index([bookingId])
+}
+
+// -------- DOMÄN: DOKUMENT --------
+
+model Document {
+  id         String       @id @default(cuid())
+  userId     String
+  travelerId String?
+  type       DocumentType
+  filename   String
+  filepath   String
+  mimetype   String
+  sizeBytes  Int
+  status     DocumentStatus @default(PENDING)
+  reviewNote String?
+  uploadedAt DateTime     @default(now())
+  reviewedAt DateTime?
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  traveler Traveler? @relation(fields: [travelerId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([travelerId])
+  @@index([status])
+}
+
+enum DocumentType {
+  PASSPORT
+  PASSPORT_PHOTO
+  RESIDENCE_PERMIT
+  VACCINATION
+  OTHER
+}
+
+enum DocumentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  NEEDS_INFO
+}
+
+// -------- DOMÄN: BETALNING --------
+
+model Payment {
+  id          String        @id @default(cuid())
+  bookingId   String
+  amount      Int
+  method      PaymentMethod
+  status      PaymentStatus @default(PENDING)
+  reference   String?
+  providerRef String?
+  paidAt      DateTime?
+  createdAt   DateTime      @default(now())
+  metadata    Json?
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([status])
+}
+
+enum PaymentMethod {
+  SWISH
+  KLARNA
+  CARD
+  BANKGIRO
+  INVOICE
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// -------- DOMÄN: MEDDELANDEN --------
+
+model Message {
+  id        String        @id @default(cuid())
+  userId    String
+  bookingId String?
+  direction MessageDirection
+  subject   String?
+  body      String
+  readAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([bookingId])
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+// -------- DOMÄN: LEADS (quote form) --------
+
+model Lead {
+  id            String     @id @default(cuid())
+  name          String
+  email         String
+  phone         String?
+  departureCity String?
+  travelType    PackageType?
+  preferredDate DateTime?
+  travelers     Int?
+  message       String?
+  source        String?
+  status        LeadStatus @default(NEW)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CONVERTED
+  CLOSED
+}

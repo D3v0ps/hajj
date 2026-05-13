@@ -1,0 +1,126 @@
+name: Build and deploy
+
+on:
+  push:
+    branches:
+      - main
+      - claude/hippo-memory-init-BxqGB
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set image tag for deploy
+        id: tag
+        run: |
+          echo "image=${REGISTRY}/${IMAGE_NAME}:sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Copy compose files to server
+        run: |
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new \
+            docker-compose.yml Caddyfile \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/home/${{ secrets.DEPLOY_USER }}/app/
+
+      - name: Write .env on server
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "umask 077 && cat > /home/${{ secrets.DEPLOY_USER }}/app/.env" <<EOF
+          APP_IMAGE=${{ steps.tag.outputs.image }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          AUTH_SECRET=${{ secrets.AUTH_SECRET }}
+          DOMAIN=hajj.karimkhalil.se
+          ACME_EMAIL=info@hajj.karimkhalil.se
+          SEED_ADMIN_EMAIL=${{ secrets.SEED_ADMIN_EMAIL }}
+          SEED_ADMIN_PASSWORD=${{ secrets.SEED_ADMIN_PASSWORD }}
+          RUN_SEED=1
+          EOF
+
+      - name: Login to GHCR on server, pull image, restart compose
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} bash <<'REMOTE'
+          set -euo pipefail
+          cd ~/app
+
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+          docker compose pull
+          docker compose up -d --remove-orphans
+          docker image prune -f --filter "until=72h"
+          docker compose ps
+          REMOTE
+
+      - name: Health check
+        run: |
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fsS https://hajj.karimkhalil.se/api/health -o /dev/null -m 10; then
+              echo "Healthy on try $i"
+              exit 0
+            fi
+            echo "Try $i: not ready, sleeping..."
+            sleep 10
+          done
+          echo "App did not become healthy in time"
+          exit 1

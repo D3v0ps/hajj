@@ -1,0 +1,156 @@
+"use server";
+
+import { z } from "zod";
+import { prisma } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+
+async function requireAdmin() {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/logga-in");
+  if (session.user.role !== "ADMIN" && session.user.role !== "STAFF") redirect("/min-sida");
+  return session.user;
+}
+
+const packageSchema = z.object({
+  slug: z.string().min(2).max(120).regex(/^[a-z0-9-]+$/, "Endast a–z, 0–9 och bindestreck"),
+  type: z.enum(["HAJJ", "OMRA", "HADJ_BADAL", "VISUM"]),
+  title: z.string().min(2).max(200),
+  subtitle: z.string().max(280).optional().or(z.literal("")),
+  summary: z.string().max(500).optional().or(z.literal("")),
+  description: z.string().max(5000).optional().or(z.literal("")),
+  city: z.string().max(80).optional().or(z.literal("")),
+  departCity: z.string().max(80).optional().or(z.literal("")),
+  startDate: z.string().optional().or(z.literal("")),
+  endDate: z.string().optional().or(z.literal("")),
+  durationDays: z.coerce.number().int().min(1).max(60).optional().or(z.literal(0)),
+  groupSize: z.coerce.number().int().min(1).max(500).optional().or(z.literal(0)),
+  status: z.enum(["DRAFT", "PUBLISHED", "SOLD_OUT", "ARCHIVED"]).default("DRAFT"),
+  hotelMakkah: z.string().max(120).optional().or(z.literal("")),
+  hotelMadinah: z.string().max(120).optional().or(z.literal("")),
+  distHaramM: z.coerce.number().int().min(0).max(50000).optional().or(z.literal(0)),
+  distNabawiM: z.coerce.number().int().min(0).max(50000).optional().or(z.literal(0)),
+  inclusions: z.string().optional().or(z.literal("")),
+  excludeNotes: z.string().optional().or(z.literal("")),
+});
+
+function fromForm(formData: FormData) {
+  return {
+    slug: String(formData.get("slug") ?? ""),
+    type: String(formData.get("type") ?? "OMRA"),
+    title: String(formData.get("title") ?? ""),
+    subtitle: String(formData.get("subtitle") ?? ""),
+    summary: String(formData.get("summary") ?? ""),
+    description: String(formData.get("description") ?? ""),
+    city: String(formData.get("city") ?? ""),
+    departCity: String(formData.get("departCity") ?? ""),
+    startDate: String(formData.get("startDate") ?? ""),
+    endDate: String(formData.get("endDate") ?? ""),
+    durationDays: String(formData.get("durationDays") ?? ""),
+    groupSize: String(formData.get("groupSize") ?? ""),
+    status: String(formData.get("status") ?? "DRAFT"),
+    hotelMakkah: String(formData.get("hotelMakkah") ?? ""),
+    hotelMadinah: String(formData.get("hotelMadinah") ?? ""),
+    distHaramM: String(formData.get("distHaramM") ?? ""),
+    distNabawiM: String(formData.get("distNabawiM") ?? ""),
+    inclusions: String(formData.get("inclusions") ?? ""),
+    excludeNotes: String(formData.get("excludeNotes") ?? ""),
+  };
+}
+
+function dataFromParsed(p: z.infer<typeof packageSchema>) {
+  return {
+    slug: p.slug,
+    type: p.type,
+    title: p.title,
+    subtitle: p.subtitle || null,
+    summary: p.summary || null,
+    description: p.description || null,
+    city: p.city || null,
+    departCity: p.departCity || null,
+    startDate: p.startDate ? new Date(p.startDate) : null,
+    endDate: p.endDate ? new Date(p.endDate) : null,
+    durationDays: p.durationDays || null,
+    groupSize: p.groupSize || null,
+    status: p.status,
+    hotelMakkah: p.hotelMakkah || null,
+    hotelMadinah: p.hotelMadinah || null,
+    distHaramM: p.distHaramM || null,
+    distNabawiM: p.distNabawiM || null,
+    inclusions: (p.inclusions || "").split("\n").map((s) => s.trim()).filter(Boolean),
+    excludeNotes: (p.excludeNotes || "").split("\n").map((s) => s.trim()).filter(Boolean),
+  };
+}
+
+export async function createPackage(formData: FormData) {
+  await requireAdmin();
+  const parsed = packageSchema.safeParse(fromForm(formData));
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Ogiltiga fält" };
+
+  const exists = await prisma.package.findUnique({ where: { slug: parsed.data.slug } });
+  if (exists) return { ok: false, error: "Slug är redan upptagen" };
+
+  const created = await prisma.package.create({ data: dataFromParsed(parsed.data) });
+  revalidatePath("/admin/paket");
+  redirect(`/admin/paket/${created.id}`);
+}
+
+export async function updatePackage(id: string, formData: FormData) {
+  await requireAdmin();
+  const parsed = packageSchema.safeParse(fromForm(formData));
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Ogiltiga fält" };
+
+  await prisma.package.update({ where: { id }, data: dataFromParsed(parsed.data) });
+  revalidatePath("/admin/paket");
+  revalidatePath(`/admin/paket/${id}`);
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function deletePackage(id: string) {
+  await requireAdmin();
+  await prisma.package.delete({ where: { id } });
+  revalidatePath("/admin/paket");
+  redirect("/admin/paket");
+}
+
+const tierSchema = z.object({
+  name: z.string().min(1).max(80),
+  roomType: z.enum(["DOUBLE", "TRIPLE", "QUAD", "QUINTUPLE", "FAMILY"]),
+  pricePerPerson: z.coerce.number().int().min(0).max(10_000_000),
+  available: z.coerce.number().int().min(0).max(1000).default(0),
+  notes: z.string().max(280).optional().or(z.literal("")),
+});
+
+export async function addTier(packageId: string, formData: FormData) {
+  await requireAdmin();
+  const parsed = tierSchema.safeParse({
+    name: formData.get("name"),
+    roomType: formData.get("roomType"),
+    pricePerPerson: formData.get("pricePerPerson"),
+    available: formData.get("available"),
+    notes: formData.get("notes"),
+  });
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Ogiltiga fält" };
+
+  await prisma.packageTier.create({
+    data: {
+      packageId,
+      name: parsed.data.name,
+      roomType: parsed.data.roomType,
+      pricePerPerson: parsed.data.pricePerPerson,
+      available: parsed.data.available,
+      notes: parsed.data.notes || null,
+    },
+  });
+
+  revalidatePath(`/admin/paket/${packageId}`);
+  return { ok: true };
+}
+
+export async function deleteTier(packageId: string, tierId: string) {
+  await requireAdmin();
+  await prisma.packageTier.deleteMany({ where: { id: tierId, packageId } });
+  revalidatePath(`/admin/paket/${packageId}`);
+}
