@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
+// Seed för Hadj Omra Resor — körs som ren Node-modul i container,
+// inga TypeScript-beroenden eller tsx behövs runtime.
+
 import { PrismaClient } from "@prisma/client";
 import { scrypt, randomBytes } from "node:crypto";
 import { promisify } from "node:util";
@@ -5,16 +9,15 @@ import { promisify } from "node:util";
 const prisma = new PrismaClient();
 const scryptAsync = promisify(scrypt);
 
-async function hashPassword(password: string): Promise<string> {
+async function hashPassword(password) {
   const salt = randomBytes(16).toString("hex");
-  const derived = (await scryptAsync(password, salt, 64)) as Buffer;
+  const derived = await scryptAsync(password, salt, 64);
   return `${salt}:${derived.toString("hex")}`;
 }
 
 async function main() {
   console.log("Seeding...");
 
-  // -------- Admin user (idempotent) --------
   const adminEmail = process.env.SEED_ADMIN_EMAIL?.toLowerCase();
   const adminPassword = process.env.SEED_ADMIN_PASSWORD;
 
@@ -40,11 +43,10 @@ async function main() {
     console.log("  Skipping admin (set SEED_ADMIN_EMAIL + SEED_ADMIN_PASSWORD to create one).");
   }
 
-  // -------- Paket --------
   const packages = [
     {
       slug: "omra-pasklov-2026",
-      type: "OMRA" as const,
+      type: "OMRA",
       title: "Omra Påsklov 2026",
       subtitle: "Familjevänlig vårresa under påsklovet",
       summary: "Tio dagar i Mecka och Medina med svensk reseledare. Perfekt för familjer som vill resa under skollovet.",
@@ -56,7 +58,7 @@ async function main() {
       endDate: new Date("2026-04-12"),
       durationDays: 11,
       groupSize: 40,
-      status: "PUBLISHED" as const,
+      status: "PUBLISHED",
       hotelMakkah: "Anjum Hotel Makkah",
       hotelMadinah: "Dar Al Eiman Royal",
       distHaramM: 350,
@@ -74,14 +76,14 @@ async function main() {
       ],
       excludeNotes: ["Reseförsäkring", "Lunch", "Personliga utflykter"],
       tiers: [
-        { name: "4-bädd", roomType: "QUAD" as const, pricePerPerson: 19900, available: 16 },
-        { name: "3-bädd", roomType: "TRIPLE" as const, pricePerPerson: 20900, available: 12 },
-        { name: "2-bädd", roomType: "DOUBLE" as const, pricePerPerson: 21900, available: 12 },
+        { name: "4-bädd", roomType: "QUAD", pricePerPerson: 19900, available: 16 },
+        { name: "3-bädd", roomType: "TRIPLE", pricePerPerson: 20900, available: 12 },
+        { name: "2-bädd", roomType: "DOUBLE", pricePerPerson: 21900, available: 12 },
       ],
     },
     {
       slug: "omra-sommarlov-2026",
-      type: "OMRA" as const,
+      type: "OMRA",
       title: "Omra Sommarlov 2026",
       subtitle: "Tio dagar i samband med skolornas sommarlov",
       summary: "Sommarens Omra-resa. Boka tidigt — platserna går snabbt.",
@@ -92,7 +94,7 @@ async function main() {
       endDate: new Date("2026-08-10"),
       durationDays: 11,
       groupSize: 50,
-      status: "PUBLISHED" as const,
+      status: "PUBLISHED",
       hotelMakkah: "Pullman ZamZam Makkah",
       hotelMadinah: "Madinah Hilton",
       distHaramM: 250,
@@ -110,14 +112,14 @@ async function main() {
       ],
       excludeNotes: ["Reseförsäkring", "Lunch", "Personliga utflykter"],
       tiers: [
-        { name: "4-bädd", roomType: "QUAD" as const, pricePerPerson: 19900, available: 20 },
-        { name: "3-bädd", roomType: "TRIPLE" as const, pricePerPerson: 20900, available: 18 },
-        { name: "2-bädd", roomType: "DOUBLE" as const, pricePerPerson: 21900, available: 12 },
+        { name: "4-bädd", roomType: "QUAD", pricePerPerson: 19900, available: 20 },
+        { name: "3-bädd", roomType: "TRIPLE", pricePerPerson: 20900, available: 18 },
+        { name: "2-bädd", roomType: "DOUBLE", pricePerPerson: 21900, available: 12 },
       ],
     },
     {
       slug: "hajj-2027",
-      type: "HAJJ" as const,
+      type: "HAJJ",
       title: "Hajj 2027 — Dhul Hijja 1448",
       subtitle: "Komplett Hajj-resa med saudisk partner",
       summary: "Vår årliga Hajj-resa. Begränsade platser via Saudiarabiens kvotsystem. Anmäl intresse tidigt.",
@@ -129,7 +131,7 @@ async function main() {
       endDate: new Date("2027-06-15"),
       durationDays: 22,
       groupSize: 25,
-      status: "PUBLISHED" as const,
+      status: "PUBLISHED",
       hotelMakkah: "Swissôtel Al Maqam",
       hotelMadinah: "Anwar Al Madinah Movenpick",
       distHaramM: 200,
@@ -148,9 +150,9 @@ async function main() {
       ],
       excludeNotes: ["Reseförsäkring", "Personliga utflykter", "Tilläggsoffer"],
       tiers: [
-        { name: "4-bädd", roomType: "QUAD" as const, pricePerPerson: 89000, available: 8 },
-        { name: "3-bädd", roomType: "TRIPLE" as const, pricePerPerson: 99000, available: 6 },
-        { name: "2-bädd", roomType: "DOUBLE" as const, pricePerPerson: 119000, available: 4 },
+        { name: "4-bädd", roomType: "QUAD", pricePerPerson: 89000, available: 8 },
+        { name: "3-bädd", roomType: "TRIPLE", pricePerPerson: 99000, available: 6 },
+        { name: "2-bädd", roomType: "DOUBLE", pricePerPerson: 119000, available: 4 },
       ],
     },
   ];

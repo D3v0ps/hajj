@@ -7,7 +7,6 @@ ARG NODE_VERSION=22
 FROM node:${NODE_VERSION}-bookworm-slim AS deps
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
-# Pinna pnpm-versionen via package.json:packageManager — corepack prepare ger oss exakt rätt version
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
@@ -30,7 +29,7 @@ RUN pnpm build
 FROM node:${NODE_VERSION}-bookworm-slim AS runner
 WORKDIR /app
 
-RUN corepack enable && apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates wget && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates wget && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 ENV PORT=3000
@@ -39,21 +38,18 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 --gid nodejs nextjs
 
-# Standalone Next.js output
+# Standalone Next.js output (tracer in @prisma/client + engine via outputFileTracingIncludes)
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Prisma client + binary engine + migrations + CLI for migrate-on-boot
+# Migrations + seed (ren JS, inga TS-runtime-beroenden)
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/tsx ./node_modules/tsx
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/esbuild ./node_modules/esbuild
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/get-tsconfig ./node_modules/get-tsconfig
 
-COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+# Prisma CLI globalt — behövs av entrypoint för `prisma migrate deploy` och `prisma db seed`.
+# Standalone tracer inte CLI:t eftersom det inte används av app-koden runtime.
+RUN npm install -g prisma@6.19.3 && npm cache clean --force
+
 COPY --chown=nextjs:nodejs docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
