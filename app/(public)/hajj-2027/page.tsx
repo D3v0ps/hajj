@@ -34,8 +34,8 @@ export default function Hajj2027Page() {
         </div>
       </section>
 
-      <section style={{ padding: "80px 0" }}>
-        <div className="container" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 64 }}>
+      <section className="section-pad">
+        <div className="container split-main-aside">
           <div>
             <span className="section-mark">— 01 / Vad ingår</span>
             <h2 style={{ marginTop: 14, marginBottom: 24 }}>Hela resan, från Sverige till hemkomst.</h2>
@@ -117,8 +117,15 @@ export default function Hajj2027Page() {
         .timeline .when { font-family: var(--f-mono); font-size: 12px; color: var(--c-text-muted); letter-spacing: 0.12em; padding-top: 8px; }
 
         @media (max-width: 980px) {
-          .container[style*="grid"] { grid-template-columns: 1fr !important; }
           .timeline li { grid-template-columns: 30px 100px 1fr; }
+        }
+        @media (max-width: 640px) {
+          .timeline li { grid-template-columns: 28px 1fr; gap: 14px; padding: 16px 0; }
+          .timeline .when { padding-top: 4px; font-size: 11px; }
+          .timeline li > .when { grid-column: 2; margin-top: -8px; margin-bottom: 4px; }
+          .timeline .what { grid-column: 2; }
+          .timeline:before { left: 14px; }
+          .timeline .dot { margin-left: 8px; }
         }
       `}</style>
     </>

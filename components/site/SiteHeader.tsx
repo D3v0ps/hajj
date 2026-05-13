@@ -57,6 +57,16 @@ export function SiteHeader() {
           padding-top: 18px;
           padding-bottom: 18px;
         }
+        @media (max-width: 980px) {
+          .site-header .container { gap: 16px; }
+        }
+        @media (max-width: 480px) {
+          .site-header .container { padding-top: 12px; padding-bottom: 12px; gap: 10px; }
+          .brand-mark { width: 32px; height: 32px; font-size: 18px; }
+          .brand-name { font-size: 15px; }
+          .brand-name small { font-size: 9px; }
+          .phone { font-size: 12px; padding: 0; }
+        }
         .brand {
           display: flex;
           align-items: center;

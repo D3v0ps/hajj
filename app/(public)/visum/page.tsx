@@ -25,8 +25,8 @@ export default function VisumPage() {
         </div>
       </section>
 
-      <section style={{ padding: "80px 0" }}>
-        <div className="container" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 64 }}>
+      <section className="section-pad">
+        <div className="container split-main-aside">
           <div>
             <span className="section-mark">— 01 / Visumtyper</span>
             <h2 style={{ marginTop: 14, marginBottom: 24 }}>Vi hjälper med dessa typer</h2>
@@ -70,7 +70,7 @@ export default function VisumPage() {
         .checklist { list-style: none; padding: 0; display: grid; gap: 10px; }
         .checklist li { padding-left: 24px; position: relative; line-height: 1.6; }
         .checklist li:before { content: "✓"; position: absolute; left: 0; color: var(--c-gold); font-weight: 700; }
-        @media (max-width: 980px) { .visa-grid { grid-template-columns: 1fr; } .container[style*="grid"] { grid-template-columns: 1fr !important; } }
+        @media (max-width: 720px) { .visa-grid { grid-template-columns: 1fr; } }
       `}</style>
     </>
   );

@@ -31,9 +31,11 @@ export default async function DokumentPage() {
           </p>
         </div>
       ) : (
+        <div className="table-wrap">
         <table className="table">
+          <caption className="sr-only">Mina dokument</caption>
           <thead>
-            <tr><th>Filnamn</th><th>Typ</th><th>Resenär</th><th>Status</th><th>Uppladdad</th></tr>
+            <tr><th scope="col">Filnamn</th><th scope="col">Typ</th><th scope="col">Resenär</th><th scope="col">Status</th><th scope="col">Uppladdad</th></tr>
           </thead>
           <tbody>
             {docs.map((d) => (
@@ -47,10 +49,12 @@ export default async function DokumentPage() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
 
       <style>{`
         .empty-card { padding: 48px; background: #fff; border: 1px dashed var(--c-line); }
+        @media (max-width: 640px) { .empty-card { padding: 32px 20px; } }
       `}</style>
     </div>
   );

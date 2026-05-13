@@ -148,7 +148,13 @@ export default function ForberedPage() {
         .faq-item summary { cursor: pointer; font-family: var(--f-serif); font-size: 18px; color: var(--c-ink); list-style: none; }
         .faq-item summary::marker { display: none; }
         .faq-item[open] summary { color: var(--c-gold); margin-bottom: 12px; }
-        @media (max-width: 720px) { .pack-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 980px) { .pack-grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 640px) {
+          .pack-grid { grid-template-columns: 1fr; gap: 24px; }
+          .ritual li { padding: 12px 14px; font-size: 14px; }
+          .faq-item { padding: 14px 18px; }
+          .faq-item summary { font-size: 17px; }
+        }
       `}</style>
     </>
   );

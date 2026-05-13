@@ -90,6 +90,7 @@ export function StepReview({ booking }: Props) {
 
       <style>{`
         .rev-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px 32px; padding: 24px; background: var(--c-cream); border: 1px solid var(--c-line); }
+        @media (max-width: 640px) { .rev-grid { grid-template-columns: 1fr; gap: 16px; padding: 18px; } }
         .rev-trvs { list-style: none; padding: 0; display: grid; gap: 8px; }
         .rev-trvs li { display: grid; gap: 4px; padding: 14px 18px; background: var(--c-paper); border: 1px solid var(--c-line-soft); }
         .rev-total { margin-top: 32px; padding: 24px; background: var(--c-ink); color: #fff; }

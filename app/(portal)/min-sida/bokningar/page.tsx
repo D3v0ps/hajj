@@ -23,16 +23,18 @@ export default async function MinaBokningarPage() {
       {bookings.length === 0 ? (
         <p className="dim">Du har inga bokningar än.</p>
       ) : (
+        <div className="table-wrap">
         <table className="table">
+          <caption className="sr-only">Mina bokningar</caption>
           <thead>
             <tr>
-              <th>Referens</th>
-              <th>Paket</th>
-              <th>Datum</th>
-              <th>Resenärer</th>
-              <th>Belopp</th>
-              <th>Status</th>
-              <th>—</th>
+              <th scope="col">Referens</th>
+              <th scope="col">Paket</th>
+              <th scope="col">Datum</th>
+              <th scope="col">Resenärer</th>
+              <th scope="col">Belopp</th>
+              <th scope="col">Status</th>
+              <th scope="col"><span className="sr-only">Åtgärder</span></th>
             </tr>
           </thead>
           <tbody>
@@ -55,6 +57,7 @@ export default async function MinaBokningarPage() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );

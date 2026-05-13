@@ -24,8 +24,8 @@ export default function KontaktPage() {
         </div>
       </section>
 
-      <section style={{ padding: "80px 0" }}>
-        <div className="container" style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 64 }}>
+      <section className="section-pad">
+        <div className="container kontakt-grid">
           <div>
             <h2 style={{ fontSize: 28, marginBottom: 24 }}>Kontoren</h2>
 
@@ -77,7 +77,10 @@ export default function KontaktPage() {
         .contact-card .eyebrow { display: block; margin-bottom: 10px; }
         .address { font-family: var(--f-serif); font-size: 18px; color: var(--c-ink); margin: 0 0 8px; line-height: 1.5; }
         .address a { color: var(--c-ink); border-bottom: 1px solid var(--c-gold); }
-        @media (max-width: 980px) { .container[style*="grid"] { grid-template-columns: 1fr !important; } }
+        .kontakt-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 64px; }
+        @media (max-width: 980px) {
+          .kontakt-grid { grid-template-columns: 1fr; gap: 40px; }
+        }
       `}</style>
     </>
   );

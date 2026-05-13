@@ -54,8 +54,8 @@ export function StepRoom({ booking }: Props) {
 
       <style>{`
         .tier-field { border: 0; padding: 0; margin: 0; }
-        .tier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-        .tier-opt { display: grid; grid-template-columns: 24px 1fr; gap: 12px; padding: 18px; border: 1px solid var(--c-line); cursor: pointer; transition: all 160ms; }
+        .tier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+        .tier-opt { display: grid; grid-template-columns: 24px 1fr; gap: 12px; padding: 18px; border: 1px solid var(--c-line); cursor: pointer; transition: all 160ms; min-height: 44px; }
         .tier-opt:hover { border-color: var(--c-ink); }
         .tier-opt:has(input:checked) { border-color: var(--c-gold); background: #FFFAEC; }
         .tier-opt input { margin-top: 4px; }

@@ -19,9 +19,11 @@ export default async function AdminBookingsPage() {
       <span className="eyebrow gold">Bokningar</span>
       <h1 style={{ fontSize: 32, marginTop: 12, marginBottom: 24 }}>Alla bokningar</h1>
 
+      <div className="table-wrap">
       <table className="table">
+        <caption className="sr-only">Alla bokningar</caption>
         <thead>
-          <tr><th>Ref</th><th>Paket</th><th>Kund</th><th>Resenärer</th><th>Belopp</th><th>Status</th><th>Uppdaterad</th><th>—</th></tr>
+          <tr><th scope="col">Ref</th><th scope="col">Paket</th><th scope="col">Kund</th><th scope="col">Resenärer</th><th scope="col">Belopp</th><th scope="col">Status</th><th scope="col">Uppdaterad</th><th scope="col"><span className="sr-only">Åtgärder</span></th></tr>
         </thead>
         <tbody>
           {bookings.map((b) => (
@@ -41,6 +43,7 @@ export default async function AdminBookingsPage() {
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

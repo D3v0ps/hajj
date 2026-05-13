@@ -54,6 +54,15 @@ export function ProgressNav({ currentStep, packageTitle }: { currentStep: number
         .bo-step.now .ind { background: var(--c-ink); color: #fff; border-color: var(--c-ink); }
         .bo-step .name { font-family: var(--f-serif); font-size: 16px; color: var(--c-ink); margin-bottom: 2px; }
         .bo-step .meta { font-size: 11px; color: var(--c-text-muted); letter-spacing: 0.04em; text-transform: uppercase; }
+        @media (max-width: 980px) {
+          .bo-progress { position: static; padding: 20px 22px; }
+          .bo-progress h2 { font-size: 22px !important; margin-bottom: 4px !important; }
+          .bo-steps { flex-direction: row; gap: 6px; overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch; }
+          .bo-step { grid-template-columns: 1fr; gap: 6px; flex: 0 0 auto; min-width: 72px; text-align: center; }
+          .bo-step .ind { margin: 0 auto; }
+          .bo-step .name { font-size: 11px; line-height: 1.25; }
+          .bo-step .meta { display: none; }
+        }
       `}</style>
     </aside>
   );

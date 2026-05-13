@@ -26,8 +26,10 @@ export default async function AdminLeadsPage() {
       <span className="eyebrow gold">Leads</span>
       <h1 style={{ fontSize: 32, marginTop: 12, marginBottom: 24 }}>Inkomna förfrågningar</h1>
 
+      <div className="table-wrap">
       <table className="table">
-        <thead><tr><th>Datum</th><th>Namn</th><th>Kontakt</th><th>Typ</th><th>Meddelande</th><th>Källa</th><th>Status</th><th>—</th></tr></thead>
+        <caption className="sr-only">Inkomna leads</caption>
+        <thead><tr><th scope="col">Datum</th><th scope="col">Namn</th><th scope="col">Kontakt</th><th scope="col">Typ</th><th scope="col">Meddelande</th><th scope="col">Källa</th><th scope="col">Status</th><th scope="col"><span className="sr-only">Åtgärder</span></th></tr></thead>
         <tbody>
           {leads.map((l) => (
             <tr key={l.id}>
@@ -53,6 +55,7 @@ export default async function AdminLeadsPage() {
           {leads.length === 0 && <tr><td colSpan={8} className="center dim" style={{ padding: 32 }}>Inga leads ännu.</td></tr>}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

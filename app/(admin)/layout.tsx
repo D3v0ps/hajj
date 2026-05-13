@@ -53,11 +53,28 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         .brand-name { font-family: var(--f-serif); font-size: 16px; line-height: 1; }
         .brand-name small { display: block; font-family: var(--f-sans); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--c-gold); margin-top: 4px; font-weight: 700; }
         .admin-side nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
-        .admin-side nav a { padding: 10px 14px; font-size: 13px; color: #C3CCD8; border-left: 2px solid transparent; }
+        .admin-side nav a { padding: 10px 14px; font-size: 13px; color: #C3CCD8; border-left: 2px solid transparent; min-height: 40px; display: flex; align-items: center; }
         .admin-side nav a:hover { color: #fff; border-left-color: var(--c-gold); background: rgba(255,255,255,0.04); }
         .admin-user { padding: 18px 14px; background: #08152e; border: 1px solid #1F324F; }
         .admin-main { background: var(--c-paper); padding: 40px 48px; }
-        @media (max-width: 900px) { .admin-shell { grid-template-columns: 1fr; } .admin-side { position: static; height: auto; } }
+        @media (max-width: 900px) {
+          .admin-shell { grid-template-columns: 1fr; }
+          .admin-side {
+            position: static; height: auto; padding: 16px 20px;
+            flex-direction: row; align-items: center; gap: 16px; flex-wrap: wrap;
+          }
+          .admin-side .brand { flex-shrink: 0; }
+          .admin-side nav { flex: 1; flex-direction: row; flex-wrap: wrap; gap: 4px 12px; min-width: 0; }
+          .admin-side nav a { border-left: 0; padding: 8px 0; min-height: 36px; }
+          .admin-side nav a:hover { background: transparent; border-left: 0; }
+          .admin-user { padding: 8px 14px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+          .admin-user > * { margin: 0 !important; }
+          .admin-main { padding: 24px 20px; }
+        }
+        @media (max-width: 480px) {
+          .admin-side nav { flex-basis: 100%; padding-top: 8px; border-top: 1px solid #1F324F; }
+          .admin-main { padding: 20px 16px; }
+        }
       `}</style>
     </div>
   );

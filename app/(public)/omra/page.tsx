@@ -116,9 +116,9 @@ export default async function OmraPage() {
           transition: all 200ms;
         }
         .pkg-row:hover { border-color: var(--c-ink); }
-        .pkg-row-img { background: var(--c-cream); }
+        .pkg-row-img { background: var(--c-cream); min-height: 100%; }
         .pkg-row-body { padding: 28px; display: flex; flex-direction: column; }
-        .pkg-row-meta { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 16px; font-size: 13px; color: var(--c-text-muted); }
+        .pkg-row-meta { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 16px; font-size: 13px; color: var(--c-text-muted); }
         .pkg-row-meta span { padding-right: 16px; border-right: 1px solid var(--c-line); }
         .pkg-row-meta span:last-child { border-right: 0; }
         .pkg-row-price {
@@ -134,8 +134,13 @@ export default async function OmraPage() {
         .empty { background: var(--c-cream); border: 1px dashed var(--c-line); padding: 48px; text-align: center; }
         @media (max-width: 980px) {
           .pkg-row { grid-template-columns: 1fr; }
-          .pkg-row-img { height: 160px; }
+          .pkg-row-img { height: 160px; min-height: 160px; }
           .pkg-row-price { border-left: 0; border-top: 1px solid var(--c-line-soft); }
+        }
+        @media (max-width: 640px) {
+          .pkg-row-body, .pkg-row-price { padding: 20px; }
+          .pkg-row-meta span { border-right: 0; padding-right: 0; }
+          .empty { padding: 32px 20px; }
         }
       `}</style>
     </>

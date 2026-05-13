@@ -138,7 +138,10 @@ export function PackageForm({ pkg, action, submitLabel = "Spara" }: { pkg?: Pack
         .pk-form fieldset { border: 1px solid var(--c-line); padding: 24px; margin-bottom: 20px; background: #fff; }
         .pk-form legend { padding: 0 10px; font-family: var(--f-sans); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--c-gold); font-weight: 700; }
         .pk-form .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-        @media (max-width: 720px) { .pk-form .grid2 { grid-template-columns: 1fr; } }
+        @media (max-width: 900px) { .pk-form .grid2 { grid-template-columns: 1fr; } }
+        @media (max-width: 640px) {
+          .pk-form fieldset { padding: 18px 16px; }
+        }
       `}</style>
     </form>
   );

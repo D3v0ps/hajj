@@ -26,8 +26,8 @@ export default function HadjBadalPage() {
         </div>
       </section>
 
-      <section style={{ padding: "80px 0" }}>
-        <div className="container" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 64 }}>
+      <section className="section-pad">
+        <div className="container split-main-aside">
           <div>
             <span className="section-mark">— 01 / Så fungerar det</span>
             <h2 style={{ marginTop: 14, marginBottom: 24 }}>Uppdrag, genomförande, intyg.</h2>
@@ -71,7 +71,9 @@ export default function HadjBadalPage() {
         .badal-steps li { display: grid; grid-template-columns: 60px 1fr; gap: 18px; padding-bottom: 22px; border-bottom: 1px solid var(--c-line-soft); }
         .badal-steps li:last-child { border-bottom: 0; }
         .badal-steps .num { font-family: var(--f-mono); font-size: 14px; color: var(--c-gold); letter-spacing: 0.16em; padding-top: 4px; }
-        @media (max-width: 980px) { .container[style*="grid"] { grid-template-columns: 1fr !important; } }
+        @media (max-width: 640px) {
+          .badal-steps li { grid-template-columns: 40px 1fr; gap: 12px; padding-bottom: 16px; }
+        }
       `}</style>
     </>
   );

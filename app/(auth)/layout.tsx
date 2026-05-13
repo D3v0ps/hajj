@@ -19,6 +19,12 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         .brand-mark { width: 38px; height: 38px; border: 1px solid var(--c-gold); display: grid; place-items: center; color: var(--c-gold); font-family: var(--f-serif); font-size: 22px; line-height: 1; }
         .brand-name { font-family: var(--f-serif); font-size: 19px; color: var(--c-ink); font-weight: 460; }
         .auth-main { flex: 1; display: grid; place-items: center; padding: 56px 0; }
+        @media (max-width: 640px) {
+          .auth-top { padding: 14px 0; }
+          .brand-mark { width: 32px; height: 32px; font-size: 18px; }
+          .brand-name { font-size: 16px; }
+          .auth-main { padding: 32px 0; align-items: flex-start; }
+        }
       `}</style>
     </div>
   );

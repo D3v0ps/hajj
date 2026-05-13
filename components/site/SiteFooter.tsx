@@ -158,7 +158,13 @@ export function SiteFooter() {
           max-width: 320px;
         }
         @media (max-width: 900px) {
-          .footer-grid { grid-template-columns: 1fr 1fr; }
+          .site-footer { padding: 56px 0 24px; margin-top: 64px; }
+          .footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; padding-bottom: 40px; }
+          .footer-bottom { flex-direction: column; align-items: flex-start; }
+        }
+        @media (max-width: 480px) {
+          .footer-grid { grid-template-columns: 1fr; gap: 28px; }
+          .legal-links { flex-direction: column; gap: 8px; }
         }
       `}</style>
     </footer>

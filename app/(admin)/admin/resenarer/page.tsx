@@ -17,8 +17,10 @@ export default async function AdminResenarerPage() {
       <span className="eyebrow gold">Resenärer</span>
       <h1 style={{ fontSize: 32, marginTop: 12, marginBottom: 24 }}>Alla resenärer</h1>
 
+      <div className="table-wrap">
       <table className="table">
-        <thead><tr><th>Namn</th><th>Personnummer</th><th>Pass</th><th>Konto</th><th>Bokning</th><th>Tillagd</th></tr></thead>
+        <caption className="sr-only">Alla resenärer</caption>
+        <thead><tr><th scope="col">Namn</th><th scope="col">Personnummer</th><th scope="col">Pass</th><th scope="col">Konto</th><th scope="col">Bokning</th><th scope="col">Tillagd</th></tr></thead>
         <tbody>
           {travelers.map((t) => (
             <tr key={t.id}>
@@ -33,6 +35,7 @@ export default async function AdminResenarerPage() {
           {travelers.length === 0 && <tr><td colSpan={6} className="center dim" style={{ padding: 32 }}>Inga resenärer ännu.</td></tr>}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

@@ -97,8 +97,10 @@ export default async function AdminBookingDetailPage({ params }: { params: Param
 
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>Betalningar</h2>
           {booking.payments.length === 0 ? <p className="dim">Inga än.</p> : (
+            <div className="table-wrap">
             <table className="table">
-              <thead><tr><th>Datum</th><th>Belopp</th><th>Metod</th><th>Status</th><th>Ref</th></tr></thead>
+              <caption className="sr-only">Betalningar för bokningen</caption>
+              <thead><tr><th scope="col">Datum</th><th scope="col">Belopp</th><th scope="col">Metod</th><th scope="col">Status</th><th scope="col">Ref</th></tr></thead>
               <tbody>
                 {booking.payments.map((p) => (
                   <tr key={p.id}>
@@ -111,6 +113,7 @@ export default async function AdminBookingDetailPage({ params }: { params: Param
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </section>
 
@@ -140,6 +143,7 @@ export default async function AdminBookingDetailPage({ params }: { params: Param
 
       <style>{`
         .adm-bk-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 32px; margin-top: 32px; }
+        @media (max-width: 980px) { .adm-bk-grid { grid-template-columns: 1fr; gap: 24px; } }
         .status-form { display: flex; gap: 8px; align-items: center; }
         .status-form select { padding: 10px 14px; border: 1px solid var(--c-line); font-family: var(--f-sans); font-size: 14px; flex: 1; }
         .trv-grid { list-style: none; padding: 0; display: grid; gap: 8px; }

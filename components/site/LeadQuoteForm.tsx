@@ -60,7 +60,7 @@ export function LeadQuoteForm() {
 
         <div className="field">
           <label htmlFor="lead-phone">Telefon</label>
-          <input id="lead-phone" name="phone" />
+          <input id="lead-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" />
         </div>
 
         <div className="field">
@@ -121,4 +121,8 @@ const leadStyles = `
     gap: 14px;
   }
   .quote-card.success-card { border-color: var(--c-green-soft); }
+  @media (max-width: 640px) {
+    .quote-card { padding: 24px 20px; }
+    .quote-grid { grid-template-columns: 1fr; gap: 12px; }
+  }
 `;

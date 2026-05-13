@@ -19,10 +19,12 @@ export default async function AdminPackagesPage() {
         <Link href="/admin/paket/ny" className="btn btn-primary">+ Nytt paket</Link>
       </div>
 
+      <div className="table-wrap">
       <table className="table">
+        <caption className="sr-only">Alla paket i systemet</caption>
         <thead>
           <tr>
-            <th>Titel</th><th>Slug</th><th>Typ</th><th>Status</th><th>Avresa</th><th>Tiers</th><th>Bokningar</th><th>—</th>
+            <th scope="col">Titel</th><th scope="col">Slug</th><th scope="col">Typ</th><th scope="col">Status</th><th scope="col">Avresa</th><th scope="col">Tiers</th><th scope="col">Bokningar</th><th scope="col"><span className="sr-only">Åtgärder</span></th>
           </tr>
         </thead>
         <tbody>
@@ -45,6 +47,7 @@ export default async function AdminPackagesPage() {
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

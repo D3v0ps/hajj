@@ -60,11 +60,11 @@ export function StepTravelers({ booking }: Props) {
             </div>
             <div className="field">
               <label>Personnummer (ÅÅÅÅMMDD-XXXX)</label>
-              <input name="personnummer" placeholder="19850315-1234" />
+              <input name="personnummer" inputMode="numeric" autoComplete="off" placeholder="19850315-1234" />
             </div>
             <div className="field">
               <label>Passnummer</label>
-              <input name="passportNo" />
+              <input name="passportNo" autoComplete="off" />
             </div>
             <div className="field">
               <label>Födelsedatum</label>
@@ -115,6 +115,12 @@ export function StepTravelers({ booking }: Props) {
         .add-trv[open] summary { margin-bottom: 24px; color: var(--c-gold); }
         .trv-form .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         @media (max-width: 720px) { .trv-form .grid2 { grid-template-columns: 1fr; } }
+        @media (max-width: 480px) {
+          .trv-row { grid-template-columns: 1fr; gap: 8px; padding: 14px 16px; }
+          .trv-row .num { font-size: 11px; }
+          .add-trv { padding: 16px 18px; }
+          .trv-form > div[style*="display: flex"] { flex-direction: column; gap: 10px; align-items: flex-start !important; }
+        }
       `}</style>
     </div>
   );

@@ -67,8 +67,11 @@ export default async function BookingPage({
           font-size: 14px;
         }
         @media (max-width: 980px) {
-          .bo-grid { grid-template-columns: 1fr; }
-          .bo-content { padding: 32px 24px; }
+          .bo-grid { grid-template-columns: 1fr; gap: 16px; }
+          .bo-content { padding: 28px 22px; min-height: 0; }
+        }
+        @media (max-width: 640px) {
+          .bo-content { padding: 22px 18px; }
         }
       `}</style>
     </div>

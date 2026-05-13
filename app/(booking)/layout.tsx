@@ -30,7 +30,7 @@ export default function BookingLayout({ children }: { children: React.ReactNode 
       <style>{`
         .boka-shell { min-height: 100vh; background: var(--c-paper); display: flex; flex-direction: column; }
         .boka-top { padding: 18px 0; border-bottom: 1px solid var(--c-line-soft); background: #fff; }
-        .boka-top .container { display: flex; align-items: center; justify-content: space-between; }
+        .boka-top .container { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
         .brand { display: inline-flex; align-items: center; gap: 14px; }
         .brand-mark { width: 38px; height: 38px; border: 1px solid var(--c-gold); display: grid; place-items: center; color: var(--c-gold); font-family: var(--f-serif); font-size: 22px; line-height: 1; }
         .brand-name { font-family: var(--f-serif); font-size: 19px; color: var(--c-ink); font-weight: 460; line-height: 1; }
@@ -40,6 +40,15 @@ export default function BookingLayout({ children }: { children: React.ReactNode 
         .secure strong { display: block; font-size: 12px; letter-spacing: 0.06em; color: var(--c-ink); }
         .secure span { font-size: 11px; letter-spacing: 0.08em; color: var(--c-text-muted); text-transform: uppercase; font-weight: 600; }
         .boka-main { flex: 1; padding: 56px 0 80px; }
+        @media (max-width: 640px) {
+          .boka-top { padding: 12px 0; }
+          .brand-name { font-size: 15px; }
+          .brand-name small { font-size: 9px; }
+          .brand-mark { width: 32px; height: 32px; font-size: 18px; }
+          .secure { padding: 6px 10px; }
+          .secure span { display: none; }
+          .boka-main { padding: 28px 0 48px; }
+        }
       `}</style>
     </div>
   );

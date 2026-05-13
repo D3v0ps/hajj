@@ -58,8 +58,10 @@ export default async function BokningDetailPage({ params }: { params: Params }) 
       {booking.payments.length === 0 ? (
         <p className="dim">Inga betalningar registrerade.</p>
       ) : (
+        <div className="table-wrap">
         <table className="table">
-          <thead><tr><th>Datum</th><th>Belopp</th><th>Metod</th><th>Status</th><th>Ref</th></tr></thead>
+          <caption className="sr-only">Betalningar för bokningen</caption>
+          <thead><tr><th scope="col">Datum</th><th scope="col">Belopp</th><th scope="col">Metod</th><th scope="col">Status</th><th scope="col">Ref</th></tr></thead>
           <tbody>
             {booking.payments.map((p) => (
               <tr key={p.id}>
@@ -72,6 +74,7 @@ export default async function BokningDetailPage({ params }: { params: Params }) 
             ))}
           </tbody>
         </table>
+        </div>
       )}
 
       <style>{`
@@ -80,7 +83,8 @@ export default async function BokningDetailPage({ params }: { params: Params }) 
         .trv-grid { list-style: none; padding: 0; display: grid; gap: 8px; }
         .trv-grid li { padding: 14px 18px; background: #fff; border: 1px solid var(--c-line-soft); display: grid; gap: 4px; }
         .trv-grid strong { font-family: var(--f-serif); font-size: 17px; color: var(--c-ink); }
-        @media (max-width: 720px) { .kv-grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 900px) { .kv-grid { grid-template-columns: 1fr 1fr; gap: 14px; padding: 18px; } }
+        @media (max-width: 480px) { .kv-grid { grid-template-columns: 1fr; padding: 16px; } }
       `}</style>
     </div>
   );

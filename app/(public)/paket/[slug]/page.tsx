@@ -49,7 +49,7 @@ export default async function PackageDetailPage({ params }: { params: Params }) 
       </section>
 
       <section style={{ padding: "48px 0" }}>
-        <div className="container" style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 56 }}>
+        <div className="container paket-grid">
           <div>
             <div className="pkg-hero-img" />
 
@@ -189,7 +189,18 @@ export default async function PackageDetailPage({ params }: { params: Params }) 
         .tier-list { list-style: none; padding: 0; display: grid; gap: 8px; margin-top: 8px; }
         .tier-list li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--c-line-soft); font-size: 14px; }
         .tier-list strong { color: var(--c-ink); }
-        @media (max-width: 980px) { .container[style*="grid"] { grid-template-columns: 1fr !important; } }
+        .paket-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 56px; }
+        @media (max-width: 980px) {
+          .paket-grid { grid-template-columns: 1fr; gap: 32px; }
+          .book-card { position: static; }
+          .pkg-hero-img { height: 220px; }
+        }
+        @media (max-width: 640px) {
+          .pkg-hero-img { height: 180px; }
+          .book-card { padding: 22px; }
+          .kv { grid-template-columns: 1fr; gap: 10px 0; }
+          .hotels { grid-template-columns: 1fr; gap: 18px; padding: 18px; }
+        }
       `}</style>
     </>
   );

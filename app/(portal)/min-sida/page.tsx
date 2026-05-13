@@ -117,7 +117,16 @@ export default async function MinSidaPage() {
         .bk-row { display: grid; grid-template-columns: 1fr 200px 180px; gap: 24px; align-items: center; padding: 20px 24px; background: #fff; border: 1px solid var(--c-line-soft); transition: all 160ms; }
         .bk-row:hover { border-color: var(--c-ink); }
         .bk-amount { text-align: right; }
-        @media (max-width: 900px) { .dash-stats { grid-template-columns: 1fr 1fr; } .bk-row { grid-template-columns: 1fr; } }
+        @media (max-width: 900px) {
+          .dash-stats { grid-template-columns: 1fr 1fr; }
+          .bk-row { grid-template-columns: 1fr; gap: 10px; }
+          .bk-amount { text-align: left; }
+        }
+        @media (max-width: 480px) {
+          .stat { padding: 18px; }
+          .stat-v { font-size: 28px; }
+          .bk-row { padding: 16px 18px; }
+        }
       `}</style>
     </div>
   );

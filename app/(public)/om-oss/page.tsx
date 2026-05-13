@@ -104,7 +104,7 @@ export default function OmOssPage() {
         .vals { display: grid; gap: 18px; margin-top: 16px; }
         .vals strong { display: block; font-family: var(--f-serif); font-size: 18px; margin-bottom: 4px; color: var(--c-ink); }
         .vals p { margin: 0; font-size: 14px; line-height: 1.55; }
-        @media (max-width: 800px) { .om-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 900px) { .om-grid { grid-template-columns: 1fr; gap: 40px; } }
       `}</style>
     </>
   );

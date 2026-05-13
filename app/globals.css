@@ -131,6 +131,40 @@ p { margin: 0 0 1em; text-wrap: pretty; }
 @media (max-width: 720px) {
   .container { padding: 0 20px; }
 }
+@media (max-width: 480px) {
+  .container { padding: 0 16px; }
+}
+
+/* Standardiserade brytpunkter — mobile-first hjälpklasser */
+.hide-mobile { }
+.show-mobile { display: none !important; }
+@media (max-width: 720px) {
+  .hide-mobile { display: none !important; }
+  .show-mobile { display: revert !important; }
+}
+
+/* Stack-grid utility: 2 kolumner desktop, 1 mobil */
+.stack-md {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+@media (max-width: 900px) {
+  .stack-md { grid-template-columns: 1fr; gap: 24px; }
+}
+
+/* Table-wrap — horisontell scroll på smala skärmar */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -16px;
+  padding: 0 16px;
+}
+.table-wrap .table { min-width: 720px; }
+@media (min-width: 901px) {
+  .table-wrap { margin: 0; padding: 0; }
+  .table-wrap .table { min-width: auto; }
+}
 
 .eyebrow {
   font-family: var(--f-sans);
@@ -162,6 +196,7 @@ p { margin: 0 0 1em; text-wrap: pretty; }
   cursor: pointer;
   transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
   line-height: 1;
+  min-height: 44px;
 }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
@@ -209,6 +244,17 @@ p { margin: 0 0 1em; text-wrap: pretty; }
 .dim { color: var(--c-text-muted); }
 .center { text-align: center; }
 
+/* Screen-reader-only innehåll */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .rule { height: 1px; background: var(--c-line-soft); border: 0; }
 
 .section-mark {
@@ -216,6 +262,53 @@ p { margin: 0 0 1em; text-wrap: pretty; }
   font-size: 12px;
   color: var(--c-gold);
   letter-spacing: 0.16em;
+}
+
+/* Sektion-padding standardiserat (kollapsar på mobil) */
+.section-pad { padding: 80px 0; }
+.section-pad-lg { padding: 96px 0; }
+@media (max-width: 900px) {
+  .section-pad { padding: 56px 0; }
+  .section-pad-lg { padding: 64px 0; }
+}
+@media (max-width: 640px) {
+  .section-pad { padding: 40px 0; }
+  .section-pad-lg { padding: 48px 0; }
+}
+
+/* 2-kolumns "main + sidebar"-mönster som flera publika sidor använder */
+.split-main-aside {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 64px;
+}
+@media (max-width: 980px) {
+  .split-main-aside {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+}
+@media (max-width: 640px) {
+  .split-main-aside { gap: 32px; }
+}
+
+/* Section-head (eyebrow + h2 + rhs-paragraph) */
+.section-head {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 56px;
+  margin-bottom: 48px;
+  align-items: end;
+}
+@media (max-width: 900px) {
+  .section-head { grid-template-columns: 1fr; gap: 16px; margin-bottom: 32px; }
+}
+
+/* Heading-skala på mobil */
+@media (max-width: 640px) {
+  h1 { font-size: clamp(32px, 9vw, 48px); }
+  h2 { font-size: clamp(24px, 6vw, 36px); }
+  h3 { font-size: 20px; }
 }
 
 /* Trust-bar (nyckelvärden under hjälten) */
@@ -239,6 +332,7 @@ p { margin: 0 0 1em; text-wrap: pretty; }
   color: var(--c-ink);
   font-weight: 460;
   letter-spacing: -0.01em;
+  text-wrap: balance;
 }
 .trust-bar .ti .l {
   font-size: 12px;
@@ -248,9 +342,20 @@ p { margin: 0 0 1em; text-wrap: pretty; }
   font-weight: 600;
 }
 
-@media (max-width: 900px) {
-  .trust-bar { grid-template-columns: repeat(2, 1fr); }
-  .trust-bar .ti { border-bottom: 1px solid var(--c-line); }
+@media (max-width: 1024px) {
+  .trust-bar { grid-template-columns: repeat(3, 1fr); }
+  .trust-bar .ti:nth-child(n) { border-right: 1px solid var(--c-line); }
+  .trust-bar .ti:nth-child(3n) { border-right: 0; }
+  .trust-bar .ti:nth-last-child(-n+2) { border-bottom: 1px solid var(--c-line); border-top: 0; }
+}
+@media (max-width: 640px) {
+  .trust-bar { grid-template-columns: 1fr 1fr; }
+  .trust-bar .ti { padding: 16px 14px; }
+  .trust-bar .ti:nth-child(2n) { border-right: 0; }
+  .trust-bar .ti:nth-child(2n+1) { border-right: 1px solid var(--c-line); }
+  .trust-bar .ti:not(:nth-last-child(-n+2)) { border-bottom: 1px solid var(--c-line); }
+  .trust-bar .ti .v { font-size: 18px; }
+  .trust-bar .ti .l { font-size: 10px; }
 }
 
 /* Form-fält */
