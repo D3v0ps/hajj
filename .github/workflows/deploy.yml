@@ -76,12 +76,26 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          # Strippa eventuella \r (Windows-radslut) som krashar OpenSSH-parsning
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          # Add server to known_hosts to avoid prompt
           ssh-keyscan -H -T 10 "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
-          # Sanity-print of key (header only — never print full key)
-          head -1 ~/.ssh/deploy_key
+
+          # --- Diagnostik (avslöjar inte nyckelinnehåll) ---
+          echo "Key file size: $(wc -c < ~/.ssh/deploy_key) bytes"
+          echo "Key file line count: $(wc -l < ~/.ssh/deploy_key)"
+          echo "First line: $(head -1 ~/.ssh/deploy_key)"
+          echo "Last line: $(tail -1 ~/.ssh/deploy_key)"
+          echo "Has CR chars: $(grep -c $'\r' ~/.ssh/deploy_key || echo 0)"
+          echo ""
+          # Verifiera att OpenSSH faktiskt kan läsa nyckeln — ssh-keygen -y avlöjar tidigt om format är trasigt
+          if ssh-keygen -y -P '' -f ~/.ssh/deploy_key > /tmp/pubkey 2>&1; then
+            echo "Pubkey derived OK: $(cat /tmp/pubkey)"
+          else
+            echo "::error::Kunde inte parsa privata nyckeln. DEPLOY_SSH_KEY-secreten är skadad — se diagnostik ovan."
+            cat /tmp/pubkey
+            exit 1
+          fi
 
       - name: Pre-flight SSH connectivity test
         run: |
