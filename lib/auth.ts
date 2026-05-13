@@ -45,7 +45,7 @@ export async function verifyPassword(password: string, stored: string): Promise<
 
 const credsSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8),
+  password: z.string().min(6),
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({

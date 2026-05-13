@@ -10,7 +10,7 @@ const registerSchema = z
   .object({
     name: z.string().min(2, "Ange ditt namn").max(120),
     email: z.string().email("Ogiltig e-postadress"),
-    password: z.string().min(8, "Minst 8 tecken"),
+    password: z.string().min(6, "Minst 6 tecken"),
     confirm: z.string(),
   })
   .refine((d) => d.password === d.confirm, { message: "Lösenorden matchar inte", path: ["confirm"] });

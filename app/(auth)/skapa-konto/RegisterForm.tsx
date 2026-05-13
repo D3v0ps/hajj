@@ -30,13 +30,13 @@ export function RegisterForm() {
 
       <div className="field">
         <label htmlFor="reg-pw">Lösenord</label>
-        <input id="reg-pw" name="password" type="password" autoComplete="new-password" required minLength={8} />
-        <span className="hint">Minst 8 tecken</span>
+        <input id="reg-pw" name="password" type="password" autoComplete="new-password" required minLength={6} />
+        <span className="hint">Minst 6 tecken</span>
       </div>
 
       <div className="field">
         <label htmlFor="reg-confirm">Bekräfta lösenord</label>
-        <input id="reg-confirm" name="confirm" type="password" autoComplete="new-password" required minLength={8} />
+        <input id="reg-confirm" name="confirm" type="password" autoComplete="new-password" required minLength={6} />
       </div>
 
       {error && <p className="err">{error}</p>}
