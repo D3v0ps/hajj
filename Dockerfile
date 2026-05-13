@@ -22,6 +22,13 @@ RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# Dummy env-vars för Next.js build-collect (NEXT_PHASE-detection i lib/env.ts
+# hoppar över zod-validering under build, men i fall någon kod råkar läsa
+# process.env vid module-init så sätter vi placeholders som klarar zod-shape.
+# Vid runtime override:as dessa av docker-compose env-vars.
+ENV DATABASE_URL="postgresql://build:build@localhost:5432/build?schema=public"
+ENV AUTH_SECRET="build-time-placeholder-secret-not-used-at-runtime"
+ENV APP_URL="http://localhost:3000"
 RUN pnpm exec prisma generate
 RUN pnpm build
 
