@@ -20,7 +20,7 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
-export async function registerUser(formData: FormData): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function registerUser(formData: FormData): Promise<{ ok: false; error: string } | void> {
   const raw = {
     name: String(formData.get("name") ?? ""),
     email: String(formData.get("email") ?? "").toLowerCase(),
@@ -34,14 +34,10 @@ export async function registerUser(formData: FormData): Promise<{ ok: true } | {
   }
 
   const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } });
-
-  // Email enumeration-skydd: returnera samma response oavsett om kontot fanns.
-  // Vi gör hashing-arbetet ändå för att inte avslöja via timing-skillnad.
+  // Email enumeration-skydd: alltid hash + visa samma resultat oavsett om kontot fanns
   const passwordHash = await hashPassword(parsed.data.password);
 
   if (existing) {
-    // Tyst no-op + redirect till login. Riktig användare som glömt att de hade
-    // konto landar på login. Eventuell duplicate-registrering avslöjas inte.
     redirect("/logga-in?registered=1");
   }
 
@@ -53,17 +49,21 @@ export async function registerUser(formData: FormData): Promise<{ ok: true } | {
     },
   });
 
+  // signIn med redirectTo: Auth.js sätter session-cookien + kastar NEXT_REDIRECT i samma response.
+  // Behöver INTE en separat redirect() efter — det bryter cookie-propageringen.
   try {
     await signIn("credentials", {
       email: parsed.data.email,
       password: parsed.data.password,
-      redirect: false,
+      redirectTo: "/min-sida",
     });
-  } catch {
-    return { ok: false, error: "Konto skapat men inloggning misslyckades. Försök logga in manuellt." };
+  } catch (e) {
+    if (e instanceof AuthError) {
+      return { ok: false, error: "Konto skapat men inloggning misslyckades. Försök logga in manuellt." };
+    }
+    // NEXT_REDIRECT måste re-throwas så Next.js kan följa den
+    throw e;
   }
-
-  redirect("/min-sida");
 }
 
 export async function loginUser(formData: FormData): Promise<{ ok: false; error: string } | void> {
@@ -78,13 +78,16 @@ export async function loginUser(formData: FormData): Promise<{ ok: false; error:
   }
 
   try {
-    await signIn("credentials", { ...parsed.data, redirect: false });
+    await signIn("credentials", {
+      email: parsed.data.email,
+      password: parsed.data.password,
+      redirectTo: "/min-sida",
+    });
   } catch (e) {
     if (e instanceof AuthError) {
       return { ok: false, error: "Fel e-post eller lösenord." };
     }
+    // NEXT_REDIRECT kastas av Auth.js vid lyckad login — måste re-throwas
     throw e;
   }
-
-  redirect("/min-sida");
 }
