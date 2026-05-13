@@ -28,7 +28,7 @@ export default async function MeddelandenPage() {
           {messages.map((m) => (
             <li key={m.id} className={m.direction}>
               <header>
-                <span className="dir">{m.direction === "INBOUND" ? "Från kontoret" : "Du skrev"}</span>
+                <span className="dir">{m.direction === "OUTBOUND" ? "Från kontoret" : "Du skrev"}</span>
                 <span className="dim">{new Date(m.createdAt).toLocaleString("sv-SE")}</span>
               </header>
               {m.subject && <strong className="serif">{m.subject}</strong>}
@@ -42,8 +42,8 @@ export default async function MeddelandenPage() {
         .empty-card { padding: 48px; background: #fff; border: 1px dashed var(--c-line); }
         .msgs { list-style: none; padding: 0; display: grid; gap: 12px; }
         .msgs li { padding: 18px 22px; background: #fff; border: 1px solid var(--c-line-soft); border-left: 3px solid var(--c-line); }
-        .msgs li.INBOUND { border-left-color: var(--c-gold); }
-        .msgs li.OUTBOUND { border-left-color: var(--c-green-soft); }
+        .msgs li.OUTBOUND { border-left-color: var(--c-gold); }
+        .msgs li.INBOUND { border-left-color: var(--c-green-soft); }
         .msgs header { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
         .msgs .dir { font-weight: 700; color: var(--c-text-muted); }
         .msgs strong { display: block; font-size: 16px; color: var(--c-ink); margin-bottom: 6px; }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { createBooking } from "@/app/actions/bookings";
 import type { Metadata } from "next";
 
 type Params = Promise<{ slug: string }>;
@@ -160,9 +161,11 @@ export default async function PackageDetailPage({ params }: { params: Params }) 
                 </>
               )}
 
-              <Link href={`/boka/${pkg.id}`} className="btn btn-primary" style={{ width: "100%", justifyContent: "center", marginTop: 24 }}>
-                Påbörja bokning →
-              </Link>
+              <form action={createBooking.bind(null, pkg.id)} style={{ marginTop: 24 }}>
+                <button type="submit" className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }}>
+                  Påbörja bokning →
+                </button>
+              </form>
 
               <p className="dim" style={{ fontSize: 11, marginTop: 12, lineHeight: 1.5, textAlign: "center" }}>
                 Resegaranti hos Kammarkollegiet · Avbeställning enligt resevillkor

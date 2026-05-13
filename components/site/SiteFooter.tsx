@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SITE } from "@/lib/config";
 
 export function SiteFooter() {
   const year = new Date().getFullYear();
@@ -57,17 +58,17 @@ export function SiteFooter() {
           <div>
             <h4>Kontakt</h4>
             <ul>
-              <li>Stockholm — Kapellgränd 10</li>
+              <li>Stockholm — {SITE.offices.stockholm.address}</li>
               <li>Göteborg — efter bokning</li>
-              <li>08-12 34 56 78</li>
-              <li><a href="mailto:info@hajj.karimkhalil.se">info@hajj.karimkhalil.se</a></li>
+              <li>{SITE.phoneDisplay}</li>
+              <li><a href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
               <li><Link href="/kontakt">Kontaktformulär</Link></li>
             </ul>
           </div>
         </div>
 
         <div className="footer-bottom">
-          <span>© {year} Hadj Omra Resor AB · Org.nr 556xxx-xxxx</span>
+          <span>© {year} {SITE.legalName} · Org.nr {SITE.orgNr}</span>
           <div className="legal-links">
             <Link href="/integritet">Integritetspolicy</Link>
             <Link href="/cookies">Cookies</Link>

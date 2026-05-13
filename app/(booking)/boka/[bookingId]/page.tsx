@@ -9,9 +9,17 @@ import { StepPay } from "./StepPay";
 import { StepDone } from "./StepDone";
 
 type Params = Promise<{ bookingId: string }>;
+type SearchParams = Promise<{ error?: string }>;
 
-export default async function BookingPage({ params }: { params: Params }) {
+export default async function BookingPage({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: SearchParams;
+}) {
   const { bookingId } = await params;
+  const { error } = await searchParams;
   const session = await auth();
   if (!session?.user?.id) redirect(`/logga-in?next=${encodeURIComponent(`/boka/${bookingId}`)}`);
 
@@ -33,6 +41,12 @@ export default async function BookingPage({ params }: { params: Params }) {
         <ProgressNav currentStep={booking.step} packageTitle={booking.package.title} />
 
         <section className="bo-content">
+          {error && (
+            <div role="alert" className="bo-error">
+              <strong>Något stämde inte:</strong> {error}
+            </div>
+          )}
+
           {booking.step === 2 && <StepRoom booking={booking} />}
           {booking.step === 3 && <StepTravelers booking={booking} />}
           {booking.step === 4 && <StepReview booking={booking} />}
@@ -44,6 +58,14 @@ export default async function BookingPage({ params }: { params: Params }) {
       <style>{`
         .bo-grid { display: grid; grid-template-columns: 320px 1fr; gap: 48px; }
         .bo-content { background: #fff; border: 1px solid var(--c-line); padding: 48px 56px; min-height: 600px; }
+        .bo-error {
+          background: #FBE9E2;
+          border: 1px solid var(--c-warn);
+          color: var(--c-warn);
+          padding: 14px 18px;
+          margin-bottom: 24px;
+          font-size: 14px;
+        }
         @media (max-width: 980px) {
           .bo-grid { grid-template-columns: 1fr; }
           .bo-content { padding: 32px 24px; }

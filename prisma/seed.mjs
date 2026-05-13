@@ -120,7 +120,7 @@ async function main() {
     {
       slug: "hajj-2027",
       type: "HAJJ",
-      title: "Hajj 2027 — Dhul Hijja 1448",
+      title: "Hajj 2027 — Dhul Hijja 1449",
       subtitle: "Komplett Hajj-resa med saudisk partner",
       summary: "Vår årliga Hajj-resa. Begränsade platser via Saudiarabiens kvotsystem. Anmäl intresse tidigt.",
       description:

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { SITE } from "@/lib/config";
+import { MobileMenu } from "./MobileMenu";
 
 const NAV = [
   { href: "/omra", label: "Omra" },
@@ -13,15 +15,15 @@ export function SiteHeader() {
   return (
     <header className="site-header">
       <div className="container">
-        <Link href="/" className="brand">
-          <span className="brand-mark">ح</span>
+        <Link href="/" className="brand" aria-label="Hadj Omra Resor — startsidan">
+          <span className="brand-mark" lang="ar" aria-hidden="true">ح</span>
           <span className="brand-name">
             Hadj Omra Resor
             <small>Vallfärd sedan 1985</small>
           </span>
         </Link>
 
-        <nav className="nav">
+        <nav className="nav" aria-label="Huvudmeny">
           {NAV.map((item) => (
             <Link key={item.href} href={item.href}>
               {item.label}
@@ -30,17 +32,13 @@ export function SiteHeader() {
         </nav>
 
         <div className="header-right">
-          <div className="lang">
-            <a className="active" href="#">SV</a>
-            <a href="#">EN</a>
-            <a href="#">AR</a>
-          </div>
-          <a className="phone" href="tel:+46812345678">
-            08-12 34 56 78
+          <a className="phone" href={`tel:${SITE.phone.replace(/\s/g, "")}`}>
+            {SITE.phoneDisplay}
           </a>
-          <Link href="/min-sida" className="btn btn-ghost" style={{ padding: "10px 16px", fontSize: 13 }}>
+          <Link href="/min-sida" className="btn btn-ghost desktop-only" style={{ padding: "10px 16px", fontSize: 13 }}>
             Min sida
           </Link>
+          <MobileMenu items={NAV} />
         </div>
       </div>
 
@@ -102,16 +100,29 @@ export function SiteHeader() {
           font-weight: 500;
           letter-spacing: 0.005em;
           padding: 6px 0;
+          min-height: 44px;
+          display: inline-flex;
+          align-items: center;
         }
         .nav a:hover { color: var(--c-gold); }
-        .header-right { display: flex; align-items: center; gap: 18px; flex-shrink: 0; }
-        .lang { display: flex; gap: 0; font-size: 12px; letter-spacing: 0.16em; font-weight: 600; color: var(--c-text-muted); }
-        .lang a { padding: 0 6px; border-right: 1px solid var(--c-line); }
-        .lang a:last-child { border-right: 0; padding-right: 0; }
-        .lang a.active { color: var(--c-ink); }
-        .phone { font-size: 13px; font-weight: 600; letter-spacing: 0.02em; color: var(--c-ink); display: inline-flex; align-items: center; gap: 8px; }
+        .header-right { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+        .phone {
+          font-size: 13px;
+          font-weight: 600;
+          letter-spacing: 0.02em;
+          color: var(--c-ink);
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          min-height: 44px;
+          padding: 0 4px;
+        }
         @media (max-width: 980px) {
           .nav { display: none; }
+          .desktop-only { display: none; }
+        }
+        @media (min-width: 981px) {
+          .mobile-only { display: none; }
         }
       `}</style>
     </header>

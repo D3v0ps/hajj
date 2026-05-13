@@ -13,7 +13,7 @@ export default function Hajj2027Page() {
     <>
       <section style={{ padding: "80px 0 56px", borderBottom: "1px solid var(--c-line)" }}>
         <div className="container">
-          <span className="eyebrow gold">Hajj · Dhul Hijja 1448 / juni 2027</span>
+          <span className="eyebrow gold">Hajj · Dhul Hijja 1449 / juni 2027</span>
           <h1 style={{ marginTop: 18, marginBottom: 24, maxWidth: 880 }}>
             Hajj 2027 — <em style={{ color: "var(--c-gold)", fontStyle: "italic" }}>begränsade platser</em>, allt inkluderat.
           </h1>

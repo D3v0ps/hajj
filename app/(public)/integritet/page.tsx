@@ -1,3 +1,5 @@
+import { SITE } from "@/lib/config";
+
 export const metadata = { title: "Integritetspolicy" };
 
 export default function IntegritetPage() {
@@ -10,9 +12,10 @@ export default function IntegritetPage() {
 
         <h2 style={{ fontSize: 22, marginTop: 32, marginBottom: 12 }}>Personuppgiftsansvarig</h2>
         <p>
-          Hadj Omra Resor AB är personuppgiftsansvarig för behandlingen av
-          dina personuppgifter på denna webbplats och i samband med din
-          bokning. Kontakt: info@hajj.karimkhalil.se
+          {SITE.legalName} (org.nr {SITE.orgNr}) är personuppgiftsansvarig för behandlingen
+          av dina personuppgifter på denna webbplats och i samband med din bokning.
+          Adress: {SITE.offices.stockholm.address}, {SITE.offices.stockholm.postal}.
+          Kontakt: <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.
         </p>
 
         <h2 style={{ fontSize: 22, marginTop: 32, marginBottom: 12 }}>Vilka uppgifter samlar vi in?</h2>
@@ -20,7 +23,7 @@ export default function IntegritetPage() {
           <li>Namn, e-post, telefon (kontaktuppgifter)</li>
           <li>Personnummer, passuppgifter, passfoto (för visumansökan)</li>
           <li>Eventuella särskilda behov, mahram-uppgifter</li>
-          <li>Betalningsinformation (vi sparar inte kortuppgifter — Stripe/Swish hanterar dem)</li>
+          <li>Betalningsinformation (vi sparar inte kortuppgifter — extern PSP hanterar dem)</li>
           <li>Cookies för inloggning och webbplatsens funktion</li>
         </ul>
 
@@ -31,7 +34,11 @@ export default function IntegritetPage() {
         <p>Bokningsinformation sparas i 7 år enligt bokföringslagen. Passuppgifter raderas inom 12 månader efter avslutad resa.</p>
 
         <h2 style={{ fontSize: 22, marginTop: 32, marginBottom: 12 }}>Dina rättigheter</h2>
-        <p>Du har rätt att begära utdrag, rättelse eller radering av dina uppgifter. Skicka begäran till info@hajj.karimkhalil.se. Vid klagomål kan du vända dig till Integritetsskyddsmyndigheten (IMY).</p>
+        <p>
+          Du har rätt att begära utdrag, rättelse eller radering av dina uppgifter.
+          Skicka begäran till <a href={`mailto:${SITE.email}`}>{SITE.email}</a>. Vid
+          klagomål kan du vända dig till Integritetsskyddsmyndigheten (IMY).
+        </p>
       </div>
     </article>
   );

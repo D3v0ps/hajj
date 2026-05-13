@@ -34,11 +34,16 @@ export async function registerUser(formData: FormData): Promise<{ ok: true } | {
   }
 
   const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } });
-  if (existing) {
-    return { ok: false, error: "En användare med den e-postadressen finns redan." };
-  }
 
+  // Email enumeration-skydd: returnera samma response oavsett om kontot fanns.
+  // Vi gör hashing-arbetet ändå för att inte avslöja via timing-skillnad.
   const passwordHash = await hashPassword(parsed.data.password);
+
+  if (existing) {
+    // Tyst no-op + redirect till login. Riktig användare som glömt att de hade
+    // konto landar på login. Eventuell duplicate-registrering avslöjas inte.
+    redirect("/logga-in?registered=1");
+  }
 
   await prisma.user.create({
     data: {

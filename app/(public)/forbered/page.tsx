@@ -49,7 +49,7 @@ export default function ForberedPage() {
               <h3 style={{ fontSize: 18, marginBottom: 12 }}>Religiöst</h3>
               <ul className="checklist">
                 <li>Ihram-tyg (män, två stycken)</li>
-                <li>Modesta kläder för kvinnor (avhanda, sjal)</li>
+                <li>Modesta kläder för kvinnor (abaya, hijab/sjal)</li>
                 <li>Tasbih (radband)</li>
                 <li>Liten dua-bok eller mobilapp</li>
                 <li>Sittunderlag för bön i moské</li>
@@ -72,7 +72,7 @@ export default function ForberedPage() {
                 <li>Smärtstillande, plåster, vätskeersättning</li>
                 <li>Halstabletter, näsdroppar (luften är torr)</li>
                 <li>Solkräm SPF 50</li>
-                <li>Maginer, hudkräm</li>
+                <li>Magmedicin, hudkräm</li>
               </ul>
             </div>
           </div>
@@ -92,7 +92,7 @@ export default function ForberedPage() {
           <ol className="ritual">
             {[
               { t: "Ihram", b: "Anta tillståndet ihram vid miqat med rätt intentions-formulering. Recitera talbiyah." },
-              { t: "Tawaf al-Qudum", b: "Sju varv runt Kaaba moturs, börja vid den svarta stenen." },
+              { t: "Tawaf (ankomst)", b: "Sju varv runt Kaaba moturs, börja vid den svarta stenen. För Omra-pilgrimer: detta är Tawaf al-Umrah." },
               { t: "Sa'i", b: "Sju turer mellan Safa och Marwa." },
               { t: "Mina (8 Dhul Hijja)", b: "Övernatta i tält i Mina, fyra böner." },
               { t: "Arafat (9 Dhul Hijja)", b: "Stå i Arafat från middag till solnedgång — Hajj-dagen." },

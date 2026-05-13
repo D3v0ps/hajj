@@ -26,7 +26,7 @@ function flashError(bookingId: string, message: string): never {
   redirect(`/boka/${bookingId}?${u.toString()}`);
 }
 
-export async function createBooking(packageId: string): Promise<void> {
+export async function createBooking(packageId: string, _formData?: FormData): Promise<void> {
   const user = await requireUser();
   const pkg = await prisma.package.findUnique({
     where: { id: packageId },

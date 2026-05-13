@@ -39,7 +39,7 @@ async function sendMessage(bookingId: string, formData: FormData) {
     data: {
       userId: booking.userId,
       bookingId: booking.id,
-      direction: "INBOUND",
+      direction: "OUTBOUND",
       subject: subject || null,
       body,
     },
@@ -51,7 +51,14 @@ export default async function AdminBookingDetailPage({ params }: { params: Param
   const { id } = await params;
   const booking = await prisma.booking.findUnique({
     where: { id },
-    include: { package: true, tier: true, user: true, travelers: true, payments: true, messages: { orderBy: { createdAt: "desc" } } },
+    include: {
+      package: true,
+      tier: true,
+      user: { select: { id: true, email: true, name: true, phone: true } },
+      travelers: true,
+      payments: true,
+      messages: { orderBy: { createdAt: "desc" } },
+    },
   });
   if (!booking) notFound();
 
@@ -120,7 +127,7 @@ export default async function AdminBookingDetailPage({ params }: { params: Param
             <ol className="msgs">
               {booking.messages.map((m) => (
                 <li key={m.id} className={m.direction}>
-                  <span className="dir">{m.direction === "INBOUND" ? "Till kund" : "Från kund"}</span>
+                  <span className="dir">{m.direction === "OUTBOUND" ? "Till kund" : "Från kund"}</span>
                   <span className="dim" style={{ fontSize: 11 }}>{new Date(m.createdAt).toLocaleString("sv-SE")}</span>
                   {m.subject && <strong>{m.subject}</strong>}
                   <p>{m.body}</p>

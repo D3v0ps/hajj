@@ -2,9 +2,14 @@
 
 Levande dokument. Uppdateras vid varje större milstolpe så att arbetet kan plockas upp där det stannade.
 
-**Senast uppdaterad:** 2026-05-13 — Fas 1 färdig, redo för första deploy.
+**Senast uppdaterad:** 2026-05-13 — Sajten är LIVE på `https://hajj.karimkhalil.se`. Fas 1.1 (audit-fixes) pushad.
 **Aktuell branch:** `claude/hippo-memory-init-BxqGB`
-**Aktuell fas:** Fas 1 — Foundation klar, väntar på första deploy + verifiering.
+**Aktuell fas:** Fas 1.1 — Första batch audit-fixes pushad. Fas 2 i kö.
+
+## Audit-historik (2026-05-13)
+Kört 20 parallella audit-agenter över hela kodbasen. ~150 findings totalt.
+Första batch (15-20 mest blockerande) fixade och pushade i denna commit.
+Återstående findings ligger i "Att-göra — Fas 2" och kategoriserade nedan.
 
 ---
 

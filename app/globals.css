@@ -69,6 +69,41 @@ html, body {
 img, svg { display: block; max-width: 100%; }
 a { color: inherit; text-decoration: none; }
 
+/* A11y: synlig focus-ring för tangentbordsanvändare */
+*:focus-visible {
+  outline: 2px solid var(--c-gold);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Skip-link — visas bara vid focus */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  background: var(--c-ink);
+  color: #fff;
+  padding: 12px 18px;
+  font-weight: 600;
+  font-size: 14px;
+  z-index: 200;
+  transition: top 160ms;
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 16px;
+}
+
+/* Reducerat rörelse */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 h1, h2, h3, h4 {
   font-family: var(--f-serif);
   font-weight: 460;

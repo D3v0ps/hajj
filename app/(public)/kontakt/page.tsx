@@ -1,4 +1,5 @@
 import { LeadQuoteForm } from "@/components/site/LeadQuoteForm";
+import { SITE } from "@/lib/config";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -29,28 +30,27 @@ export default function KontaktPage() {
             <h2 style={{ fontSize: 28, marginBottom: 24 }}>Kontoren</h2>
 
             <div className="contact-card">
-              <span className="eyebrow">Stockholm — huvudkontor</span>
+              <span className="eyebrow">{SITE.offices.stockholm.label}</span>
               <p className="address">
-                Kapellgränd 10<br />
-                116 25 Stockholm
+                {SITE.offices.stockholm.address}<br />
+                {SITE.offices.stockholm.postal}
               </p>
-              <p className="dim" style={{ fontSize: 14 }}>
-                I Stockholms moské. Drop-in fungerar inte — boka tid via telefon eller e-post.
-              </p>
+              <p className="dim" style={{ fontSize: 14 }}>{SITE.offices.stockholm.note}</p>
             </div>
 
             <div className="contact-card">
-              <span className="eyebrow">Göteborg</span>
+              <span className="eyebrow">{SITE.offices.goteborg.label}</span>
               <p className="address">
-                Efter bokad tid<br />
-                Boka via telefon
+                {SITE.offices.goteborg.address}<br />
+                {SITE.offices.goteborg.postal}
               </p>
+              <p className="dim" style={{ fontSize: 14 }}>{SITE.offices.goteborg.note}</p>
             </div>
 
             <div className="contact-card">
               <span className="eyebrow">Telefon</span>
               <p className="address" style={{ fontSize: 22 }}>
-                <a href="tel:+46812345678">08-12 34 56 78</a>
+                <a href={`tel:${SITE.phone.replace(/\s/g, "")}`}>{SITE.phoneDisplay}</a>
               </p>
               <p className="dim" style={{ fontSize: 14 }}>
                 Vardagar 9–17. Akut under resa: dygnet-runt-nummer skickas till alla resenärer före avresa.
@@ -60,7 +60,7 @@ export default function KontaktPage() {
             <div className="contact-card">
               <span className="eyebrow">E-post</span>
               <p className="address" style={{ fontSize: 18 }}>
-                <a href="mailto:info@hajj.karimkhalil.se">info@hajj.karimkhalil.se</a>
+                <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
               </p>
             </div>
           </div>

@@ -10,7 +10,11 @@ export default async function AdminOverviewPage() {
     prisma.booking.count({ where: { status: "SUBMITTED" } }),
     prisma.lead.count({ where: { status: "NEW" } }),
     prisma.lead.findMany({ orderBy: { createdAt: "desc" }, take: 8 }),
-    prisma.booking.findMany({ orderBy: { updatedAt: "desc" }, take: 8, include: { package: true, user: true } }),
+    prisma.booking.findMany({
+      orderBy: { updatedAt: "desc" },
+      take: 8,
+      include: { package: true, user: { select: { id: true, email: true, name: true } } },
+    }),
   ]);
 
   return (

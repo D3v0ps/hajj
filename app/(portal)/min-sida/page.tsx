@@ -39,7 +39,7 @@ export default async function MinSidaPage() {
     }),
     prisma.traveler.count({ where: { userId: session.user.id } }),
     prisma.document.findMany({ where: { userId: session.user.id }, orderBy: { uploadedAt: "desc" }, take: 5 }),
-    prisma.message.count({ where: { userId: session.user.id, readAt: null, direction: "INBOUND" } }),
+    prisma.message.count({ where: { userId: session.user.id, readAt: null, direction: "OUTBOUND" } }),
   ]);
 
   return (

@@ -3,11 +3,17 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
-import { scrypt, randomBytes, timingSafeEqual } from "node:crypto";
-import { promisify } from "node:util";
+import { scrypt, randomBytes, timingSafeEqual, type ScryptOptions } from "node:crypto";
 import { authConfig } from "@/lib/auth.config";
 
-const scryptAsync = promisify(scrypt);
+function scryptAsync(password: string, salt: string, keylen: number, options: ScryptOptions): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    scrypt(password, salt, keylen, options, (err, key) => {
+      if (err) reject(err);
+      else resolve(key);
+    });
+  });
+}
 
 declare module "next-auth" {
   interface Session {
@@ -18,9 +24,13 @@ declare module "next-auth" {
   }
 }
 
+// OWASP-rekommenderade scrypt-parametrar (2024+):
+// N=2^17, r=8, p=1. maxmem behöver höjas eftersom default räcker ej för N=131072.
+const SCRYPT_OPTS = { N: 1 << 17, r: 8, p: 1, maxmem: 256 * 1024 * 1024 } as const;
+
 export async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16).toString("hex");
-  const derived = (await scryptAsync(password, salt, 64)) as Buffer;
+  const derived = await scryptAsync(password, salt, 64, SCRYPT_OPTS);
   return `${salt}:${derived.toString("hex")}`;
 }
 
@@ -28,7 +38,7 @@ export async function verifyPassword(password: string, stored: string): Promise<
   const [salt, hashHex] = stored.split(":");
   if (!salt || !hashHex) return false;
   const expected = Buffer.from(hashHex, "hex");
-  const derived = (await scryptAsync(password, salt, 64)) as Buffer;
+  const derived = await scryptAsync(password, salt, 64, SCRYPT_OPTS);
   if (expected.length !== derived.length) return false;
   return timingSafeEqual(expected, derived);
 }

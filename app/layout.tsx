@@ -1,6 +1,14 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Newsreader, Manrope, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+// Importera env-validering tidigt så appen kraschar snabbt vid felaktig config.
+import "@/lib/env";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#FBFAF6",
+};
 
 const newsreader = Newsreader({
   variable: "--font-serif-actual",

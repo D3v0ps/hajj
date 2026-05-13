@@ -4,7 +4,10 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminResenarerPage() {
   const travelers = await prisma.traveler.findMany({
-    include: { user: true, booking: { include: { package: true } } },
+    include: {
+      user: { select: { id: true, email: true } },
+      booking: { select: { id: true, package: { select: { title: true } } } },
+    },
     orderBy: { createdAt: "desc" },
     take: 200,
   });

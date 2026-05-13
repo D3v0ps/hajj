@@ -1,0 +1,26 @@
+node_modules
+.next
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+*.log
+*.tmp
+*.swp
+.DS_Store
+
+# Dev/CI artefakter
+coverage
+.vscode
+.idea
+
+# Docker stuff vi inte vill in i image-context
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Dokumentation som inte påverkar build
+README.md
+STATUS.md
+.github

@@ -5,7 +5,11 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminBookingsPage() {
   const bookings = await prisma.booking.findMany({
-    include: { package: true, user: true, travelers: true, payments: true },
+    include: {
+      package: true,
+      user: { select: { id: true, email: true, name: true } },
+      travelers: { select: { id: true } },
+    },
     orderBy: { updatedAt: "desc" },
     take: 200,
   });
