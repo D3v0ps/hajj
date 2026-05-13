@@ -166,14 +166,26 @@ jobs:
           # Logga in på GHCR med workflow-token (kräver packages: read i deploy-jobbet)
           echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_ACTOR" --password-stdin
 
-          # Pull och starta om
-          docker compose pull
+          # Pulla quiet — annars spammar varje progress-uppdatering Action-loggen
+          # med tusentals rader "Downloading XX.XXMB". Timeout efter 8 min så vi
+          # inte hänger för evigt på en seg layer-nedladdning.
+          echo "Pulling images..."
+          timeout 480 docker compose pull --quiet || {
+            echo "::warning::Pull timed out eller failed — försöker igen verbose för diagnostik"
+            docker compose pull
+          }
+
           docker compose up -d --remove-orphans
 
           # Status
           docker compose ps
           docker image prune -f --filter "until=72h" || true
 
+          # Diskspace-koll så vi ser om vi börjar bli trånga
+          echo ""
+          echo "Diskanvändning:"
+          df -h /var/lib/docker 2>/dev/null || df -h /
+          echo ""
           echo "Deploy step done on server."
           REMOTE
 
