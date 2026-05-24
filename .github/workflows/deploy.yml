@@ -161,6 +161,7 @@ jobs:
             echo "SEED_ADMIN_EMAIL=${SEED_ADMIN_EMAIL:-}"
             echo "SEED_ADMIN_PASSWORD=${SEED_ADMIN_PASSWORD:-}"
             echo "RUN_SEED=1"
+            echo "SETUP_MODE=1"
           } > .env
 
           # Logga in på GHCR med workflow-token (kräver packages: read i deploy-jobbet)

@@ -28,6 +28,7 @@ services:
       APP_URL: https://${DOMAIN:-hajj.karimkhalil.se}
       AUTH_TRUST_HOST: "true"
       RUN_SEED: ${RUN_SEED:-1}
+      SETUP_MODE: ${SETUP_MODE:-1}
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
       NODE_ENV: production
