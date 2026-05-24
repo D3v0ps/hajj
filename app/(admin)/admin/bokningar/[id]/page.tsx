@@ -246,86 +246,127 @@ export default async function BokningDetailPage({ params, searchParams }: { para
 
       {activeTab === "resenarer" && (
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <div className="tv-toolbar">
             <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 22, margin: 0 }}>
               {booking.travelers.length} resenärer
             </h2>
+            <div className="tv-quick-stats">
+              <span className="tv-qs">{booking.travelers.filter((t) => t.passportNo).length}/{booking.travelers.length} pass</span>
+              <span className="tv-qs">{booking.travelers.filter((t) => t.roomAssignment).length}/{booking.travelers.length} rum</span>
+              {booking.travelers.some((t) => t.needsAssist) && (
+                <span className="tv-qs warn">{booking.travelers.filter((t) => t.needsAssist).length} assistans</span>
+              )}
+            </div>
           </div>
 
-          {/* Profilkort per resenär */}
           <div className="traveler-cards">
-            {booking.travelers.map((t, i) => (
-              <div key={t.id} className="tv-card">
-                <div className="tv-card-head">
-                  <div className="tv-card-num">{String(i + 1).padStart(2, "0")}</div>
-                  <div className="tv-card-name">
-                    <h3>{t.firstName} {t.lastName}</h3>
-                    <div className="tv-card-badges">
-                      <span className={`adm-pill ${t.gender === "M" ? "info" : t.gender === "F" ? "gold" : "outline"}`}>
-                        {t.gender === "M" ? "Man" : t.gender === "F" ? "Kvinna" : "—"}
-                      </span>
-                      {t.needsAssist && <span className="adm-pill warn">Assistans</span>}
-                      {t.isMahram && <span className="adm-pill gold">Mahram</span>}
+            {booking.travelers.map((t, i) => {
+              const hasPass = !!t.passportNo;
+              const hasRoom = !!t.roomAssignment;
+              const missingCount = [!t.passportNo, !t.personnummer, !t.birthDate].filter(Boolean).length;
+
+              return (
+                <details key={t.id} className="tv-accordion" open={i === 0}>
+                  <summary className="tv-summary">
+                    <div className="tv-sum-left">
+                      <div className="tv-sum-avatar" data-gender={t.gender ?? ""}>
+                        {t.gender === "M" ? "♂" : t.gender === "F" ? "♀" : String(i + 1)}
+                      </div>
+                      <div className="tv-sum-info">
+                        <div className="tv-sum-name">{t.firstName} {t.lastName}</div>
+                        <div className="tv-sum-meta">
+                          {t.email ?? t.phone ?? booking.user.email}
+                          {t.nationality && <> · {t.nationality}</>}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="tv-sum-right">
+                      <div className="tv-sum-checks">
+                        <span className={`tv-check ${hasPass ? "ok" : "missing"}`} title={hasPass ? "Pass registrerat" : "Pass saknas"}>
+                          {hasPass ? "✓" : "✗"} Pass
+                        </span>
+                        <span className={`tv-check ${hasRoom ? "ok" : "missing"}`} title={hasRoom ? `Rum: ${t.roomAssignment}` : "Rum ej tilldelat"}>
+                          {hasRoom ? "✓" : "—"} Rum
+                        </span>
+                      </div>
+                      <div className="tv-sum-badges">
+                        {t.needsAssist && <span className="adm-pill warn">Assistans</span>}
+                        {t.isMahram && <span className="adm-pill gold">Mahram</span>}
+                        {missingCount > 0 && <span className="adm-pill outline">{missingCount} saknas</span>}
+                      </div>
+                      <span className="tv-chevron" aria-hidden="true">›</span>
+                    </div>
+                  </summary>
+
+                  <div className="tv-card-body">
+                    <div className="tv-body-grid">
+                      <div className="tv-section">
+                        <span className="tv-section-label">Kontaktuppgifter</span>
+                        <div className="tv-fields">
+                          <div><span className="tv-label">E-post</span><span className="tv-value">{t.email ?? booking.contactEmail ?? booking.user.email}</span></div>
+                          <div><span className="tv-label">Mobil</span><span className="tv-value">{t.phone ?? booking.user.phone ?? booking.contactPhone ?? "—"}</span></div>
+                          <div><span className="tv-label">Bor i</span><span className="tv-value">{t.residenceCity ?? "—"}</span></div>
+                        </div>
+                      </div>
+
+                      <div className="tv-section">
+                        <span className="tv-section-label">Identitet & pass</span>
+                        <div className="tv-fields">
+                          <div><span className="tv-label">Personnummer</span><span className="tv-value mono">{t.personnummer ?? "—"}</span></div>
+                          <div><span className="tv-label">Passnummer</span><span className="tv-value mono">{t.passportNo ?? "—"}</span></div>
+                          <div><span className="tv-label">Pass giltig t.o.m.</span><span className="tv-value">{t.passportExp ? fmtDate(t.passportExp) : "—"}</span></div>
+                          <div><span className="tv-label">Födelsedatum</span><span className="tv-value">{t.birthDate ? fmtDate(t.birthDate) : "—"}</span></div>
+                          <div><span className="tv-label">Nationalitet</span><span className="tv-value">{t.nationality ?? "—"}</span></div>
+                          <div><span className="tv-label">Ursprung</span><span className="tv-value">{t.countryOfOrigin ?? "—"}</span></div>
+                        </div>
+                      </div>
+
+                      <div className="tv-section">
+                        <span className="tv-section-label">Resa & logistik</span>
+                        <div className="tv-fields">
+                          <div><span className="tv-label">Rumsindelning</span><span className="tv-value">{t.roomAssignment ?? "Ej tilldelat"}</span></div>
+                          <div><span className="tv-label">Flyg ut</span><span className="tv-value mono">{t.flightOut ?? "—"}</span></div>
+                          <div><span className="tv-label">Flyg hem</span><span className="tv-value mono">{t.flightReturn ?? "—"}</span></div>
+                          <div><span className="tv-label">Civilstånd</span><span className="tv-value">{t.civilStatus ?? "—"}</span></div>
+                          <div><span className="tv-label">Födelsestad</span><span className="tv-value">{t.birthCity ?? "—"}</span></div>
+                          <div><span className="tv-label">Betalning</span><span className="tv-value">{t.paymentNote ?? "—"}</span></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {t.notes && (
+                      <div className="tv-notes-block">
+                        <span className="tv-section-label">Anteckningar</span>
+                        <p className="tv-notes">{t.notes}</p>
+                      </div>
+                    )}
+
+                    <div className="tv-actions">
+                      <form action={removeTravelerAdmin.bind(null, booking.id, t.id)}>
+                        <button type="submit" className="tv-action-btn danger">Ta bort resenär</button>
+                      </form>
                     </div>
                   </div>
-                  <form action={removeTravelerAdmin.bind(null, booking.id, t.id)}>
-                    <button type="submit" className="btn-link" style={{ fontSize: 11, color: "var(--c-warn)" }}>Ta bort</button>
-                  </form>
-                </div>
-
-                <div className="tv-card-body">
-                  <div className="tv-section">
-                    <span className="tv-section-label">Kontaktuppgifter</span>
-                    <div className="tv-fields">
-                      <div><span className="tv-label">E-post</span><span className="tv-value">{t.email ?? booking.contactEmail ?? booking.user.email}</span></div>
-                      <div><span className="tv-label">Mobil</span><span className="tv-value">{t.phone ?? booking.user.phone ?? booking.contactPhone ?? "—"}</span></div>
-                      <div><span className="tv-label">Bor i</span><span className="tv-value">{t.residenceCity ?? "—"}</span></div>
-                    </div>
-                  </div>
-
-                  <div className="tv-section">
-                    <span className="tv-section-label">Identitet & pass</span>
-                    <div className="tv-fields">
-                      <div><span className="tv-label">Personnummer</span><span className="tv-value mono">{t.personnummer ?? "—"}</span></div>
-                      <div><span className="tv-label">Passnummer</span><span className="tv-value mono">{t.passportNo ?? "—"}</span></div>
-                      <div><span className="tv-label">Pass giltig t.o.m.</span><span className="tv-value">{t.passportExp ? fmtDate(t.passportExp) : "—"}</span></div>
-                      <div><span className="tv-label">Födelsedatum</span><span className="tv-value">{t.birthDate ? fmtDate(t.birthDate) : "—"}</span></div>
-                      <div><span className="tv-label">Nationalitet</span><span className="tv-value">{t.nationality ?? "—"}</span></div>
-                      <div><span className="tv-label">Ursprung</span><span className="tv-value">{t.countryOfOrigin ?? "—"}</span></div>
-                    </div>
-                  </div>
-
-                  <div className="tv-section">
-                    <span className="tv-section-label">Resa & logistik</span>
-                    <div className="tv-fields">
-                      <div><span className="tv-label">Rumsindelning</span><span className="tv-value">{t.roomAssignment ?? "Ej tilldelat"}</span></div>
-                      <div><span className="tv-label">Flyg ut</span><span className="tv-value mono">{t.flightOut ?? "—"}</span></div>
-                      <div><span className="tv-label">Flyg hem</span><span className="tv-value mono">{t.flightReturn ?? "—"}</span></div>
-                      <div><span className="tv-label">Civilstånd</span><span className="tv-value">{t.civilStatus ?? "—"}</span></div>
-                      <div><span className="tv-label">Födelsestad</span><span className="tv-value">{t.birthCity ?? "—"}</span></div>
-                      <div><span className="tv-label">Betalning</span><span className="tv-value">{t.paymentNote ?? "—"}</span></div>
-                    </div>
-                  </div>
-
-                  {t.notes && (
-                    <div className="tv-section">
-                      <span className="tv-section-label">Anteckningar</span>
-                      <p className="tv-notes">{t.notes}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
+                </details>
+              );
+            })}
           </div>
 
           {booking.travelers.length === 0 && (
-            <div className="adm-card"><div className="b dim" style={{ padding: 32, textAlign: "center" }}>Inga resenärer registrerade ännu.</div></div>
+            <div style={{ padding: 48, textAlign: "center", background: "#fff", border: "1px dashed var(--c-line)" }}>
+              <span style={{ fontSize: 32, display: "block", marginBottom: 12, opacity: 0.3 }}>👤</span>
+              <p style={{ margin: 0, fontSize: 16 }}>Inga resenärer registrerade ännu.</p>
+              <p className="dim" style={{ fontSize: 13, marginTop: 6 }}>Lägg till den första nedan.</p>
+            </div>
           )}
 
-          {/* Lägg till ny resenär */}
-          <div className="adm-card" style={{ marginTop: 20 }}>
-            <div className="h">+ Lägg till resenär</div>
-            <div className="b">
+          {/* Lägg till resenär — ihopfällbar */}
+          <details className="tv-add-accordion" style={{ marginTop: 20 }}>
+            <summary className="tv-add-summary">
+              <span className="tv-add-icon">+</span>
+              <span>Lägg till resenär</span>
+            </summary>
+            <div className="tv-add-body">
               <form action={addTravelerAdmin.bind(null, booking.id)} className="add-tv-form">
                 <div className="add-tv-grid">
                   <div className="field"><label>Förnamn *</label><input name="firstName" required /></div>
@@ -350,7 +391,7 @@ export default async function BokningDetailPage({ params, searchParams }: { para
                 </div>
               </form>
             </div>
-          </div>
+          </details>
         </div>
       )}
 
@@ -703,51 +744,140 @@ export default async function BokningDetailPage({ params, searchParams }: { para
           .case-pkg { font-size: 15px; }
         }
 
-        /* Traveler profile cards */
-        .traveler-cards { display: grid; gap: 12px; }
-        .tv-card { background: #fff; border: 1px solid var(--c-line-soft); }
-        .tv-card-head {
-          display: flex; align-items: center; gap: 14px;
-          padding: 16px 20px;
-          background: var(--c-cream);
-          border-bottom: 1px solid var(--c-line-soft);
+        /* Traveler accordion cards */
+        .tv-toolbar {
+          display: flex; justify-content: space-between; align-items: center;
+          margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
         }
-        .tv-card-num {
-          font-family: var(--f-mono); font-size: 14px; color: var(--c-gold);
-          letter-spacing: 0.12em; flex-shrink: 0;
-          width: 32px; height: 32px; display: grid; place-items: center;
-          border: 1px solid var(--c-gold); background: #fff;
+        .tv-quick-stats { display: flex; gap: 12px; }
+        .tv-qs {
+          font-size: 12px; font-family: var(--f-mono); color: var(--c-text-muted);
+          padding: 4px 10px; background: var(--c-cream); border: 1px solid var(--c-line-soft);
         }
-        .tv-card-name { flex: 1; }
-        .tv-card-name h3 { font-size: 18px; margin: 0 0 6px; }
-        .tv-card-badges { display: flex; gap: 4px; flex-wrap: wrap; }
-        .tv-card-body { padding: 20px; display: grid; gap: 18px; }
-        .tv-section { }
+        .tv-qs.warn { color: var(--c-warn); border-color: var(--c-warn); background: #FBE9E2; }
+
+        .traveler-cards { display: grid; gap: 6px; }
+
+        .tv-accordion {
+          background: #fff; border: 1px solid var(--c-line-soft);
+          transition: border-color 160ms;
+        }
+        .tv-accordion[open] { border-color: var(--c-gold); }
+        .tv-accordion[open] .tv-chevron { transform: rotate(90deg); }
+
+        .tv-summary {
+          display: flex; justify-content: space-between; align-items: center;
+          padding: 14px 20px; cursor: pointer; list-style: none;
+          transition: background 120ms; user-select: none;
+          gap: 16px;
+        }
+        .tv-summary::-webkit-details-marker { display: none; }
+        .tv-summary::marker { display: none; }
+        .tv-summary:hover { background: var(--c-cream); }
+
+        .tv-sum-left { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+        .tv-sum-avatar {
+          width: 40px; height: 40px; border-radius: 50%;
+          display: grid; place-items: center;
+          font-size: 16px; flex-shrink: 0;
+          border: 1px solid var(--c-line);
+        }
+        .tv-sum-avatar[data-gender="M"] { background: var(--c-ink); color: #fff; border-color: var(--c-ink); }
+        .tv-sum-avatar[data-gender="F"] { background: var(--c-gold); color: #fff; border-color: var(--c-gold); }
+        .tv-sum-info { min-width: 0; }
+        .tv-sum-name {
+          font-family: var(--f-serif); font-size: 16px; color: var(--c-ink);
+          font-weight: 460; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .tv-sum-meta { font-size: 12px; color: var(--c-text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .tv-sum-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+        .tv-sum-checks { display: flex; gap: 8px; }
+        .tv-check {
+          font-size: 11px; font-weight: 600; padding: 2px 8px;
+          border: 1px solid var(--c-line); background: var(--c-paper);
+        }
+        .tv-check.ok { color: var(--c-green-soft); border-color: var(--c-green-soft); }
+        .tv-check.missing { color: var(--c-text-faint); }
+        .tv-sum-badges { display: flex; gap: 4px; }
+        .tv-chevron {
+          font-size: 20px; color: var(--c-text-muted);
+          transition: transform 200ms; flex-shrink: 0;
+        }
+
+        .tv-card-body {
+          padding: 0 20px 20px;
+          border-top: 1px solid var(--c-line-soft);
+        }
+        .tv-body-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; padding-top: 20px; }
         .tv-section-label {
           display: block; font-size: 10px; letter-spacing: 0.16em;
           text-transform: uppercase; color: var(--c-gold); font-weight: 700;
-          margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--c-line-soft);
+          margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--c-line-soft);
         }
-        .tv-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 18px; }
+        .tv-fields { display: grid; gap: 10px; }
         .tv-label {
-          display: block; font-size: 10px; letter-spacing: 0.08em;
-          text-transform: uppercase; color: var(--c-text-muted); font-weight: 600; margin-bottom: 2px;
+          display: block; font-size: 9px; letter-spacing: 0.1em;
+          text-transform: uppercase; color: var(--c-text-faint); font-weight: 600; margin-bottom: 1px;
         }
-        .tv-value { font-family: var(--f-serif); font-size: 15px; color: var(--c-ink); }
-        .tv-value.mono { font-family: var(--f-mono); font-size: 13px; letter-spacing: 0.04em; }
-        .tv-notes { margin: 0; font-size: 14px; line-height: 1.6; color: var(--c-text); padding: 10px 14px; background: var(--c-paper); border-left: 3px solid var(--c-gold); }
+        .tv-value { font-family: var(--f-serif); font-size: 14px; color: var(--c-ink); }
+        .tv-value.mono { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.04em; }
+        .tv-notes-block { padding-top: 16px; }
+        .tv-notes {
+          margin: 0; font-size: 13px; line-height: 1.6; color: var(--c-text);
+          padding: 10px 14px; background: var(--c-paper); border-left: 3px solid var(--c-gold);
+        }
+        .tv-actions {
+          padding-top: 16px; display: flex; justify-content: flex-end;
+          border-top: 1px solid var(--c-line-soft); margin-top: 16px;
+        }
+        .tv-action-btn {
+          background: transparent; border: 1px solid var(--c-line);
+          padding: 6px 14px; font-size: 12px; cursor: pointer;
+          font-family: var(--f-sans); color: var(--c-text-muted);
+          transition: all 120ms;
+        }
+        .tv-action-btn.danger { border-color: var(--c-warn); color: var(--c-warn); }
+        .tv-action-btn.danger:hover { background: var(--c-warn); color: #fff; }
 
+        /* Add traveler accordion */
+        .tv-add-accordion {
+          background: #fff; border: 1px dashed var(--c-line);
+        }
+        .tv-add-summary {
+          display: flex; align-items: center; gap: 10px;
+          padding: 16px 20px; cursor: pointer; list-style: none;
+          font-family: var(--f-serif); font-size: 17px; color: var(--c-ink);
+          transition: all 120ms;
+        }
+        .tv-add-summary::-webkit-details-marker { display: none; }
+        .tv-add-summary::marker { display: none; }
+        .tv-add-summary:hover { background: var(--c-cream); }
+        .tv-add-icon {
+          width: 32px; height: 32px; display: grid; place-items: center;
+          border: 1px solid var(--c-gold); color: var(--c-gold);
+          font-size: 18px; font-family: var(--f-sans);
+        }
+        .tv-add-accordion[open] .tv-add-summary { border-bottom: 1px solid var(--c-line-soft); color: var(--c-gold); }
+        .tv-add-body { padding: 20px; }
         .add-tv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 
+        @media (max-width: 1024px) {
+          .tv-body-grid { grid-template-columns: 1fr 1fr; }
+        }
         @media (max-width: 900px) {
-          .tv-fields { grid-template-columns: 1fr 1fr; }
           .add-tv-grid { grid-template-columns: 1fr 1fr; }
+          .tv-sum-checks { display: none; }
         }
         @media (max-width: 640px) {
-          .tv-fields { grid-template-columns: 1fr; }
-          .tv-card-body { padding: 16px; }
+          .tv-body-grid { grid-template-columns: 1fr; }
           .add-tv-grid { grid-template-columns: 1fr; }
-          .tv-card-head { flex-wrap: wrap; gap: 10px; }
+          .tv-sum-badges { display: none; }
+          .tv-summary { padding: 12px 14px; gap: 10px; }
+          .tv-sum-avatar { width: 36px; height: 36px; font-size: 14px; }
+          .tv-sum-name { font-size: 15px; }
+          .tv-card-body { padding: 0 14px 14px; }
+          .tv-add-body { padding: 16px; }
         }
       `}</style>
     </div>
