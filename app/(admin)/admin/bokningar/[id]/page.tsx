@@ -80,11 +80,20 @@ async function sendMessage(bookingId: string, formData: FormData) {
   const user = await requireAdmin();
   const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
   if (!booking) return;
-  const subject = String(formData.get("subject") ?? "").slice(0, 200);
   const body = String(formData.get("body") ?? "").slice(0, 4000);
+  const subject = String(formData.get("subject") ?? "").slice(0, 200);
+  const isInternal = formData.get("isInternal") === "on";
   if (!body) return;
   await prisma.message.create({
-    data: { userId: booking.userId, bookingId, direction: "OUTBOUND", subject: subject || null, body },
+    data: {
+      userId: booking.userId,
+      bookingId,
+      direction: isInternal ? "INBOUND" : "OUTBOUND",
+      isInternal,
+      authorName: user.name ?? user.email ?? "Admin",
+      subject: subject || null,
+      body,
+    },
   });
   revalidatePath(`/admin/bokningar/${bookingId}`);
 }
@@ -401,43 +410,97 @@ export default async function BokningDetailPage({ params, searchParams }: { para
         </div>
       )}
 
-      {activeTab === "meddelanden" && (
-        <div className="tab-grid">
-          <div className="adm-card">
-            <div className="h">Konversation</div>
-            <div className="b dense">
-              {booking.messages.length === 0 ? (
-                <div className="dim" style={{ padding: 24, textAlign: "center" }}>Inga meddelanden</div>
-              ) : (
-                <div className="msg-list">
-                  {booking.messages.map((m) => (
-                    <div key={m.id} className={`msg ${m.direction}`}>
-                      <div className="msg-head">
-                        <span className="msg-dir">{m.direction === "OUTBOUND" ? "Till kund" : "Från kund"}</span>
-                        <span className="dim" style={{ fontSize: 11, fontFamily: "var(--f-mono)" }}>{new Date(m.createdAt).toLocaleString("sv-SE")}</span>
+      {activeTab === "meddelanden" && (() => {
+        const customerMsgs = booking.messages.filter((m) => !m.isInternal);
+        const internalNotes = booking.messages.filter((m) => m.isInternal);
+        const sortedMsgs = [...customerMsgs].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+        return (
+          <div className="chat-layout">
+            {/* Chat thread */}
+            <div className="chat-main">
+              <div className="chat-header">
+                <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 20, margin: 0 }}>
+                  Konversation med {booking.user.name ?? booking.user.email}
+                </h2>
+                <span className="dim" style={{ fontSize: 12 }}>{customerMsgs.length} meddelanden</span>
+              </div>
+
+              <div className="chat-thread">
+                {sortedMsgs.length === 0 ? (
+                  <div className="chat-empty">
+                    <span className="chat-empty-icon">💬</span>
+                    <p>Ingen konversation ännu.</p>
+                    <p className="dim" style={{ fontSize: 13 }}>Skriv ett meddelande nedan för att starta.</p>
+                  </div>
+                ) : (
+                  sortedMsgs.map((m) => (
+                    <div key={m.id} className={`chat-bubble ${m.direction === "OUTBOUND" ? "outbound" : "inbound"}`}>
+                      <div className="chat-bubble-sender">
+                        {m.direction === "OUTBOUND" ? (m.authorName ?? "Kontoret") : (booking.user.name ?? "Kund")}
                       </div>
-                      {m.subject && <strong className="msg-subj">{m.subject}</strong>}
-                      <p className="msg-body">{m.body}</p>
+                      {m.subject && <div className="chat-bubble-subject">{m.subject}</div>}
+                      <div className="chat-bubble-body">{m.body}</div>
+                      <div className="chat-bubble-time">
+                        {new Date(m.createdAt).toLocaleString("sv-SE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        {m.direction === "OUTBOUND" && <span className="chat-sent">✓</span>}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          <aside>
-            <div className="adm-card">
-              <div className="h">Nytt meddelande</div>
-              <div className="b">
-                <form action={sendMessage.bind(null, booking.id)} style={{ display: "grid", gap: 10 }}>
-                  <input name="subject" placeholder="Ämne (valfritt)" style={{ padding: "8px 12px", border: "1px solid var(--c-line)", fontSize: 13 }} />
-                  <textarea name="body" rows={6} placeholder="Skriv meddelande till kunden..." required style={{ padding: "10px 12px", border: "1px solid var(--c-line)", fontSize: 13, fontFamily: "var(--f-sans)" }} />
-                  <button type="submit" className="btn btn-primary" style={{ fontSize: 12, padding: "8px 14px" }}>Skicka</button>
+                  ))
+                )}
+              </div>
+
+              {/* Composer */}
+              <div className="chat-composer">
+                <form action={sendMessage.bind(null, booking.id)} className="chat-form">
+                  <input name="subject" placeholder="Ämne (valfritt)" className="chat-subject" />
+                  <div className="chat-input-row">
+                    <textarea name="body" rows={3} placeholder="Skriv meddelande till kunden..." required className="chat-textarea" />
+                    <button type="submit" className="chat-send-btn" aria-label="Skicka">
+                      <span>➤</span>
+                    </button>
+                  </div>
                 </form>
               </div>
             </div>
-          </aside>
-        </div>
-      )}
+
+            {/* Internal notes sidebar */}
+            <aside className="chat-sidebar">
+              <div className="notes-card">
+                <div className="notes-header">
+                  <span className="notes-icon">📌</span>
+                  <strong>Interna anteckningar</strong>
+                  <span className="dim" style={{ fontSize: 11 }}>Ej synliga för kund</span>
+                </div>
+
+                <div className="notes-list">
+                  {internalNotes.length === 0 ? (
+                    <p className="dim" style={{ padding: "16px", fontSize: 13 }}>Inga interna anteckningar.</p>
+                  ) : (
+                    internalNotes.map((n) => (
+                      <div key={n.id} className="note-item">
+                        <div className="note-meta">
+                          <span className="note-author">{n.authorName ?? "Admin"}</span>
+                          <span className="note-time">
+                            {new Date(n.createdAt).toLocaleString("sv-SE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        </div>
+                        <p className="note-body">{n.body}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <form action={sendMessage.bind(null, booking.id)} className="note-form">
+                  <input type="hidden" name="isInternal" value="on" />
+                  <textarea name="body" rows={2} placeholder="Skriv intern anteckning..." required className="note-textarea" />
+                  <button type="submit" className="note-submit">+ Anteckning</button>
+                </form>
+              </div>
+            </aside>
+          </div>
+        );
+      })()}
 
       <style>{`
         .case-head {
@@ -502,17 +565,129 @@ export default async function BokningDetailPage({ params, searchParams }: { para
         .compact-list dd { margin: 0; color: var(--c-ink); }
         .compact-list a { color: var(--c-gold); }
 
-        .msg-list { display: flex; flex-direction: column; }
-        .msg { padding: 14px 20px; border-bottom: 1px solid var(--c-line-soft); border-left: 3px solid var(--c-line); }
-        .msg.OUTBOUND { border-left-color: var(--c-gold); }
-        .msg.INBOUND { border-left-color: var(--c-green-soft); }
-        .msg-head { display: flex; justify-content: space-between; margin-bottom: 6px; }
-        .msg-dir { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: var(--c-text-muted); }
-        .msg-subj { display: block; font-family: var(--f-serif); font-size: 15px; color: var(--c-ink); margin-bottom: 4px; }
-        .msg-body { margin: 0; font-size: 14px; line-height: 1.5; }
+        /* Chat layout */
+        .chat-layout { display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
+        .chat-main {
+          background: #fff; border: 1px solid var(--c-line-soft);
+          display: flex; flex-direction: column; max-height: 700px;
+        }
+        .chat-header {
+          padding: 16px 20px; border-bottom: 1px solid var(--c-line-soft);
+          display: flex; justify-content: space-between; align-items: center;
+          flex-shrink: 0;
+        }
+        .chat-thread {
+          flex: 1; overflow-y: auto; padding: 20px;
+          display: flex; flex-direction: column; gap: 12px;
+          background: linear-gradient(180deg, var(--c-paper) 0%, #fff 100%);
+        }
+        .chat-empty {
+          flex: 1; display: flex; flex-direction: column;
+          align-items: center; justify-content: center;
+          color: var(--c-text-muted); gap: 8px;
+        }
+        .chat-empty-icon { font-size: 40px; opacity: 0.4; }
+
+        .chat-bubble { max-width: 75%; padding: 12px 16px; border-radius: 12px; position: relative; }
+        .chat-bubble.outbound {
+          align-self: flex-end;
+          background: var(--c-ink); color: #fff;
+          border-bottom-right-radius: 4px;
+        }
+        .chat-bubble.inbound {
+          align-self: flex-start;
+          background: var(--c-cream); color: var(--c-text);
+          border-bottom-left-radius: 4px;
+        }
+        .chat-bubble-sender {
+          font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+          font-weight: 700; margin-bottom: 4px;
+        }
+        .chat-bubble.outbound .chat-bubble-sender { color: var(--c-gold); }
+        .chat-bubble.inbound .chat-bubble-sender { color: var(--c-text-muted); }
+        .chat-bubble-subject {
+          font-family: var(--f-serif); font-size: 15px; font-weight: 500;
+          margin-bottom: 4px;
+        }
+        .chat-bubble.outbound .chat-bubble-subject { color: #fff; }
+        .chat-bubble-body { font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+        .chat-bubble-time {
+          font-size: 10px; margin-top: 6px;
+          display: flex; justify-content: flex-end; gap: 4px; align-items: center;
+        }
+        .chat-bubble.outbound .chat-bubble-time { color: #8B9AB8; }
+        .chat-bubble.inbound .chat-bubble-time { color: var(--c-text-faint); }
+        .chat-sent { color: var(--c-gold); }
+
+        .chat-composer {
+          padding: 14px 16px; border-top: 1px solid var(--c-line-soft);
+          background: #fff; flex-shrink: 0;
+        }
+        .chat-form { display: flex; flex-direction: column; gap: 8px; }
+        .chat-subject {
+          padding: 8px 12px; border: 1px solid var(--c-line-soft);
+          font-size: 12px; font-family: var(--f-sans); background: var(--c-paper);
+        }
+        .chat-input-row { display: flex; gap: 8px; }
+        .chat-textarea {
+          flex: 1; padding: 10px 14px; border: 1px solid var(--c-line);
+          font-size: 14px; font-family: var(--f-sans); resize: none;
+          min-height: 60px;
+        }
+        .chat-textarea:focus { border-color: var(--c-ink); outline: none; }
+        .chat-send-btn {
+          width: 48px; height: auto;
+          background: var(--c-ink); color: #fff; border: 0;
+          font-size: 20px; cursor: pointer;
+          display: grid; place-items: center;
+          flex-shrink: 0; transition: background 160ms;
+        }
+        .chat-send-btn:hover { background: var(--c-gold); }
+
+        /* Internal notes sidebar */
+        .chat-sidebar { }
+        .notes-card {
+          background: #FFFDE6; border: 1px solid #E8DDA0;
+          display: flex; flex-direction: column;
+          max-height: 700px;
+        }
+        .notes-header {
+          padding: 14px 16px; border-bottom: 1px solid #E8DDA0;
+          display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        }
+        .notes-icon { font-size: 16px; }
+        .notes-header strong { font-size: 13px; color: var(--c-ink); }
+        .notes-list { flex: 1; overflow-y: auto; padding: 8px; }
+        .note-item {
+          padding: 10px 12px; border-bottom: 1px solid #E8DDA0;
+        }
+        .note-item:last-child { border-bottom: 0; }
+        .note-meta { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .note-author { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; color: var(--c-text-muted); }
+        .note-time { font-size: 10px; font-family: var(--f-mono); color: var(--c-text-faint); }
+        .note-body { margin: 0; font-size: 13px; line-height: 1.5; color: var(--c-text); }
+        .note-form {
+          padding: 10px 12px; border-top: 1px solid #E8DDA0;
+          display: flex; flex-direction: column; gap: 6px;
+        }
+        .note-textarea {
+          width: 100%; padding: 8px 10px; border: 1px solid #E8DDA0;
+          font-size: 13px; font-family: var(--f-sans); resize: none;
+          background: #fff;
+        }
+        .note-submit {
+          align-self: flex-end;
+          background: transparent; border: 1px solid var(--c-gold);
+          color: var(--c-gold); padding: 5px 12px; font-size: 11px;
+          font-weight: 700; cursor: pointer; font-family: var(--f-sans);
+        }
+        .note-submit:hover { background: var(--c-gold); color: #fff; }
 
         @media (max-width: 1024px) {
           .tab-grid { grid-template-columns: 1fr; }
+          .chat-layout { grid-template-columns: 1fr; }
+          .chat-main { max-height: 500px; }
+          .notes-card { max-height: 300px; }
           .fact-row { grid-template-columns: repeat(3, 1fr); }
           .fact-row > div { padding: 8px 12px; }
           .case-head { padding: 20px; margin: -28px -32px 0; }

@@ -306,14 +306,16 @@ enum PaymentStatus {
 // -------- DOMÄN: MEDDELANDEN --------
 
 model Message {
-  id        String        @id @default(cuid())
-  userId    String
-  bookingId String?
-  direction MessageDirection
-  subject   String?
-  body      String
-  readAt    DateTime?
-  createdAt DateTime      @default(now())
+  id         String        @id @default(cuid())
+  userId     String
+  bookingId  String?
+  direction  MessageDirection
+  subject    String?
+  body       String
+  isInternal Boolean       @default(false)
+  authorName String?
+  readAt     DateTime?
+  createdAt  DateTime      @default(now())
 
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
