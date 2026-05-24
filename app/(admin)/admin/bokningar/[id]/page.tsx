@@ -175,16 +175,16 @@ export default async function BokningDetailPage({ params, searchParams }: { para
           { key: "oversikt", label: "Översikt" },
           { key: "resenarer", label: "Resenärer", count: booking.travelers.length },
           { key: "betalningar", label: "Betalningar", count: booking.payments.length },
-          { key: "meddelanden", label: "Meddelanden", count: booking.messages.length },
+          { key: "meddelanden", label: "Meddelanden", count: booking.messages.filter((m) => !m.isInternal).length },
         ].map((t) => (
-          <Link
+          <a
             key={t.key}
             href={`/admin/bokningar/${booking.id}?tab=${t.key}`}
             className={`adm-tab ${activeTab === t.key ? "active" : ""}`}
           >
             {t.label}
             {t.count != null && <span className="count">{t.count}</span>}
-          </Link>
+          </a>
         ))}
       </div>
 
