@@ -1,23 +1,20 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useFormStatus } from "react-dom";
 import { loginUser } from "@/app/actions/auth";
 
-export function LoginForm() {
-  const [pending, start] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-
+function SubmitButton() {
+  const { pending } = useFormStatus();
   return (
-    <form
-      action={(formData) => {
-        setError(null);
-        start(async () => {
-          const res = await loginUser(formData);
-          if (res && res.ok === false) setError(res.error);
-        });
-      }}
-      style={{ display: "grid", gap: 16 }}
-    >
+    <button type="submit" className="btn btn-primary" disabled={pending} style={{ justifyContent: "center", width: "100%" }}>
+      {pending ? "Loggar in..." : "Logga in →"}
+    </button>
+  );
+}
+
+export function LoginForm({ error }: { error: string | null }) {
+  return (
+    <form action={loginUser} style={{ display: "grid", gap: 16 }}>
       <div className="field">
         <label htmlFor="login-email">E-post</label>
         <input id="login-email" name="email" type="email" autoComplete="email" required />
@@ -28,11 +25,9 @@ export function LoginForm() {
         <input id="login-pw" name="password" type="password" autoComplete="current-password" required />
       </div>
 
-      {error && <p className="err">{error}</p>}
+      {error && <p className="err" role="alert">{error}</p>}
 
-      <button type="submit" className="btn btn-primary" disabled={pending} style={{ justifyContent: "center" }}>
-        {pending ? "Loggar in..." : "Logga in →"}
-      </button>
+      <SubmitButton />
     </form>
   );
 }

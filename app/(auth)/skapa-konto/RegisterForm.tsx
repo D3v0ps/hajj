@@ -1,23 +1,20 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useFormStatus } from "react-dom";
 import { registerUser } from "@/app/actions/auth";
 
-export function RegisterForm() {
-  const [pending, start] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-
+function SubmitButton() {
+  const { pending } = useFormStatus();
   return (
-    <form
-      action={(formData) => {
-        setError(null);
-        start(async () => {
-          const res = await registerUser(formData);
-          if (res && res.ok === false) setError(res.error);
-        });
-      }}
-      style={{ display: "grid", gap: 16 }}
-    >
+    <button type="submit" className="btn btn-primary" disabled={pending} style={{ justifyContent: "center", width: "100%" }}>
+      {pending ? "Skapar konto..." : "Skapa konto →"}
+    </button>
+  );
+}
+
+export function RegisterForm({ error }: { error: string | null }) {
+  return (
+    <form action={registerUser} style={{ display: "grid", gap: 16 }}>
       <div className="field">
         <label htmlFor="reg-name">Namn</label>
         <input id="reg-name" name="name" autoComplete="name" required />
@@ -39,11 +36,9 @@ export function RegisterForm() {
         <input id="reg-confirm" name="confirm" type="password" autoComplete="new-password" required minLength={6} />
       </div>
 
-      {error && <p className="err">{error}</p>}
+      {error && <p className="err" role="alert">{error}</p>}
 
-      <button type="submit" className="btn btn-primary" disabled={pending} style={{ justifyContent: "center" }}>
-        {pending ? "Skapar konto..." : "Skapa konto →"}
-      </button>
+      <SubmitButton />
 
       <p className="dim" style={{ fontSize: 12, lineHeight: 1.55 }}>
         Genom att skapa konto godkänner du våra resevillkor och att vi behandlar dina uppgifter enligt vår integritetspolicy.
