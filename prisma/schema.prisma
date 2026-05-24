@@ -101,8 +101,9 @@ model Package {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
-  tiers    PackageTier[]
-  bookings Booking[]
+  tiers      PackageTier[]
+  bookings   Booking[]
+  emailSends EmailSend[]
 }
 
 enum PackageType {
@@ -172,9 +173,10 @@ model Booking {
   user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   package   Package      @relation(fields: [packageId], references: [id])
   tier      PackageTier? @relation(fields: [tierId], references: [id])
-  travelers Traveler[]
-  payments  Payment[]
-  messages  Message[]
+  travelers  Traveler[]
+  payments   Payment[]
+  messages   Message[]
+  emailSends EmailSend[]
 
   @@index([userId])
   @@index([packageId])
@@ -321,6 +323,63 @@ model Message {
 enum MessageDirection {
   INBOUND
   OUTBOUND
+}
+
+// -------- DOMÄN: E-POSTMALLAR & UTSKICK --------
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  subject   String
+  body      String
+  category  EmailCategory
+  variables String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sends EmailSend[]
+}
+
+enum EmailCategory {
+  BOOKING_CONFIRM
+  PAYMENT_REQUEST
+  PAYMENT_REMINDER
+  TRIP_INFO
+  PRE_DEPARTURE
+  VISA_STATUS
+  GENERAL
+}
+
+model EmailSend {
+  id           String     @id @default(cuid())
+  templateId   String?
+  recipientEmail String
+  recipientName  String?
+  subject      String
+  body         String
+  status       EmailSendStatus @default(QUEUED)
+  sentAt       DateTime?
+  errorMessage String?
+  bookingId    String?
+  packageId    String?
+  sentById     String?
+  createdAt    DateTime   @default(now())
+
+  template EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  booking  Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  package  Package?       @relation(fields: [packageId], references: [id], onDelete: SetNull)
+
+  @@index([templateId])
+  @@index([bookingId])
+  @@index([status])
+}
+
+enum EmailSendStatus {
+  QUEUED
+  SENT
+  FAILED
+  SKIPPED
 }
 
 // -------- DOMÄN: LEADS (quote form) --------

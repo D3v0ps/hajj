@@ -11,11 +11,11 @@ type Props = {
 };
 
 const METHODS = [
-  { v: "SWISH" as const, label: "Swish", note: "Direktbetalning. Kommer i fas 2." },
-  { v: "KLARNA" as const, label: "Klarna", note: "Betala om 30 dagar eller dela upp. Kommer i fas 2." },
-  { v: "CARD" as const, label: "Kort (Stripe)", note: "Visa, Mastercard. Kommer i fas 2." },
-  { v: "BANKGIRO" as const, label: "Bankgiro", note: "Vi mejlar inbetalningskort med OCR." },
-  { v: "INVOICE" as const, label: "Faktura", note: "Företag/förening. Kontoret kontaktar dig." },
+  { v: "SWISH" as const, label: "Swish", note: "Vi skickar betalningsuppgifter via mejl." },
+  { v: "KLARNA" as const, label: "Klarna", note: "Vi skickar en Klarna-faktura till din e-post." },
+  { v: "CARD" as const, label: "Kort (Visa / Mastercard)", note: "Vi skickar en betallänk till din e-post." },
+  { v: "BANKGIRO" as const, label: "Bankgiro", note: "Vi mejlar inbetalningskort med OCR-nummer." },
+  { v: "INVOICE" as const, label: "Faktura", note: "Företag eller förening — vi mejlar faktura." },
 ];
 
 export function StepPay({ booking }: Props) {
@@ -26,7 +26,7 @@ export function StepPay({ booking }: Props) {
       <span className="section-mark">— Steg 5 av 5</span>
       <h2 style={{ fontSize: 32, marginTop: 12, marginBottom: 16 }}>Betala anmälningsavgift</h2>
       <p className="dim" style={{ marginBottom: 32 }}>
-        För att bekräfta bokningen betalas {booking.depositAmount.toLocaleString("sv-SE")} kr per person, totalt <strong className="tnum" style={{ color: "var(--c-ink)" }}>{totalDeposit.toLocaleString("sv-SE")} kr</strong>. Slutbetalning sker 30 dagar före avresa.
+        Anmälningsavgift {booking.depositAmount.toLocaleString("sv-SE")} kr per person, totalt <strong className="tnum" style={{ color: "var(--c-ink)" }}>{totalDeposit.toLocaleString("sv-SE")} kr</strong>. Välj betalsätt — kontoret skickar betalningsuppgifter till din e-post inom 24 timmar. Slutbetalning sker 30 dagar före avresa.
       </p>
 
       <div className="dep-summary">
@@ -51,18 +51,27 @@ export function StepPay({ booking }: Props) {
                 <strong>{m.label}</strong>
                 <span className="dim" style={{ fontSize: 12 }}>{m.note}</span>
               </div>
-              <span className="btn-link" style={{ borderBottom: 0 }}>Välj →</span>
+              <span className="pay-arrow">Välj →</span>
             </button>
           </form>
         ))}
       </div>
 
-      <div style={{ marginTop: 32, padding: "18px 22px", background: "var(--c-cream)", borderLeft: "3px solid var(--c-gold)" }}>
-        <p className="eyebrow gold" style={{ marginBottom: 6 }}>Fas 1 — manuell hantering</p>
-        <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6 }}>
-          Direktbetalning via Swish, Klarna och Stripe aktiveras i fas 2. Tills dess registreras din betalningsavsikt och kontoret skickar inbetalningskort eller faktura inom 24 timmar.
-        </p>
-      </div>
+      <style>{`
+        .dep-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; padding: 20px; background: var(--c-cream); border: 1px solid var(--c-line); }
+        .pay-list { display: grid; gap: 8px; }
+        .pay-opt {
+          display: flex; justify-content: space-between; align-items: center;
+          width: 100%; padding: 16px 20px;
+          background: #fff; border: 1px solid var(--c-line);
+          text-align: left; cursor: pointer; font: inherit; color: inherit;
+          transition: all 160ms; min-height: 44px;
+        }
+        .pay-opt:hover { border-color: var(--c-ink); }
+        .pay-opt strong { font-family: var(--f-serif); font-size: 16px; color: var(--c-ink); display: block; margin-bottom: 2px; }
+        .pay-arrow { color: var(--c-gold); font-size: 13px; font-weight: 600; flex-shrink: 0; }
+        @media (max-width: 640px) { .dep-summary { grid-template-columns: 1fr; } }
+      `}</style>
     </div>
   );
 }

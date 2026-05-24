@@ -27,6 +27,13 @@ const NAV = [
     ],
   },
   {
+    label: "Kommunikation",
+    items: [
+      { href: "/admin/mejl", label: "Mejlmallar", icon: "✉" },
+      { href: "/admin/mejl/skicka", label: "Nytt utskick", icon: "➤" },
+    ],
+  },
+  {
     label: "Verktyg",
     items: [
       { href: "/admin/import", label: "Excel-import", icon: "↥" },

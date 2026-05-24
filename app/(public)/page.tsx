@@ -211,7 +211,7 @@ export default async function HomePage() {
           <ol className="process">
             {[
               { t: "Begär offert eller välj paket", b: "Använd vår quote-form för en skräddarsydd offert, eller boka direkt ett av våra publicerade paket. Du får svar inom 24 timmar." },
-              { t: "Skapa konto och fyll i ansökan", b: "Logga in med e-post (BankID kommer i fas 2). Lägg till resenärer, fyll i passuppgifter och eventuella särskilda behov." },
+              { t: "Skapa konto och fyll i ansökan", b: "Logga in med e-post eller BankID. Lägg till resenärer, ladda upp pass via kamera, och ange eventuella särskilda behov." },
               { t: "Ladda upp dokument", b: "Pass, passfoto, eventuellt uppehållstillstånd. Vi granskar och återkommer om något behöver kompletteras." },
               { t: "Granska och betala anmälningsavgift", b: "5 000 kr per person bekräftar din plats. Slutbetalning 30 dagar före avresa, via Swish, Klarna, kort eller bankgiro." },
               { t: "Resa, ritualer, hemkomst", b: "Reseledare följer gruppen, dagligt program, akutkontakt dygnet runt. Efter hemkomst: kvitto, intyg, möjlighet att lämna omdöme." },

@@ -26,8 +26,7 @@ export default async function DokumentPage() {
         <div className="empty-card">
           <p>Du har inga dokument uppladdade än.</p>
           <p className="dim" style={{ fontSize: 13, marginTop: 12 }}>
-            Direktupload i webbläsaren aktiveras i fas 2 (objektslagring + virusscanning).
-            Tills dess: e-posta dokumenten till info@hajj.karimkhalil.se så registrerar kontoret dem här.
+            E-posta dokument till kontoret eller ladda upp via bokningsflödet (steg 3, pass-skanning). Kontoret registrerar dem här.
           </p>
         </div>
       ) : (
