@@ -38,14 +38,20 @@ export default async function EditPackagePage({ params }: { params: Params }) {
         <h2 style={{ fontSize: 22, marginBottom: 16 }}>Rumstyper (tiers)</h2>
 
         {pkg.tiers.length > 0 && (
-          <table className="table" style={{ marginBottom: 24 }}>
-            <thead><tr><th>Namn</th><th>Rumstyp</th><th>Pris/person</th><th>Tillgängliga</th><th>Anteckning</th><th></th></tr></thead>
+          <div className="table-wrap">
+          <table className="table" style={{ marginBottom: 24, fontSize: 13 }}>
+            <thead><tr><th scope="col">Namn</th><th scope="col">Rumstyp</th><th scope="col">Ålder</th><th scope="col">Pris/person</th><th scope="col">Tillg.</th><th scope="col">Not</th><th scope="col"></th></tr></thead>
             <tbody>
               {pkg.tiers.map((t) => (
                 <tr key={t.id}>
-                  <td>{t.name}</td>
+                  <td><strong>{t.name}</strong></td>
                   <td>{t.roomType}</td>
-                  <td className="tnum">{t.pricePerPerson.toLocaleString("sv-SE")} kr</td>
+                  <td>
+                    <span className={`adm-pill ${t.ageCategory === "ADULT" ? "info" : t.ageCategory === "CHILD" ? "gold" : "outline"}`}>
+                      {t.ageCategory === "ADULT" ? `Vuxen (${t.ageMin}+)` : t.ageCategory === "CHILD" ? `Barn (${t.ageMin}–${t.ageMax})` : `Spädbarn (${t.ageMin}–${t.ageMax})`}
+                    </span>
+                  </td>
+                  <td className="tnum" style={{ fontWeight: 600 }}>{t.pricePerPerson.toLocaleString("sv-SE")} kr</td>
                   <td>{t.available}</td>
                   <td className="dim">{t.notes ?? "—"}</td>
                   <td>
@@ -57,28 +63,58 @@ export default async function EditPackagePage({ params }: { params: Params }) {
               ))}
             </tbody>
           </table>
+          </div>
         )}
 
         <details className="add-tier-card">
-          <summary>+ Lägg till rumstyp</summary>
+          <summary>+ Lägg till priskombination</summary>
           <form action={async (fd: FormData) => { "use server"; await addTier(pkg.id, fd); }} style={{ marginTop: 16 }}>
             <div className="tier-grid">
-              <div className="field"><label>Namn</label><input name="name" placeholder="4-bädd" required /></div>
+              <div className="field">
+                <label>Namn</label>
+                <input name="name" placeholder="Vuxen: 4-bädd" required />
+                <span className="hint">T.ex. &quot;Vuxen: 4-bädd&quot;, &quot;Barn: 3-bädd&quot;, &quot;Spädbarn&quot;</span>
+              </div>
               <div className="field">
                 <label>Rumstyp</label>
                 <select name="roomType" defaultValue="QUAD">
-                  <option value="DOUBLE">Dubbel</option>
-                  <option value="TRIPLE">Trebädd</option>
-                  <option value="QUAD">Fyrbädd</option>
-                  <option value="QUINTUPLE">Femsbädd</option>
+                  <option value="DOUBLE">Dubbel (2-bädd)</option>
+                  <option value="TRIPLE">Trebädd (3-bädd)</option>
+                  <option value="QUAD">Fyrbädd (4-bädd)</option>
+                  <option value="QUINTUPLE">Fembädd</option>
                   <option value="FAMILY">Familjerum</option>
                 </select>
               </div>
-              <div className="field"><label>Pris (kr/person)</label><input name="pricePerPerson" type="number" min="0" required /></div>
-              <div className="field"><label>Tillgängliga</label><input name="available" type="number" min="0" defaultValue="0" /></div>
-              <div className="field" style={{ gridColumn: "1 / -1" }}><label>Anteckning</label><input name="notes" /></div>
+              <div className="field">
+                <label>Ålderskategori</label>
+                <select name="ageCategory" defaultValue="ADULT">
+                  <option value="ADULT">Vuxen</option>
+                  <option value="CHILD">Barn</option>
+                  <option value="INFANT">Spädbarn</option>
+                </select>
+              </div>
+              <div className="field">
+                <label>Ålder från</label>
+                <input name="ageMin" type="number" min="0" max="99" defaultValue="12" />
+              </div>
+              <div className="field">
+                <label>Ålder till</label>
+                <input name="ageMax" type="number" min="0" max="99" defaultValue="99" />
+              </div>
+              <div className="field">
+                <label>Pris (kr/person)</label>
+                <input name="pricePerPerson" type="number" min="0" required />
+              </div>
+              <div className="field">
+                <label>Tillgängliga platser</label>
+                <input name="available" type="number" min="0" defaultValue="0" />
+              </div>
+              <div className="field" style={{ gridColumn: "1 / -1" }}>
+                <label>Anteckning</label>
+                <input name="notes" placeholder="T.ex. 'Samma kön i rummet', 'Inkl. barnsäng'" />
+              </div>
             </div>
-            <button type="submit" className="btn btn-ghost" style={{ marginTop: 14 }}>Lägg till tier</button>
+            <button type="submit" className="btn btn-ghost" style={{ marginTop: 14 }}>Lägg till priskombination</button>
           </form>
         </details>
       </div>

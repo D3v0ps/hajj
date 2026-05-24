@@ -1,0 +1,10 @@
+-- CreateEnum
+DO $$ BEGIN
+  CREATE TYPE "AgeCategory" AS ENUM ('ADULT', 'CHILD', 'INFANT');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- AlterTable: add age columns to PackageTier
+ALTER TABLE "PackageTier" ADD COLUMN IF NOT EXISTS "ageCategory" "AgeCategory" NOT NULL DEFAULT 'ADULT';
+ALTER TABLE "PackageTier" ADD COLUMN IF NOT EXISTS "ageMin" INTEGER NOT NULL DEFAULT 12;
+ALTER TABLE "PackageTier" ADD COLUMN IF NOT EXISTS "ageMax" INTEGER NOT NULL DEFAULT 99;

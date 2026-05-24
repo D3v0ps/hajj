@@ -146,20 +146,55 @@ export default async function PackageDetailPage({ params }: { params: Params }) 
                 )}
               </dl>
 
-              {pkg.tiers.length > 0 && (
-                <>
-                  <hr className="rule" style={{ margin: "20px 0" }} />
-                  <span className="eyebrow">Rumstyper</span>
-                  <ul className="tier-list">
-                    {pkg.tiers.map((t) => (
-                      <li key={t.id}>
-                        <span>{t.name}</span>
-                        <strong className="tnum">{t.pricePerPerson.toLocaleString("sv-SE")} kr</strong>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
+              {pkg.tiers.length > 0 && (() => {
+                const adults = pkg.tiers.filter((t) => t.ageCategory === "ADULT");
+                const children = pkg.tiers.filter((t) => t.ageCategory === "CHILD");
+                const infants = pkg.tiers.filter((t) => t.ageCategory === "INFANT");
+                return (
+                  <>
+                    <hr className="rule" style={{ margin: "20px 0" }} />
+                    {adults.length > 0 && (
+                      <>
+                        <span className="eyebrow">Vuxen ({adults[0]?.ageMin}+ år)</span>
+                        <ul className="tier-list">
+                          {adults.map((t) => (
+                            <li key={t.id}>
+                              <span>{t.roomType === "QUAD" ? "4-bädd" : t.roomType === "TRIPLE" ? "3-bädd" : t.roomType === "DOUBLE" ? "2-bädd" : t.name}</span>
+                              <strong className="tnum">{t.pricePerPerson.toLocaleString("sv-SE")} kr</strong>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                    {children.length > 0 && (
+                      <>
+                        <span className="eyebrow" style={{ marginTop: 16, display: "block" }}>Barn ({children[0]?.ageMin}–{children[0]?.ageMax} år)</span>
+                        <ul className="tier-list">
+                          {children.map((t) => (
+                            <li key={t.id}>
+                              <span>{t.roomType === "QUAD" ? "4-bädd" : t.roomType === "TRIPLE" ? "3-bädd" : t.roomType === "DOUBLE" ? "2-bädd" : t.name}</span>
+                              <strong className="tnum">{t.pricePerPerson.toLocaleString("sv-SE")} kr</strong>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                    {infants.length > 0 && (
+                      <>
+                        <span className="eyebrow" style={{ marginTop: 16, display: "block" }}>Spädbarn ({infants[0]?.ageMin}–{infants[0]?.ageMax} år)</span>
+                        <ul className="tier-list">
+                          {infants.map((t) => (
+                            <li key={t.id}>
+                              <span>{t.name}</span>
+                              <strong className="tnum">{t.pricePerPerson.toLocaleString("sv-SE")} kr</strong>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </>
+                );
+              })()}
 
               <form action={createBooking.bind(null, pkg.id)} style={{ marginTop: 24 }}>
                 <button type="submit" className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }}>

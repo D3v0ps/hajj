@@ -124,12 +124,21 @@ model PackageTier {
   packageId String
   name      String
   roomType  RoomType
+  ageCategory AgeCategory @default(ADULT)
+  ageMin    Int         @default(12)
+  ageMax    Int         @default(99)
   pricePerPerson Int
   available Int         @default(0)
   notes     String?
 
   package  Package   @relation(fields: [packageId], references: [id], onDelete: Cascade)
   bookings Booking[]
+}
+
+enum AgeCategory {
+  ADULT
+  CHILD
+  INFANT
 }
 
 enum RoomType {
