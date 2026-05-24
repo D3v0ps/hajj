@@ -52,6 +52,8 @@ async function addTravelerAdmin(bookingId: string, formData: FormData) {
       bookingId,
       firstName: String(formData.get("firstName") ?? ""),
       lastName: String(formData.get("lastName") ?? ""),
+      email: String(formData.get("email") ?? "") || null,
+      phone: String(formData.get("phone") ?? "") || null,
       personnummer: String(formData.get("personnummer") ?? "") || null,
       passportNo: String(formData.get("passportNo") ?? "") || null,
       birthDate: formData.get("birthDate") ? new Date(String(formData.get("birthDate"))) : null,
@@ -235,78 +237,107 @@ export default async function BokningDetailPage({ params, searchParams }: { para
 
       {activeTab === "resenarer" && (
         <div>
-          <div className="adm-card">
-            <div className="h">
-              Alla resenärer
-              <span className="dim" style={{ fontSize: 12, fontFamily: "var(--f-sans)" }}>{booking.travelers.length} st</span>
-            </div>
-            <div className="b dense">
-              <div className="table-wrap">
-              <table className="table" style={{ fontSize: 12 }}>
-                <thead>
-                  <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Namn</th>
-                    <th scope="col">Personnr</th>
-                    <th scope="col">Pass</th>
-                    <th scope="col">Födelsedatum</th>
-                    <th scope="col">Kön</th>
-                    <th scope="col">Rum</th>
-                    <th scope="col">Nation.</th>
-                    <th scope="col">Flaggor</th>
-                    <th scope="col">Not</th>
-                    <th scope="col"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {booking.travelers.map((t, i) => (
-                    <tr key={t.id}>
-                      <td className="tnum">{i + 1}</td>
-                      <td><strong style={{ fontFamily: "var(--f-serif)" }}>{t.firstName} {t.lastName}</strong></td>
-                      <td style={{ fontFamily: "var(--f-mono)", fontSize: 11 }}>{t.personnummer ?? "—"}</td>
-                      <td style={{ fontFamily: "var(--f-mono)", fontSize: 11 }}>{t.passportNo ?? "—"}</td>
-                      <td>{t.birthDate ? fmtDate(t.birthDate) : "—"}</td>
-                      <td>{t.gender ?? "—"}</td>
-                      <td>{t.roomAssignment ?? "—"}</td>
-                      <td>{t.nationality ?? "—"}</td>
-                      <td>
-                        {t.needsAssist && <span className="adm-pill warn" style={{ marginRight: 4 }}>Assist</span>}
-                        {t.isMahram && <span className="adm-pill gold">Mahram</span>}
-                      </td>
-                      <td className="dim" style={{ maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis" }}>{t.notes ?? ""}</td>
-                      <td>
-                        <form action={removeTravelerAdmin.bind(null, booking.id, t.id)}>
-                          <button type="submit" className="btn-link" style={{ fontSize: 11, color: "var(--c-warn)" }}>Ta bort</button>
-                        </form>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              </div>
-            </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <h2 style={{ fontFamily: "var(--f-serif)", fontSize: 22, margin: 0 }}>
+              {booking.travelers.length} resenärer
+            </h2>
           </div>
 
-          <div className="adm-card">
-            <div className="h">Lägg till resenär</div>
-            <div className="b">
-              <form action={addTravelerAdmin.bind(null, booking.id)} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-                <div className="field"><label>Förnamn</label><input name="firstName" required /></div>
-                <div className="field"><label>Efternamn</label><input name="lastName" required /></div>
-                <div className="field"><label>Personnummer</label><input name="personnummer" /></div>
-                <div className="field"><label>Passnummer</label><input name="passportNo" /></div>
-                <div className="field"><label>Födelsedatum</label><input name="birthDate" type="date" /></div>
-                <div className="field">
-                  <label>Kön</label>
-                  <select name="gender" defaultValue=""><option value="">—</option><option value="M">Man</option><option value="F">Kvinna</option></select>
+          {/* Profilkort per resenär */}
+          <div className="traveler-cards">
+            {booking.travelers.map((t, i) => (
+              <div key={t.id} className="tv-card">
+                <div className="tv-card-head">
+                  <div className="tv-card-num">{String(i + 1).padStart(2, "0")}</div>
+                  <div className="tv-card-name">
+                    <h3>{t.firstName} {t.lastName}</h3>
+                    <div className="tv-card-badges">
+                      <span className={`adm-pill ${t.gender === "M" ? "info" : t.gender === "F" ? "gold" : "outline"}`}>
+                        {t.gender === "M" ? "Man" : t.gender === "F" ? "Kvinna" : "—"}
+                      </span>
+                      {t.needsAssist && <span className="adm-pill warn">Assistans</span>}
+                      {t.isMahram && <span className="adm-pill gold">Mahram</span>}
+                    </div>
+                  </div>
+                  <form action={removeTravelerAdmin.bind(null, booking.id, t.id)}>
+                    <button type="submit" className="btn-link" style={{ fontSize: 11, color: "var(--c-warn)" }}>Ta bort</button>
+                  </form>
                 </div>
-                <div className="field"><label>Nationalitet</label><input name="nationality" defaultValue="SWE" /></div>
-                <div className="field"><label>Rum</label><input name="roomAssignment" /></div>
-                <div className="field"><label>Anteckning</label><input name="notes" /></div>
-                <div style={{ gridColumn: "1 / -1", display: "flex", gap: 16, alignItems: "center" }}>
+
+                <div className="tv-card-body">
+                  <div className="tv-section">
+                    <span className="tv-section-label">Kontaktuppgifter</span>
+                    <div className="tv-fields">
+                      <div><span className="tv-label">E-post</span><span className="tv-value">{t.email ?? booking.contactEmail ?? booking.user.email}</span></div>
+                      <div><span className="tv-label">Mobil</span><span className="tv-value">{t.phone ?? booking.user.phone ?? booking.contactPhone ?? "—"}</span></div>
+                      <div><span className="tv-label">Bor i</span><span className="tv-value">{t.residenceCity ?? "—"}</span></div>
+                    </div>
+                  </div>
+
+                  <div className="tv-section">
+                    <span className="tv-section-label">Identitet & pass</span>
+                    <div className="tv-fields">
+                      <div><span className="tv-label">Personnummer</span><span className="tv-value mono">{t.personnummer ?? "—"}</span></div>
+                      <div><span className="tv-label">Passnummer</span><span className="tv-value mono">{t.passportNo ?? "—"}</span></div>
+                      <div><span className="tv-label">Pass giltig t.o.m.</span><span className="tv-value">{t.passportExp ? fmtDate(t.passportExp) : "—"}</span></div>
+                      <div><span className="tv-label">Födelsedatum</span><span className="tv-value">{t.birthDate ? fmtDate(t.birthDate) : "—"}</span></div>
+                      <div><span className="tv-label">Nationalitet</span><span className="tv-value">{t.nationality ?? "—"}</span></div>
+                      <div><span className="tv-label">Ursprung</span><span className="tv-value">{t.countryOfOrigin ?? "—"}</span></div>
+                    </div>
+                  </div>
+
+                  <div className="tv-section">
+                    <span className="tv-section-label">Resa & logistik</span>
+                    <div className="tv-fields">
+                      <div><span className="tv-label">Rumsindelning</span><span className="tv-value">{t.roomAssignment ?? "Ej tilldelat"}</span></div>
+                      <div><span className="tv-label">Flyg ut</span><span className="tv-value mono">{t.flightOut ?? "—"}</span></div>
+                      <div><span className="tv-label">Flyg hem</span><span className="tv-value mono">{t.flightReturn ?? "—"}</span></div>
+                      <div><span className="tv-label">Civilstånd</span><span className="tv-value">{t.civilStatus ?? "—"}</span></div>
+                      <div><span className="tv-label">Födelsestad</span><span className="tv-value">{t.birthCity ?? "—"}</span></div>
+                      <div><span className="tv-label">Betalning</span><span className="tv-value">{t.paymentNote ?? "—"}</span></div>
+                    </div>
+                  </div>
+
+                  {t.notes && (
+                    <div className="tv-section">
+                      <span className="tv-section-label">Anteckningar</span>
+                      <p className="tv-notes">{t.notes}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {booking.travelers.length === 0 && (
+            <div className="adm-card"><div className="b dim" style={{ padding: 32, textAlign: "center" }}>Inga resenärer registrerade ännu.</div></div>
+          )}
+
+          {/* Lägg till ny resenär */}
+          <div className="adm-card" style={{ marginTop: 20 }}>
+            <div className="h">+ Lägg till resenär</div>
+            <div className="b">
+              <form action={addTravelerAdmin.bind(null, booking.id)} className="add-tv-form">
+                <div className="add-tv-grid">
+                  <div className="field"><label>Förnamn *</label><input name="firstName" required /></div>
+                  <div className="field"><label>Efternamn *</label><input name="lastName" required /></div>
+                  <div className="field"><label>E-post</label><input name="email" type="email" /></div>
+                  <div className="field"><label>Mobilnummer</label><input name="phone" type="tel" /></div>
+                  <div className="field"><label>Personnummer</label><input name="personnummer" inputMode="numeric" placeholder="ÅÅÅÅMMDD-XXXX" /></div>
+                  <div className="field"><label>Passnummer</label><input name="passportNo" /></div>
+                  <div className="field"><label>Födelsedatum</label><input name="birthDate" type="date" /></div>
+                  <div className="field">
+                    <label>Kön</label>
+                    <select name="gender" defaultValue=""><option value="">—</option><option value="M">Man</option><option value="F">Kvinna</option></select>
+                  </div>
+                  <div className="field"><label>Nationalitet</label><input name="nationality" defaultValue="SWE" /></div>
+                  <div className="field"><label>Rum</label><input name="roomAssignment" /></div>
+                  <div className="field" style={{ gridColumn: "1 / -1" }}><label>Anteckning</label><input name="notes" placeholder="Speciella behov, allergier, etc." /></div>
+                </div>
+                <div style={{ display: "flex", gap: 16, alignItems: "center", marginTop: 16 }}>
                   <label style={{ display: "flex", gap: 6, fontSize: 13, cursor: "pointer" }}><input type="checkbox" name="isMahram" /> Mahram</label>
                   <label style={{ display: "flex", gap: 6, fontSize: 13, cursor: "pointer" }}><input type="checkbox" name="needsAssist" /> Assistans</label>
-                  <button type="submit" className="btn btn-primary" style={{ marginLeft: "auto", padding: "8px 16px", fontSize: 12 }}>Lägg till</button>
+                  <button type="submit" className="btn btn-primary" style={{ marginLeft: "auto", padding: "10px 20px", fontSize: 13 }}>Lägg till resenär</button>
                 </div>
               </form>
             </div>
@@ -495,6 +526,53 @@ export default async function BokningDetailPage({ params, searchParams }: { para
           .sp::after { margin: 0 2px; }
           .case-title { font-size: 20px; }
           .case-pkg { font-size: 15px; }
+        }
+
+        /* Traveler profile cards */
+        .traveler-cards { display: grid; gap: 12px; }
+        .tv-card { background: #fff; border: 1px solid var(--c-line-soft); }
+        .tv-card-head {
+          display: flex; align-items: center; gap: 14px;
+          padding: 16px 20px;
+          background: var(--c-cream);
+          border-bottom: 1px solid var(--c-line-soft);
+        }
+        .tv-card-num {
+          font-family: var(--f-mono); font-size: 14px; color: var(--c-gold);
+          letter-spacing: 0.12em; flex-shrink: 0;
+          width: 32px; height: 32px; display: grid; place-items: center;
+          border: 1px solid var(--c-gold); background: #fff;
+        }
+        .tv-card-name { flex: 1; }
+        .tv-card-name h3 { font-size: 18px; margin: 0 0 6px; }
+        .tv-card-badges { display: flex; gap: 4px; flex-wrap: wrap; }
+        .tv-card-body { padding: 20px; display: grid; gap: 18px; }
+        .tv-section { }
+        .tv-section-label {
+          display: block; font-size: 10px; letter-spacing: 0.16em;
+          text-transform: uppercase; color: var(--c-gold); font-weight: 700;
+          margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--c-line-soft);
+        }
+        .tv-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 18px; }
+        .tv-label {
+          display: block; font-size: 10px; letter-spacing: 0.08em;
+          text-transform: uppercase; color: var(--c-text-muted); font-weight: 600; margin-bottom: 2px;
+        }
+        .tv-value { font-family: var(--f-serif); font-size: 15px; color: var(--c-ink); }
+        .tv-value.mono { font-family: var(--f-mono); font-size: 13px; letter-spacing: 0.04em; }
+        .tv-notes { margin: 0; font-size: 14px; line-height: 1.6; color: var(--c-text); padding: 10px 14px; background: var(--c-paper); border-left: 3px solid var(--c-gold); }
+
+        .add-tv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
+        @media (max-width: 900px) {
+          .tv-fields { grid-template-columns: 1fr 1fr; }
+          .add-tv-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 640px) {
+          .tv-fields { grid-template-columns: 1fr; }
+          .tv-card-body { padding: 16px; }
+          .add-tv-grid { grid-template-columns: 1fr; }
+          .tv-card-head { flex-wrap: wrap; gap: 10px; }
         }
       `}</style>
     </div>

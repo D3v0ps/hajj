@@ -206,6 +206,8 @@ export async function POST(req: NextRequest) {
             bookingId: booking.id,
             firstName,
             lastName,
+            email: data.email || null,
+            phone: data.phone || null,
             personnummer: data.personnummer || null,
             passportNo: data.passportNo || null,
             birthDate: parseBirthDate(data.birthDate || ""),
