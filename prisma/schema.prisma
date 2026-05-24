@@ -184,20 +184,29 @@ enum BookingStatus {
 }
 
 model Traveler {
-  id           String   @id @default(cuid())
-  userId       String
-  bookingId    String?
-  firstName    String
-  lastName     String
-  personnummer String?
-  passportNo   String?
-  passportExp  DateTime?
-  birthDate    DateTime?
-  gender       String?
-  isMahram     Boolean  @default(false)
-  needsAssist  Boolean  @default(false)
-  notes        String?
-  createdAt    DateTime @default(now())
+  id              String   @id @default(cuid())
+  userId          String
+  bookingId       String?
+  firstName       String
+  lastName        String
+  personnummer    String?
+  passportNo      String?
+  passportExp     DateTime?
+  birthDate       DateTime?
+  gender          String?
+  nationality     String?
+  civilStatus     String?
+  countryOfOrigin String?
+  birthCity       String?
+  residenceCity   String?
+  roomAssignment  String?
+  flightOut       String?
+  flightReturn    String?
+  isMahram        Boolean  @default(false)
+  needsAssist     Boolean  @default(false)
+  paymentNote     String?
+  notes           String?
+  createdAt       DateTime @default(now())
 
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   booking   Booking?   @relation(fields: [bookingId], references: [id], onDelete: SetNull)

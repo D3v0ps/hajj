@@ -1,0 +1,10 @@
+-- AlterTable: add new columns to Traveler for Excel-import compatibility
+ALTER TABLE "Traveler" ADD COLUMN IF NOT EXISTS "nationality" TEXT;
+ALTER TABLE "Traveler" ADD COLUMN IF NOT EXISTS "civilStatus" TEXT;
+ALTER TABLE "Traveler" ADD COLUMN IF NOT EXISTS "countryOfOrigin" TEXT;
+ALTER TABLE "Traveler" ADD COLUMN IF NOT EXISTS "birthCity" TEXT;
+ALTER TABLE "Traveler" ADD COLUMN IF NOT EXISTS "residenceCity" TEXT;
+ALTER TABLE "Traveler" ADD COLUMN IF NOT EXISTS "roomAssignment" TEXT;
+ALTER TABLE "Traveler" ADD COLUMN IF NOT EXISTS "flightOut" TEXT;
+ALTER TABLE "Traveler" ADD COLUMN IF NOT EXISTS "flightReturn" TEXT;
+ALTER TABLE "Traveler" ADD COLUMN IF NOT EXISTS "paymentNote" TEXT;
