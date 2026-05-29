@@ -28,6 +28,7 @@ export default async function PortalLayout({ children }: { children: React.React
             <Link href="/min-sida/bokningar">Mina bokningar</Link>
             <Link href="/min-sida/dokument">Dokument</Link>
             <Link href="/min-sida/meddelanden">Meddelanden</Link>
+            <Link href="/min-sida/profil">Profil</Link>
             {(session.user.role === "ADMIN" || session.user.role === "STAFF") && (
               <Link href="/admin" style={{ color: "var(--c-gold)" }}>Admin</Link>
             )}
