@@ -1,0 +1,86 @@
+{
+  "common": {
+    "siteName": "Hadj Omra Resor",
+    "tagline": "Hajj · Omra · Hadj Badal",
+    "menu": "Meny",
+    "close": "Stäng",
+    "loading": "Laddar…",
+    "language": "Språk"
+  },
+  "nav": {
+    "home": "Hem",
+    "omra": "Omra",
+    "hajj": "Hajj 2027",
+    "badal": "Hadj Badal",
+    "visa": "Visum",
+    "prepare": "Förbered",
+    "about": "Om oss",
+    "contact": "Kontakt",
+    "login": "Logga in",
+    "createAccount": "Skapa konto",
+    "myPage": "Min sida",
+    "logout": "Logga ut"
+  },
+  "home": {
+    "heroEyebrow": "Hajj · Omra · Hadj Badal",
+    "heroTitleA": "Vallfärden börjar med",
+    "heroTitleEm": "förtroende",
+    "heroTitleB": "— sedan 1985.",
+    "heroLede": "Sveriges äldsta arrangör av Hajj och Omra. Resegaranti hos Kammarkollegiet, svensk service från start till hemkomst, och den lokala kunskap som bara fyrtio års erfarenhet ger.",
+    "ctaOmra": "Se Omra-paket",
+    "ctaHajj": "Hajj 2027 — anmäl intresse",
+    "accreditation": "Medlem i SRF · IATA · Kammarkollegiet",
+    "trustYears": "40+ år",
+    "trustYearsLabel": "Erfarenhet",
+    "trustGuarantee": "Kammarkollegiet",
+    "trustGuaranteeLabel": "Resegaranti",
+    "trustOffices": "Stockholm · Göteborg",
+    "trustOfficesLabel": "Svenska kontor",
+    "trustPayments": "Swish · Klarna",
+    "trustPaymentsLabel": "Svensk betalkultur",
+    "trustRating": "4.8 / 5",
+    "trustRatingLabel": "Omdömen",
+    "trustLanguages": "SV · EN · AR",
+    "trustLanguagesLabel": "Språk"
+  },
+  "lead": {
+    "title": "Begär offert",
+    "subtitle": "Vi återkommer inom 24 timmar.",
+    "name": "Namn",
+    "email": "E-post",
+    "phone": "Telefon",
+    "city": "Avreseort",
+    "travelType": "Typ av resa",
+    "travelers": "Antal resenärer",
+    "message": "Övrig information",
+    "submit": "Skicka förfrågan",
+    "submitting": "Skickar…",
+    "sent": "Tack — vi hör av oss inom 24 timmar.",
+    "error": "Något gick fel — försök igen eller ring oss."
+  },
+  "floating": {
+    "open": "Kontakta oss",
+    "call": "Ring",
+    "whatsapp": "WhatsApp",
+    "quote": "Begär offert"
+  },
+  "cookies": {
+    "title": "Cookies & integritet",
+    "body": "Vi använder nödvändiga cookies för att sajten ska fungera, samt valfria för analys och marknadsföring.",
+    "necessary": "Nödvändiga",
+    "analytics": "Analys",
+    "marketing": "Marknadsföring",
+    "acceptAll": "Acceptera alla",
+    "onlyNecessary": "Endast nödvändiga",
+    "customize": "Anpassa",
+    "save": "Spara mina val",
+    "readMore": "Läs mer"
+  },
+  "footer": {
+    "rights": "Alla rättigheter förbehållna.",
+    "terms": "Villkor",
+    "privacy": "Integritet",
+    "cookies": "Cookies",
+    "accessibility": "Tillgänglighet"
+  }
+}

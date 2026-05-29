@@ -1,17 +1,19 @@
 import Link from "next/link";
 import { SITE } from "@/lib/config";
 import { MobileMenu } from "./MobileMenu";
+import { LocaleSwitcher } from "./LocaleSwitcher";
+import { getT } from "@/lib/i18n";
 
-const NAV = [
-  { href: "/omra", label: "Omra" },
-  { href: "/hajj-2027", label: "Hajj" },
-  { href: "/visum", label: "Visum" },
-  { href: "/hadj-badal", label: "Hadj Badal" },
-  { href: "/forbered", label: "Förbered dig" },
-  { href: "/om-oss", label: "Om oss" },
-];
-
-export function SiteHeader() {
+export async function SiteHeader() {
+  const t = await getT();
+  const NAV = [
+    { href: "/omra", label: t("nav.omra") },
+    { href: "/hajj-2027", label: t("nav.hajj") },
+    { href: "/visum", label: t("nav.visa") },
+    { href: "/hadj-badal", label: t("nav.badal") },
+    { href: "/forbered", label: t("nav.prepare") },
+    { href: "/om-oss", label: t("nav.about") },
+  ];
   return (
     <header className="site-header">
       <div className="container">
@@ -32,11 +34,12 @@ export function SiteHeader() {
         </nav>
 
         <div className="header-right">
+          <LocaleSwitcher />
           <a className="phone" href={`tel:${SITE.phone.replace(/\s/g, "")}`}>
             {SITE.phoneDisplay}
           </a>
           <Link href="/min-sida" className="btn btn-ghost desktop-only" style={{ padding: "10px 16px", fontSize: 13 }}>
-            Min sida
+            {t("nav.myPage")}
           </Link>
           <MobileMenu items={NAV} />
         </div>

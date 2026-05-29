@@ -1,0 +1,86 @@
+{
+  "common": {
+    "siteName": "Hadj Omra Resor",
+    "tagline": "Hajj · Umrah · Hajj Badal",
+    "menu": "Menu",
+    "close": "Close",
+    "loading": "Loading…",
+    "language": "Language"
+  },
+  "nav": {
+    "home": "Home",
+    "omra": "Umrah",
+    "hajj": "Hajj 2027",
+    "badal": "Hajj Badal",
+    "visa": "Visa",
+    "prepare": "Prepare",
+    "about": "About us",
+    "contact": "Contact",
+    "login": "Sign in",
+    "createAccount": "Create account",
+    "myPage": "My page",
+    "logout": "Sign out"
+  },
+  "home": {
+    "heroEyebrow": "Hajj · Umrah · Hajj Badal",
+    "heroTitleA": "The pilgrimage begins with",
+    "heroTitleEm": "trust",
+    "heroTitleB": "— since 1985.",
+    "heroLede": "Sweden's longest-running Hajj and Umrah arranger. Travel guarantee at Kammarkollegiet, Swedish service from start to homecoming, and the local knowledge that only forty years of experience can give.",
+    "ctaOmra": "View Umrah packages",
+    "ctaHajj": "Hajj 2027 — register interest",
+    "accreditation": "Member of SRF · IATA · Kammarkollegiet",
+    "trustYears": "40+ years",
+    "trustYearsLabel": "Experience",
+    "trustGuarantee": "Kammarkollegiet",
+    "trustGuaranteeLabel": "Travel guarantee",
+    "trustOffices": "Stockholm · Göteborg",
+    "trustOfficesLabel": "Swedish offices",
+    "trustPayments": "Swish · Klarna",
+    "trustPaymentsLabel": "Swedish payment methods",
+    "trustRating": "4.8 / 5",
+    "trustRatingLabel": "Reviews",
+    "trustLanguages": "SV · EN · AR",
+    "trustLanguagesLabel": "Languages"
+  },
+  "lead": {
+    "title": "Request a quote",
+    "subtitle": "We'll respond within 24 hours.",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "city": "Departure city",
+    "travelType": "Trip type",
+    "travelers": "Number of travelers",
+    "message": "Additional information",
+    "submit": "Send request",
+    "submitting": "Sending…",
+    "sent": "Thank you — we'll be in touch within 24 hours.",
+    "error": "Something went wrong — please try again or call us."
+  },
+  "floating": {
+    "open": "Contact us",
+    "call": "Call",
+    "whatsapp": "WhatsApp",
+    "quote": "Request a quote"
+  },
+  "cookies": {
+    "title": "Cookies & privacy",
+    "body": "We use necessary cookies for the site to function, plus optional ones for analytics and marketing.",
+    "necessary": "Necessary",
+    "analytics": "Analytics",
+    "marketing": "Marketing",
+    "acceptAll": "Accept all",
+    "onlyNecessary": "Only necessary",
+    "customize": "Customize",
+    "save": "Save my choices",
+    "readMore": "Read more"
+  },
+  "footer": {
+    "rights": "All rights reserved.",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "cookies": "Cookies",
+    "accessibility": "Accessibility"
+  }
+}

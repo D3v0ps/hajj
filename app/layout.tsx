@@ -4,6 +4,7 @@ import "./globals.css";
 // Importera env-validering tidigt så appen kraschar snabbt vid felaktig config.
 import "@/lib/env";
 import { CookieBanner } from "@/components/site/CookieBanner";
+import { getLocale, isRtl } from "@/lib/i18n";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -65,9 +66,10 @@ const ORG_JSONLD = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
   return (
-    <html lang="sv" className={`${newsreader.variable} ${manrope.variable} ${mono.variable}`}>
+    <html lang={locale} dir={isRtl(locale) ? "rtl" : "ltr"} className={`${newsreader.variable} ${manrope.variable} ${mono.variable}`}>
       <body>
         <script
           type="application/ld+json"

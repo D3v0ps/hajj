@@ -418,3 +418,13 @@ p { margin: 0 0 1em; text-wrap: pretty; }
 .badge-confirmed { background: #E6F1EA; color: var(--c-green); }
 .badge-paid { background: #DCEAE0; color: var(--c-green); }
 .badge-cancelled { background: #F5E1DC; color: var(--c-warn); }
+
+/* ============ RTL-stöd (arabiska) ============ */
+[dir="rtl"] .container { direction: rtl; }
+[dir="rtl"] .nav, [dir="rtl"] .header-right { flex-direction: row-reverse; }
+[dir="rtl"] .hero-jumpers a { padding-left: 18px; padding-right: 0; border-left: 1px solid var(--c-line); border-right: 0; }
+[dir="rtl"] .hero-jumpers a:hover { padding-right: 12px; padding-left: 8px; }
+[dir="rtl"] .section-mark { letter-spacing: 0.1em; }
+[dir="rtl"] .btn-link { padding-right: 0; }
+[dir="rtl"] .floating-contact { left: 24px; right: auto; }
+[dir="rtl"] body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, sans-serif; }

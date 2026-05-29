@@ -9,6 +9,11 @@ export default auth((req) => {
   const isAuthed = !!req.auth;
   const path = nextUrl.pathname;
 
+  // Skicka aktuell sökväg som header så server components (t.ex. LocaleSwitcher)
+  // kan posta tillbaka användaren till samma sida efter språkbyte.
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-pathname", path);
+
   if (path.startsWith("/min-sida") && !isAuthed) {
     const url = nextUrl.clone();
     url.pathname = "/logga-in";
@@ -30,9 +35,11 @@ export default auth((req) => {
     }
   }
 
-  return NextResponse.next();
+  return NextResponse.next({ request: { headers: requestHeaders } });
 });
 
 export const config = {
-  matcher: ["/min-sida/:path*", "/admin/:path*"],
+  // Matchar både skyddade sökvägar (auth-flödet) och publika sökvägar (för x-pathname-headern
+  // som behövs av LocaleSwitcher). Exkluderar statiska assets och API-anrop som inte berörs.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/auth|api/health).*)"],
 };

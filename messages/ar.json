@@ -1,0 +1,86 @@
+{
+  "common": {
+    "siteName": "هاج عمرة ريسور",
+    "tagline": "حج · عمرة · حج بدل",
+    "menu": "القائمة",
+    "close": "إغلاق",
+    "loading": "جارٍ التحميل…",
+    "language": "اللغة"
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "omra": "العمرة",
+    "hajj": "الحج 2027",
+    "badal": "حج بدل",
+    "visa": "التأشيرة",
+    "prepare": "الاستعداد",
+    "about": "من نحن",
+    "contact": "اتصل بنا",
+    "login": "تسجيل الدخول",
+    "createAccount": "إنشاء حساب",
+    "myPage": "صفحتي",
+    "logout": "تسجيل الخروج"
+  },
+  "home": {
+    "heroEyebrow": "حج · عمرة · حج بدل",
+    "heroTitleA": "تبدأ رحلة الحج",
+    "heroTitleEm": "بالثقة",
+    "heroTitleB": "— منذ عام 1985.",
+    "heroLede": "أعرق منظم رحلات الحج والعمرة في السويد. ضمان سفر لدى Kammarkollegiet، خدمة سويدية من البداية حتى العودة، وخبرة محلية تفوق الأربعين عامًا.",
+    "ctaOmra": "عرض باقات العمرة",
+    "ctaHajj": "الحج 2027 — تسجيل الاهتمام",
+    "accreditation": "عضو في SRF · IATA · Kammarkollegiet",
+    "trustYears": "أكثر من 40 سنة",
+    "trustYearsLabel": "خبرة",
+    "trustGuarantee": "Kammarkollegiet",
+    "trustGuaranteeLabel": "ضمان السفر",
+    "trustOffices": "ستوكهولم · يوتيبوري",
+    "trustOfficesLabel": "مكاتب سويدية",
+    "trustPayments": "Swish · Klarna",
+    "trustPaymentsLabel": "وسائل الدفع السويدية",
+    "trustRating": "4.8 / 5",
+    "trustRatingLabel": "تقييمات",
+    "trustLanguages": "السويدية · الإنجليزية · العربية",
+    "trustLanguagesLabel": "اللغات"
+  },
+  "lead": {
+    "title": "طلب عرض سعر",
+    "subtitle": "سنرد عليك خلال 24 ساعة.",
+    "name": "الاسم",
+    "email": "البريد الإلكتروني",
+    "phone": "رقم الهاتف",
+    "city": "مدينة المغادرة",
+    "travelType": "نوع الرحلة",
+    "travelers": "عدد المسافرين",
+    "message": "معلومات إضافية",
+    "submit": "إرسال الطلب",
+    "submitting": "جارٍ الإرسال…",
+    "sent": "شكرًا — سنتواصل معك خلال 24 ساعة.",
+    "error": "حدث خطأ — حاول مجددًا أو اتصل بنا."
+  },
+  "floating": {
+    "open": "اتصل بنا",
+    "call": "اتصال",
+    "whatsapp": "واتساب",
+    "quote": "طلب عرض سعر"
+  },
+  "cookies": {
+    "title": "ملفات تعريف الارتباط والخصوصية",
+    "body": "نستخدم ملفات تعريف الارتباط الضرورية لتشغيل الموقع، بالإضافة إلى ملفات اختيارية للتحليلات والتسويق.",
+    "necessary": "ضرورية",
+    "analytics": "تحليلات",
+    "marketing": "تسويق",
+    "acceptAll": "قبول الكل",
+    "onlyNecessary": "الضرورية فقط",
+    "customize": "تخصيص",
+    "save": "حفظ اختياراتي",
+    "readMore": "اقرأ المزيد"
+  },
+  "footer": {
+    "rights": "جميع الحقوق محفوظة.",
+    "terms": "الشروط",
+    "privacy": "الخصوصية",
+    "cookies": "ملفات تعريف الارتباط",
+    "accessibility": "إمكانية الوصول"
+  }
+}
