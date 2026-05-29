@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -34,7 +35,26 @@ const packageSchema = z.object({
   distNabawiM: z.coerce.number().int().min(0).max(50000).optional().or(z.literal(0)),
   inclusions: z.string().optional().or(z.literal("")),
   excludeNotes: z.string().optional().or(z.literal("")),
+  // Travel pack (alla optional, valideras vidare i parseJsonField)
+  leaderName: z.string().max(120).optional().or(z.literal("")),
+  leaderPhone: z.string().max(40).optional().or(z.literal("")),
+  emergencyContact: z.string().max(200).optional().or(z.literal("")),
+  gatheringPoint: z.string().max(200).optional().or(z.literal("")),
+  gatheringTime: z.string().max(120).optional().or(z.literal("")),
+  whatsappLink: z.string().max(500).optional().or(z.literal("")),
+  flightOutbound: z.string().optional().or(z.literal("")),
+  flightReturn: z.string().optional().or(z.literal("")),
+  hotels: z.string().optional().or(z.literal("")),
+  transfers: z.string().optional().or(z.literal("")),
+  itinerary: z.string().optional().or(z.literal("")),
 });
+
+// Tolkar ett textfält som JSON; tomt → null. Ogiltig JSON → null (fel rapporteras inte
+// inline här eftersom hela detta är optional admin-data; admin ser kvar texten i editorn).
+function parseJsonField(raw: string | undefined | null): unknown {
+  if (!raw || !raw.trim()) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
 
 function fromForm(formData: FormData) {
   return {
@@ -58,6 +78,17 @@ function fromForm(formData: FormData) {
     distNabawiM: String(formData.get("distNabawiM") ?? ""),
     inclusions: String(formData.get("inclusions") ?? ""),
     excludeNotes: String(formData.get("excludeNotes") ?? ""),
+    leaderName: String(formData.get("leaderName") ?? ""),
+    leaderPhone: String(formData.get("leaderPhone") ?? ""),
+    emergencyContact: String(formData.get("emergencyContact") ?? ""),
+    gatheringPoint: String(formData.get("gatheringPoint") ?? ""),
+    gatheringTime: String(formData.get("gatheringTime") ?? ""),
+    whatsappLink: String(formData.get("whatsappLink") ?? ""),
+    flightOutbound: String(formData.get("flightOutbound") ?? ""),
+    flightReturn: String(formData.get("flightReturn") ?? ""),
+    hotels: String(formData.get("hotels") ?? ""),
+    transfers: String(formData.get("transfers") ?? ""),
+    itinerary: String(formData.get("itinerary") ?? ""),
   };
 }
 
@@ -84,6 +115,17 @@ function dataFromParsed(p: z.infer<typeof packageSchema>) {
     distNabawiM: p.distNabawiM || null,
     inclusions: (p.inclusions || "").split("\n").map((s) => s.trim()).filter(Boolean),
     excludeNotes: (p.excludeNotes || "").split("\n").map((s) => s.trim()).filter(Boolean),
+    leaderName: p.leaderName || null,
+    leaderPhone: p.leaderPhone || null,
+    emergencyContact: p.emergencyContact || null,
+    gatheringPoint: p.gatheringPoint || null,
+    gatheringTime: p.gatheringTime || null,
+    whatsappLink: p.whatsappLink || null,
+    flightOutbound: (parseJsonField(p.flightOutbound) ?? Prisma.DbNull) as Prisma.InputJsonValue | typeof Prisma.DbNull,
+    flightReturn: (parseJsonField(p.flightReturn) ?? Prisma.DbNull) as Prisma.InputJsonValue | typeof Prisma.DbNull,
+    hotels: (parseJsonField(p.hotels) ?? Prisma.DbNull) as Prisma.InputJsonValue | typeof Prisma.DbNull,
+    transfers: (parseJsonField(p.transfers) ?? Prisma.DbNull) as Prisma.InputJsonValue | typeof Prisma.DbNull,
+    itinerary: (parseJsonField(p.itinerary) ?? Prisma.DbNull) as Prisma.InputJsonValue | typeof Prisma.DbNull,
   };
 }
 

@@ -135,6 +135,69 @@ export function PackageForm({ pkg, action, submitLabel = "Spara" }: { pkg?: Pack
         <textarea name="excludeNotes" rows={3} defaultValue={pkg?.excludeNotes?.join("\n") ?? ""} />
       </fieldset>
 
+      <fieldset>
+        <legend>Digital resväska — gruppinfo</legend>
+        <p className="dim" style={{ fontSize: 12, marginBottom: 14 }}>
+          Visas i kundens digitala resväska efter bokningsbekräftelse. Tom = info kommer närmare avresan.
+        </p>
+        <div className="grid2">
+          <div className="field">
+            <label>Reseledare</label>
+            <input name="leaderName" defaultValue={pkg?.leaderName ?? ""} />
+          </div>
+          <div className="field">
+            <label>Reseledare telefon</label>
+            <input name="leaderPhone" type="tel" defaultValue={pkg?.leaderPhone ?? ""} />
+          </div>
+          <div className="field">
+            <label>Akutkontakt 24/7</label>
+            <input name="emergencyContact" defaultValue={pkg?.emergencyContact ?? ""} placeholder="Namn + telefon" />
+          </div>
+          <div className="field">
+            <label>WhatsApp-grupp (länk)</label>
+            <input name="whatsappLink" defaultValue={pkg?.whatsappLink ?? ""} placeholder="https://chat.whatsapp.com/..." />
+          </div>
+          <div className="field">
+            <label>Samlingsplats</label>
+            <input name="gatheringPoint" defaultValue={pkg?.gatheringPoint ?? ""} placeholder="Arlanda T5 incheckning rad 12" />
+          </div>
+          <div className="field">
+            <label>Samlingstid</label>
+            <input name="gatheringTime" defaultValue={pkg?.gatheringTime ?? ""} placeholder="3 timmar före avgång" />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Digital resväska — flyg, hotell, dagsprogram (JSON)</legend>
+        <p className="dim" style={{ fontSize: 12, marginBottom: 14 }}>
+          Fyll i som JSON. Tomt fält = visas inte för kunden. <br />
+          Exempel flightOutbound: <code>{`{"airline":"Saudia","flightNo":"SV108","from":"ARN","to":"JED","departTime":"2027-02-15T14:30","arriveTime":"2027-02-15T22:10","terminal":"5"}`}</code>
+          <br />
+          Exempel hotels: <code>{`[{"city":"Mekka","name":"Swissôtel Al Maqam","rating":5,"distHaram":"100 m","checkIn":"2027-02-15","checkOut":"2027-02-25"},{"city":"Medina","name":"Pullman Madinah","rating":5}]`}</code>
+        </p>
+        <div className="field" style={{ marginBottom: 12 }}>
+          <label>Utflyg (JSON)</label>
+          <textarea name="flightOutbound" rows={3} defaultValue={pkg?.flightOutbound ? JSON.stringify(pkg.flightOutbound, null, 2) : ""} placeholder='{"airline":"…","flightNo":"…","from":"ARN","to":"JED","departTime":"2027-02-15T14:30","arriveTime":"2027-02-15T22:10"}' />
+        </div>
+        <div className="field" style={{ marginBottom: 12 }}>
+          <label>Hemflyg (JSON)</label>
+          <textarea name="flightReturn" rows={3} defaultValue={pkg?.flightReturn ? JSON.stringify(pkg.flightReturn, null, 2) : ""} />
+        </div>
+        <div className="field" style={{ marginBottom: 12 }}>
+          <label>Hotell (JSON-array)</label>
+          <textarea name="hotels" rows={4} defaultValue={pkg?.hotels ? JSON.stringify(pkg.hotels, null, 2) : ""} />
+        </div>
+        <div className="field" style={{ marginBottom: 12 }}>
+          <label>Transfer (JSON-array)</label>
+          <textarea name="transfers" rows={3} defaultValue={pkg?.transfers ? JSON.stringify(pkg.transfers, null, 2) : ""} placeholder='[{"type":"Buss","from":"Jeddah flygplats","to":"Mecka-hotell"}]' />
+        </div>
+        <div className="field">
+          <label>Dagsprogram (JSON-array)</label>
+          <textarea name="itinerary" rows={5} defaultValue={pkg?.itinerary ? JSON.stringify(pkg.itinerary, null, 2) : ""} placeholder='[{"date":"2027-02-15","title":"Avresa Stockholm","description":"...","highlights":["Incheckning","Direktflyg"]}]' />
+        </div>
+      </fieldset>
+
       {error && <p className="err">{error}</p>}
       {saved && <p style={{ color: "var(--c-green-soft)", fontSize: 13, fontWeight: 600 }}>✓ Sparat</p>}
 

@@ -80,6 +80,19 @@ export default async function BokningDetailPage({
       <h1 style={{ fontSize: 36, marginTop: 14, marginBottom: 8 }}>{booking.package.title}</h1>
       <p className="dim">{booking.package.subtitle}</p>
 
+      {["CONFIRMED", "PAID_DEPOSIT", "PAID_FULL", "COMPLETED"].includes(booking.status) && (
+        <Link href={`/min-sida/bokningar/${booking.id}/resvaska`} className="tp-link" style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "14px 18px", background: "var(--c-cream)", border: "1px solid var(--c-line-soft)",
+          borderLeft: "3px solid var(--c-gold)", marginTop: 22,
+        }}>
+          <span><strong className="serif">Digital resväska</strong>
+            <span className="dim" style={{ fontSize: 13, marginLeft: 10 }}>flyg, hotell, dagsprogram & kontakter</span>
+          </span>
+          <span style={{ color: "var(--c-gold)" }}>→</span>
+        </Link>
+      )}
+
       {refundActive && (
         <div className={`rf-banner rf-banner-${refundClass}`} role="status">
           <span className={`rf-pill rf-pill-${refundClass}`}>{refundLabel}</span>

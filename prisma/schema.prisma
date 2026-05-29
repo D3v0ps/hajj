@@ -106,6 +106,18 @@ model Package {
   distHaramM   Int?
   distNabawiM  Int?
   imageUrl     String?
+  // Digital resväska / travel pack — strukturerad info som kunden ser i portalen.
+  flightOutbound   Json?
+  flightReturn     Json?
+  hotels           Json?
+  transfers        Json?
+  itinerary        Json?
+  leaderName       String?
+  leaderPhone      String?
+  emergencyContact String?
+  gatheringPoint   String?
+  gatheringTime    String?
+  whatsappLink     String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
