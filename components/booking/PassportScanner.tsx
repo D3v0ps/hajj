@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { iso3ToSwedish } from "@/lib/countries";
 
 type PassportData = {
   firstName: string;
@@ -17,40 +18,84 @@ type Props = {
   onResult: (data: Partial<PassportData>) => void;
 };
 
-// MRZ line patterns (TD3 passport - 2 lines of 44 chars)
-const MRZ_LINE1 = /^P[<A-Z]([A-Z<]{3})([A-Z<]+)<<([A-Z<]+)/;
-const MRZ_LINE2 = /^([A-Z0-9<]{9})\d([A-Z<]{3})(\d{6})\d([MF<])(\d{6})\d/;
+// Vanliga OCR-förväxlingar i MRZ:ens numeriska fält (bokstav läst i stället för siffra).
+const LETTER_TO_DIGIT: Record<string, string> = {
+  O: "0", Q: "0", D: "0", U: "0",
+  I: "1", L: "1",
+  Z: "2", S: "5", G: "6", T: "7", B: "8",
+};
+const coerceDigits = (s: string) => s.replace(/[A-Z]/g, (c) => LETTER_TO_DIGIT[c] ?? c);
 
-function parseMRZ(text: string): Partial<PassportData> | null {
-  const lines = text.split("\n").map((l) => l.replace(/\s/g, "").toUpperCase());
-  const mrzLines = lines.filter((l) => l.length >= 42 && /^[A-Z0-9<]{42,}$/.test(l));
+// TD3-pass (häfte): rad 1 = typ + utfärdande stat + namn, rad 2 = passnr/nat/datum/kön.
+// Numeriska fält tillåts vara bokstäver i mönstret och korrigeras efteråt — så att
+// ett enda OCR-fel i ett datum inte sänker hela tolkningen (vanligt på utländska pass).
+const MRZ_LINE1 = /^P[A-Z0-9<]([A-Z<]{3})([A-Z<]+?)<<([A-Z<]+)/;
+const MRZ_LINE2 = /^([A-Z0-9<]{9})[A-Z0-9<]([A-Z<]{3})([A-Z0-9<]{6})[A-Z0-9<]([MFX<])([A-Z0-9<]{6})/;
 
-  if (mrzLines.length < 2) return null;
+const cleanName = (s: string) => s.replace(/<+/g, " ").trim();
 
-  const line1 = mrzLines[mrzLines.length - 2];
-  const line2 = mrzLines[mrzLines.length - 1];
+// MRZ kodar inte århundrade: födelsedatum kan ej ligga i framtiden, pass går ut
+// i innevarande århundrade. Ogiltigt datum → tomt (hellre tomt än fel).
+function mrzDate(raw: string, kind: "birth" | "expiry"): string {
+  const d = coerceDigits(raw);
+  if (!/^\d{6}$/.test(d)) return "";
+  const mm = +d.slice(2, 4);
+  const dd = +d.slice(4, 6);
+  if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return "";
+  let year = 2000 + +d.slice(0, 2);
+  if (kind === "birth" && year > new Date().getFullYear()) year -= 100;
+  return `${year}-${d.slice(2, 4)}-${d.slice(4, 6)}`;
+}
 
+function parsePair(line1: string, line2: string): Partial<PassportData> | null {
   const m1 = line1.match(MRZ_LINE1);
   const m2 = line2.match(MRZ_LINE2);
+  if (!m1 && !m2) return null;
 
-  if (!m1 || !m2) return null;
+  const out: Partial<PassportData> = {};
 
-  const clean = (s: string) => s.replace(/<+/g, " ").trim();
-  const fmtDate = (yymmdd: string) => {
-    const yy = parseInt(yymmdd.slice(0, 2));
-    const year = yy > 50 ? 1900 + yy : 2000 + yy;
-    return `${year}-${yymmdd.slice(2, 4)}-${yymmdd.slice(4, 6)}`;
-  };
+  if (m1) {
+    out.lastName = cleanName(m1[2]);
+    out.firstName = cleanName(m1[3]);
+    const issuing = iso3ToSwedish(m1[1]); // utfärdande stat — fallback för nationalitet
+    if (issuing) out.nationality = issuing;
+  }
 
-  return {
-    nationality: clean(m1[1]),
-    lastName: clean(m1[2]),
-    firstName: clean(m1[3]),
-    passportNo: clean(m2[1]),
-    birthDate: fmtDate(m2[3]),
-    gender: m2[4] === "M" ? "M" : m2[4] === "F" ? "F" : "",
-    expiryDate: fmtDate(m2[5]),
-  };
+  if (m2) {
+    out.passportNo = m2[1].replace(/</g, "").trim();
+    const nat = iso3ToSwedish(m2[2]); // rad 2 = nationalitet (auktoritativ)
+    if (nat) out.nationality = nat;
+    const birth = mrzDate(m2[3], "birth");
+    if (birth) out.birthDate = birth;
+    out.gender = m2[4] === "M" ? "M" : m2[4] === "F" ? "F" : "";
+    const exp = mrzDate(m2[5], "expiry");
+    if (exp) out.expiryDate = exp;
+  }
+
+  if (!out.passportNo && !out.lastName && !out.firstName) return null;
+  return out;
+}
+
+function parseMRZ(text: string): Partial<PassportData> | null {
+  const lines = text
+    .split("\n")
+    .map((l) => l.replace(/\s/g, "").toUpperCase())
+    .filter((l) => l.length >= 40 && l.length <= 48 && /^[A-Z0-9<]+$/.test(l));
+
+  if (lines.length < 2) return null;
+
+  // Testa intilliggande radpar (robust mot extra brusrader) och behåll det mest kompletta.
+  let best: Partial<PassportData> | null = null;
+  let bestScore = -1;
+  for (let i = 0; i < lines.length - 1; i++) {
+    const res = parsePair(lines[i], lines[i + 1]);
+    if (!res) continue;
+    const score =
+      (res.passportNo ? 1 : 0) + (res.lastName ? 1 : 0) + (res.firstName ? 1 : 0) +
+      (res.birthDate ? 1 : 0) + (res.expiryDate ? 1 : 0) + (res.nationality ? 1 : 0);
+    if (score > bestScore) { bestScore = score; best = res; }
+  }
+  return best;
 }
 
 export function PassportScanner({ onResult }: Props) {

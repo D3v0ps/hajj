@@ -29,13 +29,6 @@ export function TravelerForm({
     setScanned(data as ScannedData);
   }, []);
 
-  // OCR-nationalitet är ofta ISO-3 (t.ex. SWE) — mappa de vanligaste till svenska namn
-  const mapNationality = (raw?: string): string => {
-    if (!raw) return "";
-    const m: Record<string, string> = { SWE: "Sverige", SOM: "Somalia", ERI: "Eritrea", SYR: "Syrien", IRQ: "Irak", IRN: "Iran", AFG: "Afghanistan", TUR: "Turkiet", MAR: "Marocko" };
-    return m[raw.toUpperCase()] ?? "";
-  };
-
   return (
     <>
       <PassportScanner onResult={handleScanResult} />
@@ -99,7 +92,7 @@ export function TravelerForm({
 
           <div className="field">
             <label>Nationalitet</label>
-            <select name="nationality" defaultValue={mapNationality(scanned?.nationality)} key={`nat-${scanned?.nationality ?? ""}`}>
+            <select name="nationality" defaultValue={scanned?.nationality ?? ""} key={`nat-${scanned?.nationality ?? ""}`}>
               <option value="">Välj land...</option>
               {COUNTRY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
