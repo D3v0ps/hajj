@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { SITE } from "@/lib/config";
 import { MobileMenu } from "./MobileMenu";
 import { LocaleSwitcher } from "./LocaleSwitcher";
-import { getTranslator, localeHref } from "@/lib/i18n";
+import { getTranslator, localeHref, buildLocaleOptions } from "@/lib/i18n";
 
 export async function SiteHeader() {
   const { t, locale } = await getTranslator();
@@ -15,6 +16,8 @@ export async function SiteHeader() {
     { href: localeHref("/om-oss", locale), label: t("nav.about") },
   ];
   const homeHref = localeHref("/", locale);
+  const h = await headers();
+  const localeOptions = buildLocaleOptions(h.get("x-pathname") || "/", locale);
   return (
     <header className="site-header">
       <div className="container">
@@ -35,14 +38,21 @@ export async function SiteHeader() {
         </nav>
 
         <div className="header-right">
-          <LocaleSwitcher />
+          <span className="loc-desktop"><LocaleSwitcher /></span>
           <a className="phone" href={`tel:${SITE.phone.replace(/\s/g, "")}`}>
             {SITE.phoneDisplay}
           </a>
           <Link href="/min-sida" className="btn btn-ghost desktop-only" style={{ padding: "10px 16px", fontSize: 13 }}>
             {t("nav.myPage")}
           </Link>
-          <MobileMenu items={NAV} />
+          <MobileMenu
+            items={NAV}
+            locales={localeOptions}
+            myPageLabel={t("nav.myPage")}
+            languageLabel={t("common.language")}
+            phone={SITE.phone.replace(/\s/g, "")}
+            phoneDisplay={SITE.phoneDisplay}
+          />
         </div>
       </div>
 
@@ -134,9 +144,16 @@ export async function SiteHeader() {
         @media (max-width: 980px) {
           .nav { display: none; }
           .desktop-only { display: none; }
+          /* Språkväljaren flyttas in i mobilmenyn för att inte tränga headern. */
+          .loc-desktop { display: none; }
         }
         @media (min-width: 981px) {
           .mobile-only { display: none; }
+        }
+        @media (max-width: 380px) {
+          /* Mycket små skärmar: dölj undertiteln så logotypen + telefon + meny får plats. */
+          .brand-name small { display: none; }
+          .phone { display: none; }
         }
       `}</style>
     </header>

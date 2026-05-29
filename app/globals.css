@@ -64,6 +64,11 @@ html, body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   font-feature-settings: "ss01", "cv01", "tnum";
+  /* Mobil: hindra horisontell scroll från enstaka breda element + lås textstorlek
+     så iOS inte zoomar om sidan i liggande läge. */
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 img, svg { display: block; max-width: 100%; }
@@ -426,5 +431,43 @@ p { margin: 0 0 1em; text-wrap: pretty; }
 [dir="rtl"] .hero-jumpers a:hover { padding-right: 12px; padding-left: 8px; }
 [dir="rtl"] .section-mark { letter-spacing: 0.1em; }
 [dir="rtl"] .btn-link { padding-right: 0; }
-[dir="rtl"] .floating-contact { left: 24px; right: auto; }
+[dir="rtl"] .fc { left: 20px; right: auto; }
+[dir="rtl"] .fc-panel { left: 0; right: auto; }
 [dir="rtl"] body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, sans-serif; }
+
+/* ============ Mobil-finslipning (telefoner) ============ */
+
+/* iOS zoomar in automatiskt när man fokuserar ett fält med font-size < 16px,
+   och zoomar inte ut igen. Bumpa formulärkontroller till 16px på små skärmar
+   så fält-fokus inte rycker layouten. (Desktop behåller den täta designen.) */
+@media (max-width: 640px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+  /* Knappar och fält ska vara bekväma att träffa med tummen. */
+  button, .btn, a.btn, input[type="submit"] {
+    min-height: 44px;
+  }
+}
+
+/* Långa kod-/JSON-exempel (t.ex. admin) ska inte spränga sidbredden. */
+code, pre {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+pre { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* Generella tabeller utan .table-wrap får ändå horisontell scroll på mobil
+   istället för att tvinga ut sidbredden. Tabeller redan inuti .table-wrap
+   behåller sin layout (wrappen sköter scrollen). */
+@media (max-width: 640px) {
+  table.table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .table-wrap table.table { display: table; white-space: normal; }
+}
+
+/* Mindre tryck-vänligt avstånd i listor/knapprader på mobil. */
+@media (max-width: 480px) {
+  .btn { padding: 12px 18px; }
+}
+
+/* (Flytande kontaktknappen .fc hanterar redan sin egen safe-area i komponenten.) */

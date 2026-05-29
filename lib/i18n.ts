@@ -65,6 +65,25 @@ export async function getTranslator(): Promise<{ t: (k: string) => string; local
   return { t, locale };
 }
 
+export type LocaleOption = { code: Locale; label: string; href: string; active: boolean };
+
+/** Bygger språkval för en given (aktuell) sökväg. Trimmar ev. befintligt prefix. */
+export function buildLocaleOptions(currentPath: string, active: Locale): LocaleOption[] {
+  let clean = currentPath || "/";
+  for (const x of LOCALES) {
+    if (clean === `/${x}` || clean.startsWith(`/${x}/`)) {
+      clean = clean.slice(x.length + 1) || "/";
+      break;
+    }
+  }
+  return LOCALES.map((code) => ({
+    code,
+    label: LOCALE_LABELS[code],
+    href: localeHref(clean, code),
+    active: code === active,
+  }));
+}
+
 import type { Messages } from "./i18n.messages";
 import svMessages from "@/messages/sv.json";
 import enMessages from "@/messages/en.json";

@@ -330,9 +330,14 @@ export function PackageForm({ pkg, action, submitLabel = "Spara" }: { pkg?: Pack
         .pk-form details.row-card .row-card-summary { cursor: pointer; margin-bottom: 0; }
         .pk-form details.row-card[open] .row-card-summary { margin-bottom: 10px; }
         .pk-form .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-        @media (max-width: 900px) { .pk-form .grid2 { grid-template-columns: 1fr; } }
+        .pk-form .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+        @media (max-width: 900px) {
+          .pk-form .grid2 { grid-template-columns: 1fr; }
+          .pk-form .grid3 { grid-template-columns: 1fr 1fr; }
+        }
         @media (max-width: 640px) {
           .pk-form fieldset { padding: 18px 16px; }
+          .pk-form .grid3 { grid-template-columns: 1fr; }
         }
       `}</style>
     </form>

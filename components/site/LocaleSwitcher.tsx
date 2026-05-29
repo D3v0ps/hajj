@@ -1,42 +1,34 @@
 import Link from "next/link";
 import { headers } from "next/headers";
-import { getLocale, LOCALES, LOCALE_LABELS, localeHref } from "@/lib/i18n";
+import { getLocale, buildLocaleOptions } from "@/lib/i18n";
 
+/**
+ * Språkväljare för headern (desktop). På mobil göms denna och språkvalen
+ * visas istället i mobilmenyn (se MobileMenu) för att inte tränga headern.
+ */
 export async function LocaleSwitcher() {
   const locale = await getLocale();
   const h = await headers();
-  // x-pathname sätts av middleware så vi kan länka till samma sida på annan locale.
   const currentPath = h.get("x-pathname") || "/";
+  const options = buildLocaleOptions(currentPath, locale);
   return (
     <nav className="loc-sw" aria-label="Välj språk">
-      {LOCALES.map((l) => {
-        // Trimma ev. befintligt locale-prefix innan vi bygger om
-        let cleanPath = currentPath;
-        for (const x of LOCALES) {
-          if (cleanPath === `/${x}` || cleanPath.startsWith(`/${x}/`)) {
-            cleanPath = cleanPath.slice(x.length + 1) || "/";
-            break;
-          }
-        }
-        const href = localeHref(cleanPath, l);
-        const active = l === locale;
-        return (
-          <Link
-            key={l}
-            href={href}
-            hrefLang={l}
-            aria-current={active ? "page" : undefined}
-            className={active ? "loc-link active" : "loc-link"}
-          >
-            {LOCALE_LABELS[l]}
-          </Link>
-        );
-      })}
+      {options.map((o) => (
+        <Link
+          key={o.code}
+          href={o.href}
+          hrefLang={o.code}
+          aria-current={o.active ? "page" : undefined}
+          className={o.active ? "loc-link active" : "loc-link"}
+        >
+          {o.code.toUpperCase()}
+        </Link>
+      ))}
       <style>{`
-        .loc-sw { display: inline-flex; align-items: center; gap: 6px; }
+        .loc-sw { display: inline-flex; align-items: center; gap: 2px; }
         .loc-link {
-          padding: 4px 8px; font-size: 11px; letter-spacing: 0.06em;
-          color: var(--c-text-muted); text-transform: uppercase; font-weight: 600;
+          padding: 4px 7px; font-size: 11px; letter-spacing: 0.06em;
+          color: var(--c-text-muted); font-weight: 700;
           border-bottom: 2px solid transparent;
         }
         .loc-link:hover { color: var(--c-ink); }
