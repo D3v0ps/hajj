@@ -6,9 +6,17 @@ import { redirect, notFound } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 type Params = Promise<{ bookingId: string }>;
+type SearchParams = Promise<{ paid?: string }>;
 
-export default async function BokningDetailPage({ params }: { params: Params }) {
+export default async function BokningDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: SearchParams;
+}) {
   const { bookingId } = await params;
+  const { paid } = await searchParams;
   const session = await auth();
   if (!session?.user?.id) redirect("/logga-in");
 
@@ -34,6 +42,17 @@ export default async function BokningDetailPage({ params }: { params: Params }) 
 
   const fmtDate = (d: Date | null) => (d ? new Date(d).toLocaleDateString("sv-SE") : "—");
 
+  // Slutbetalning: visa CTA när anmälningsavgiften är betald men slutpriset
+  // återstår. Visa "Slutbetalt" när bokningen är PAID_FULL.
+  const paidSum = booking.payments
+    .filter((p) => p.status === "COMPLETED")
+    .reduce((sum, p) => sum + p.amount, 0);
+  const remaining = booking.totalAmount - paidSum;
+  const canPayFinal =
+    (booking.status === "PAID_DEPOSIT" || booking.status === "CONFIRMED") &&
+    remaining > 0;
+  const isFullyPaid = booking.status === "PAID_FULL" || booking.status === "COMPLETED";
+
   return (
     <div className="container narrow">
       <Link href="/min-sida" className="dim" style={{ fontSize: 13 }}>← Översikt</Link>
@@ -52,6 +71,43 @@ export default async function BokningDetailPage({ params }: { params: Params }) 
         <div><span className="eyebrow">Resenärer</span><p className="serif">{booking.travelers.length}</p></div>
         <div><span className="eyebrow">Totalpris</span><p className="serif tnum">{booking.totalAmount.toLocaleString("sv-SE")} kr</p></div>
       </div>
+
+      {paid === "final" && (
+        <div className="paid-ok" role="status">
+          <strong className="serif">Tack — slutbetalningen är mottagen.</strong>
+          <span className="dim" style={{ fontSize: 13, display: "block", marginTop: 4 }}>
+            Vi hör av oss inför avresan med all praktisk information.
+          </span>
+        </div>
+      )}
+
+      {isFullyPaid && booking.status !== "COMPLETED" && (
+        <div className="fin-banner">
+          <span className="tag green">Slutbetalt</span>
+          <span className="dim" style={{ fontSize: 13 }}>
+            Hela resekostnaden är betald.
+          </span>
+        </div>
+      )}
+
+      {canPayFinal && (
+        <div className="fin-cta">
+          <div>
+            <strong className="serif" style={{ fontSize: 18, color: "var(--c-ink)" }}>
+              Slutbetalning återstår
+            </strong>
+            <p className="dim" style={{ fontSize: 13, marginTop: 4 }}>
+              {remaining.toLocaleString("sv-SE")} kr kvar att betala — senast 30 dagar före avresa.
+            </p>
+          </div>
+          <Link
+            href={`/min-sida/bokningar/${booking.id}/slutbetalning`}
+            className="btn btn-primary"
+          >
+            Betala slutbelopp →
+          </Link>
+        </div>
+      )}
 
       {booking.status === "COMPLETED" && (
         <div className="review-cta">
@@ -131,7 +187,12 @@ export default async function BokningDetailPage({ params }: { params: Params }) 
         .trv-grid li { padding: 14px 18px; background: #fff; border: 1px solid var(--c-line-soft); display: grid; gap: 4px; }
         .trv-grid strong { font-family: var(--f-serif); font-size: 17px; color: var(--c-ink); }
         .review-cta { margin-top: 24px; padding: 20px 24px; background: var(--c-cream); border-left: 3px solid var(--c-gold); }
+        .fin-cta { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 20px 22px; background: #fff; border: 1px solid var(--c-gold); margin-top: 24px; }
+        .fin-banner { display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: #fff; border: 1px solid var(--c-line-soft); margin-top: 24px; }
+        .paid-ok { padding: 14px 18px; background: #fff; border: 1px solid var(--c-green-soft); margin-top: 20px; }
+        .paid-ok strong { color: var(--c-ink); font-size: 16px; }
         @media (max-width: 900px) { .kv-grid { grid-template-columns: 1fr 1fr; gap: 14px; padding: 18px; } }
+        @media (max-width: 640px) { .fin-cta { flex-direction: column; align-items: stretch; gap: 14px; } }
         @media (max-width: 480px) { .kv-grid { grid-template-columns: 1fr; padding: 16px; } }
       `}</style>
     </div>

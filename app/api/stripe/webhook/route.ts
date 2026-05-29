@@ -5,8 +5,6 @@ import type Stripe from "stripe";
 import { queueEmail, EMAIL_KIND, renderTemplate } from "@/lib/email";
 import { logAudit } from "@/lib/audit";
 
-const isFinalLikeStatus = (s: string) => s === "PAID_FULL";
-
 // Stripe webhook: markerar betalning som genomförd när checkout slutförs.
 // Konfigurera STRIPE_WEBHOOK_SECRET + peka Stripe-webhook till /api/stripe/webhook.
 export async function POST(req: NextRequest) {
@@ -36,7 +34,8 @@ export async function POST(req: NextRequest) {
   if (event.type === "checkout.session.completed") {
     const cs = event.data.object as Stripe.Checkout.Session;
     const bookingId = cs.metadata?.bookingId;
-    const paymentKind = cs.metadata?.paymentKind ?? "deposit"; // "deposit" | "final"
+    // Slutbetalnings-checkout sätter metadata.kind = "final"; deposits saknar kind.
+    const paymentKind = cs.metadata?.kind ?? "deposit";
 
     // Idempotent: bara PENDING → COMPLETED (replay stämplar inte om paidAt).
     const claimed = await prisma.payment.updateMany({
@@ -47,13 +46,20 @@ export async function POST(req: NextRequest) {
     if (bookingId && claimed.count > 0) {
       const booking = await prisma.booking.findUnique({
         where: { id: bookingId },
-        include: { user: { select: { email: true, name: true } }, package: { select: { title: true, startDate: true } }, payments: true },
+        include: {
+          user: { select: { email: true, name: true } },
+          package: { select: { title: true, startDate: true } },
+          payments: true,
+        },
       });
       if (booking) {
         // Räkna om totalt betalt; sätt PAID_FULL om hela beloppet är betalt, annars PAID_DEPOSIT.
         const paid = booking.payments.filter((p) => p.status === "COMPLETED").reduce((s, p) => s + p.amount, 0);
         const newStatus = paid >= booking.totalAmount && booking.totalAmount > 0 ? "PAID_FULL" : "PAID_DEPOSIT";
-        await prisma.booking.update({ where: { id: bookingId }, data: { status: newStatus, step: 6 } }).catch(() => {});
+        await prisma.booking.update({
+          where: { id: bookingId },
+          data: { status: newStatus, step: 6 },
+        }).catch(() => {});
 
         // Kvitto-mejl till kunden.
         if (booking.user.email && booking.user.email !== "import@system.local") {
@@ -62,7 +68,9 @@ export async function POST(req: NextRequest) {
           await queueEmail({
             to: booking.user.email,
             recipientName: booking.user.name,
-            subject: isFinal ? `Slutbetalning mottagen — ${booking.package.title}` : `Anmälningsavgift mottagen — ${booking.package.title}`,
+            subject: isFinal
+              ? `Slutbetalning mottagen — ${booking.package.title}`
+              : `Anmälningsavgift mottagen — ${booking.package.title}`,
             body: renderTemplate(
               "Hej {{namn}},\n\n" +
               "Vi har mottagit din betalning på {{belopp}} kr för {{paket}} (ref {{ref}}).\n\n" +
@@ -81,7 +89,12 @@ export async function POST(req: NextRequest) {
             kind: isFinal ? EMAIL_KIND.FINAL_PAYMENT_RECEIVED : EMAIL_KIND.DEPOSIT_RECEIVED,
           });
         }
-        await logAudit({ action: isFinalLikeStatus(newStatus) ? "payment.fullReceived" : "payment.depositReceived", targetType: "Booking", targetId: booking.id, metadata: { amount: cs.amount_total, kind: paymentKind } });
+        await logAudit({
+          action: newStatus === "PAID_FULL" ? "payment.fullReceived" : "payment.depositReceived",
+          targetType: "Booking",
+          targetId: booking.id,
+          metadata: { amount: cs.amount_total, kind: paymentKind },
+        });
       }
     }
   } else if (event.type === "checkout.session.expired") {
