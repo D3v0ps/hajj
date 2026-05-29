@@ -138,7 +138,7 @@ function base64UrlEncode(s: string): string {
     .replace(/\//g, "_");
 }
 
-export function base64UrlDecode(s: string): string {
+function base64UrlDecode(s: string): string {
   const padLen = (4 - (s.length % 4)) % 4;
   const padded = s.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat(padLen);
   return Buffer.from(padded, "base64").toString("utf8");
