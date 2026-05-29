@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import { rateLimit, ipKey } from "@/lib/rate-limit";
 import { logAudit } from "@/lib/audit";
+import { sendVerificationEmail } from "@/app/actions/email-verification";
 
 const registerSchema = z
   .object({
@@ -52,13 +53,20 @@ export async function registerUser(formData: FormData): Promise<never> {
     redirect("/logga-in?registered=1");
   }
 
-  await prisma.user.create({
+  const newUser = await prisma.user.create({
     data: {
       name: parsed.data.name,
       email: parsed.data.email,
       passwordHash,
     },
   });
+
+  // Köa bekräftelsemejl. Får inte krascha registreringen om mejlmotorn strular.
+  try {
+    await sendVerificationEmail(newUser.id);
+  } catch (err) {
+    console.error("[registerUser] sendVerificationEmail failed:", err);
+  }
 
   try {
     await signIn("credentials", {

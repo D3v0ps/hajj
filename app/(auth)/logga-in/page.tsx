@@ -3,10 +3,10 @@ import { LoginForm } from "./LoginForm";
 
 export const metadata = { title: "Logga in" };
 
-type SearchParams = Promise<{ error?: string; registered?: string }>;
+type SearchParams = Promise<{ error?: string; registered?: string; reset?: string }>;
 
 export default async function LoggaInPage({ searchParams }: { searchParams: SearchParams }) {
-  const { error, registered } = await searchParams;
+  const { error, registered, reset } = await searchParams;
 
   const errorMsg = error === "credentials" ? "Fel e-post eller lösenord." : null;
 
@@ -24,7 +24,17 @@ export default async function LoggaInPage({ searchParams }: { searchParams: Sear
         </p>
       )}
 
+      {reset && (
+        <p style={{ padding: "12px 16px", background: "#E6F1EA", border: "1px solid var(--c-green-soft)", color: "var(--c-green)", fontSize: 14, marginBottom: 20 }}>
+          Lösenordet är uppdaterat. Logga in med ditt nya lösenord.
+        </p>
+      )}
+
       <LoginForm error={errorMsg} />
+
+      <p style={{ fontSize: 14, marginTop: 18, textAlign: "center" }}>
+        <a href="/glomt-losen" className="btn-link">Glömt lösenord?</a>
+      </p>
 
       <p style={{ fontSize: 14, marginTop: 28, textAlign: "center" }}>
         Inget konto än? <Link href="/skapa-konto" className="btn-link">Skapa konto</Link>
