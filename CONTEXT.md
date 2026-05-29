@@ -1,21 +1,39 @@
 # Hadj Omra Resor — Projektkontext & handoff
 
 > Levande handoff-dokument. Läs detta först i en ny chatt för full kontext.
-> **Senast uppdaterad:** 2026-05 efter 20-agents full audit + åtgärdspass + 10-agents gap-research.
+> **Senast uppdaterad:** 2026-05 efter Wave 0 + 12 parallella agent-leveranser (Fas 1-push).
 > **Branch:** `claude/hippo-memory-init-BxqGB` · **Live:** https://hajj.karimkhalil.se
 >
-> 📍 **Vad som återstår för helhetslösning:** se **`ROADMAP.md`** (prioriterad, faseindelad
-> gap-analys: enablers → Fas 1 MVP-blockers → Fas 2 helhet → Fas 3 tillväxt/härdning).
-> Beslut fattade (ROADMAP §6): BankID **nej**, flerspråk **ja**, Swish **avvaktar**,
-> Fortnox **ja**, WhatsApp **manuell länk**, bilder **senare**.
-> 📄 **`FUNKTIONSOVERSIKT.md`** = presentationsklar funktionslista för kunden.
+> 📍 **Roadmap:** `ROADMAP.md` (prioriterad gap-analys).
+> Beslut: BankID **nej**, flerspråk **ja**, Swish **avvaktar**, Fortnox **ja (CSV/SIE)**,
+> WhatsApp **manuell wa.me**, bilder **senare**.
+> 📄 **`FUNKTIONSOVERSIKT.md`** = presentationsklar funktionslista.
 >
-> **Senaste tillägg (2026-05):** (1) Admin laddar upp & granskar **resedokument per
-> resenär** (`lib/storage.ts` → lokal volym `/app/uploads`, `app/actions/documents.ts`,
-> serve via `/api/documents/[id]` rollskyddad; UI i bokningsdetaljens resenärsflik).
-> (2) **Pass-OCR** stödjer nu utländska pass — komplett ISO-3→svensk mappning +
-> `iso3ToSwedish()` i `lib/countries.ts`, OCR-felkorrigering i `PassportScanner.tsx`.
-> (3) BankID borttaget ur publik copy (demo-flödet har kvar låtsas-BankID-steg — TODO).
+> ## Stora tillägg 2026-05 (Fas 1 — 12 parallella agenter + cross-cutting work)
+>
+> **Foundations:** Migration 0009 (PasswordResetToken, EmailVerificationToken, Review,
+> AuditLog, Booking.terms*/refund*, RefundStatus enum, EmailSend.providerRef/kind/SENDING).
+> `lib/email.ts` (Resend HTTP + drainQueue), `lib/audit.ts`, `lib/rate-limit.ts`.
+> Docker-compose worker-sidecar: tömmer mejlkön var 60:e sek + nattlig pg_dump 02:30
+> (14d rotation, `db-backups`-volym) + dagligt reminders-cron 04:00.
+>
+> **Nya funktioner integrerade:**
+> - **E-postmotor + transaktionsmejl** (bekräftelse, kvitto, dokumentgranskning, slut­betalnings­påminnelse, pre-departure). Aktiveras med `RESEND_API_KEY` + `WORKER_TOKEN` GitHub-secrets.
+> - **Lösenordsåterställning** (`/glomt-losen`, `/aterstall-losen/[token]`) + **e-postverifiering** (`/verifiera-epost/[token]`).
+> - **Slutbetalning online** (`/min-sida/bokningar/[id]/slutbetalning`) via Stripe; webhook sätter PAID_FULL dynamiskt.
+> - **GDPR cookie-banner** med 3 kategorier; `cookieConsent`-cookie 12 mån.
+> - **Tvåvägs-meddelanden** kund↔kontor + readAt-spårning.
+> - **Kundens egen dokumentuppladdning** (`/min-sida/dokument`) + rollskyddad serve-route.
+> - **Profil/kontoinställningar** (namn, telefon, lösenord, e-postbyte med verifiering).
+> - **Omdömen efter resa** + admin-moderering (`/admin/recensioner`).
+> - **Avbokning/återbetalning** (`/min-sida/bokningar/[id]/avboka`) + admin-status hantering.
+> - **Bokföringsexport** (CSV/SIE4) `/admin/bokforing` för revisor (VMB-not).
+> - **Visumgrupp + rooming CSV-export** + **auditlogg-vy** (`/admin/audit`).
+> - **Publik sajt-polish:** flytande WhatsApp/tel-knapp, OG-bild, Product/Offer + BreadcrumbList + FAQPage JSON-LD, klickbara trust-signaler.
+> - **Härdning:** rate-limit på login (10/IP+5/email) + register (5/IP), Caddyfile-CSP, CI-grind (typecheck+eslint), `lib/observability.ts` (Sentry-stub), pass-utgångsvalidering (6 mån efter resa), villkors­acceptans registreras med versionsstämpel, audit-logg på key actions.
+> - Demo (`/demo`) omarbetat: BankID-steg → kontoskapande med e-post.
+>
+> **Konfig som krävs för full drift:** `RESEND_API_KEY`, `SITE_EMAIL_FROM`, `WORKER_TOKEN` (GitHub Actions secrets → docker-compose env). Saknas Resend = mejl köas men skickas inte.
 
 En komplett Hajj/Omra-bokningsplattform för den svenska resebyrån **Hadj Omra Resor**
 (ersätter gamla hajj.se). Publik sajt + kundportal + fullt backoffice/admin.
