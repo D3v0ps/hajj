@@ -430,11 +430,30 @@ model Payment {
   paidAt      DateTime?
   createdAt   DateTime      @default(now())
   metadata    Json?
+  // Fortnox-spårning: när en betalning skjuts in i Fortnox som verifikat så
+  // sparas serie+nummer + tidpunkt här — idempotensskydd mot dubbel-bokning.
+  fortnoxVoucherSeries String?
+  fortnoxVoucherNumber Int?
+  fortnoxPushedAt      DateTime?
 
   booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@index([bookingId])
   @@index([status])
+  @@index([fortnoxPushedAt])
+}
+
+model FortnoxConnection {
+  id              String   @id @default(cuid())
+  accessToken     String
+  refreshToken    String
+  tokenExpiresAt  DateTime
+  orgName         String?
+  orgNumber       String?
+  scope           String?
+  connectedById   String?
+  connectedAt     DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 enum PaymentMethod {
