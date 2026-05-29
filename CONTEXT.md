@@ -1,8 +1,12 @@
 # Hadj Omra Resor — Projektkontext & handoff
 
 > Levande handoff-dokument. Läs detta först i en ny chatt för full kontext.
-> **Senast uppdaterad:** 2026-05 efter 20-agents full audit + åtgärdspass.
+> **Senast uppdaterad:** 2026-05 efter 20-agents full audit + åtgärdspass + 10-agents gap-research.
 > **Branch:** `claude/hippo-memory-init-BxqGB` · **Live:** https://hajj.karimkhalil.se
+>
+> 📍 **Vad som återstår för helhetslösning:** se **`ROADMAP.md`** (prioriterad, faseindelad
+> gap-analys: enablers → Fas 1 MVP-blockers → Fas 2 helhet → Fas 3 tillväxt/härdning,
+> + beslutspunkter som kräver kundens svar).
 
 En komplett Hajj/Omra-bokningsplattform för den svenska resebyrån **Hadj Omra Resor**
 (ersätter gamla hajj.se). Publik sajt + kundportal + fullt backoffice/admin.
