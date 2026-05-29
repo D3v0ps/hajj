@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { SITE } from "@/lib/config";
+import { getTranslator, localeHref } from "@/lib/i18n";
 
-export function SiteFooter() {
+export async function SiteFooter() {
   const year = new Date().getFullYear();
+  const { t, locale } = await getTranslator();
+  const lh = (p: string) => localeHref(p, locale);
 
   return (
     <footer className="site-footer">
@@ -26,54 +29,50 @@ export function SiteFooter() {
           </div>
 
           <div>
-            <h4>Resor</h4>
+            <h4>{t("nav.omra")} / {t("nav.hajj")}</h4>
             <ul>
-              <li><Link href="/omra">Omra</Link></li>
-              <li><Link href="/hajj-2027">Hajj 2027</Link></li>
-              <li><Link href="/hadj-badal">Hadj Badal</Link></li>
-              <li><Link href="/visum">Visumservice</Link></li>
+              <li><Link href={lh("/omra")}>{t("nav.omra")}</Link></li>
+              <li><Link href={lh("/hajj-2027")}>{t("nav.hajj")}</Link></li>
+              <li><Link href={lh("/hadj-badal")}>{t("nav.badal")}</Link></li>
+              <li><Link href={lh("/visum")}>{t("nav.visa")}</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4>Förbered dig</h4>
+            <h4>{t("nav.prepare")}</h4>
             <ul>
-              <li><Link href="/forbered">Före resan</Link></li>
-              <li><Link href="/forbered#packlista">Packlista</Link></li>
-              <li><Link href="/forbered#ritual">Ritualguide</Link></li>
-              <li><Link href="/forbered#faq">Vanliga frågor</Link></li>
-              <li><Link href="/demo" style={{ color: "var(--c-gold)" }}>Demo · 60 sek →</Link></li>
+              <li><Link href={lh("/forbered")}>{t("nav.prepare")}</Link></li>
+              <li><Link href={lh("/demo")} style={{ color: "var(--c-gold)" }}>Demo →</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4>Konto</h4>
+            <h4>{t("nav.myPage")}</h4>
             <ul>
-              <li><Link href="/min-sida">Min sida</Link></li>
-              <li><Link href="/logga-in">Logga in</Link></li>
-              <li><Link href="/skapa-konto">Skapa konto</Link></li>
-              <li><Link href="/villkor">Resevillkor</Link></li>
+              <li><Link href="/min-sida">{t("nav.myPage")}</Link></li>
+              <li><Link href="/logga-in">{t("nav.login")}</Link></li>
+              <li><Link href="/skapa-konto">{t("nav.createAccount")}</Link></li>
+              <li><Link href={lh("/villkor")}>{t("footer.terms")}</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4>Kontakt</h4>
+            <h4>{t("nav.contact")}</h4>
             <ul>
               <li>Stockholm — {SITE.offices.stockholm.address}</li>
-              <li>Göteborg — efter bokning</li>
               <li>{SITE.phoneDisplay}</li>
               <li><a href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
-              <li><Link href="/kontakt">Kontaktformulär</Link></li>
+              <li><Link href={lh("/kontakt")}>{t("nav.contact")}</Link></li>
             </ul>
           </div>
         </div>
 
         <div className="footer-bottom">
-          <span>© {year} {SITE.legalName} · Org.nr {SITE.orgNr}</span>
+          <span>© {year} {SITE.legalName} · Org.nr {SITE.orgNr} · {t("footer.rights")}</span>
           <div className="legal-links">
-            <Link href="/integritet">Integritetspolicy</Link>
-            <Link href="/cookies">Cookies</Link>
-            <Link href="/tillganglighet">Tillgänglighet</Link>
+            <Link href={lh("/integritet")}>{t("footer.privacy")}</Link>
+            <Link href={lh("/cookies")}>{t("footer.cookies")}</Link>
+            <Link href={lh("/tillganglighet")}>{t("footer.accessibility")}</Link>
           </div>
         </div>
       </div>

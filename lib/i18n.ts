@@ -39,6 +39,32 @@ export function isRtl(locale: Locale): boolean {
   return RTL_LOCALES.includes(locale);
 }
 
+/**
+ * Bygger en intern URL med rätt locale-prefix.
+ *  - `sv` (default): ingen prefix → `/omra`
+ *  - `en`/`ar`: prefix → `/en/omra`, `/ar/omra`
+ * Idempotent: dubbel-prefix undviks.
+ */
+export function localeHref(path: string, locale: Locale): string {
+  if (!path.startsWith("/")) path = `/${path}`;
+  if (locale === DEFAULT_LOCALE) return path;
+  // Trimma ev. befintligt locale-prefix
+  for (const l of LOCALES) {
+    if (path === `/${l}` || path.startsWith(`/${l}/`)) {
+      path = path.slice(l.length + 1) || "/";
+      break;
+    }
+  }
+  return path === "/" ? `/${locale}` : `/${locale}${path}`;
+}
+
+/** Returnerar t-funktion + locale så en server-komponent kan göra båda i ett anrop. */
+export async function getTranslator(): Promise<{ t: (k: string) => string; locale: Locale }> {
+  const locale = await getLocale();
+  const t = await getT(locale);
+  return { t, locale };
+}
+
 import type { Messages } from "./i18n.messages";
 import svMessages from "@/messages/sv.json";
 import enMessages from "@/messages/en.json";

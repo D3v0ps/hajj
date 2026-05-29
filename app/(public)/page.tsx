@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { LeadQuoteForm } from "@/components/site/LeadQuoteForm";
+import { getTranslator, localeHref } from "@/lib/i18n";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -9,17 +10,28 @@ export const metadata: Metadata = {
   title: "Hadj Omra Resor — Hajj & Omra från Sverige sedan 1985",
   description:
     "Sveriges äldsta arrangör av Hajj och Omra. Resegaranti hos Kammarkollegiet, svensk reseledare, Swish och Klarna. Boka tryggt från Stockholm.",
-  alternates: { canonical: "/" },
+  alternates: {
+    canonical: "/",
+    languages: {
+      sv: "/",
+      en: "/en",
+      ar: "/ar",
+      "x-default": "/",
+    },
+  },
   openGraph: {
     title: "Hadj Omra Resor — Hajj & Omra från Sverige sedan 1985",
     description:
       "Sveriges äldsta arrangör av Hajj och Omra. Resegaranti hos Kammarkollegiet, svensk reseledare, Swish och Klarna.",
     type: "website",
     locale: "sv_SE",
+    alternateLocale: ["en_US", "ar"],
   },
 };
 
 export default async function HomePage() {
+  const { t, locale } = await getTranslator();
+  const lh = (p: string) => localeHref(p, locale);
   const featured = await prisma.package
     .findMany({
       where: { status: "PUBLISHED" },
@@ -38,52 +50,40 @@ export default async function HomePage() {
             <div>
               <div className="hero-eyebrow">
                 <span className="line" />
-                <span className="eyebrow gold">Hajj · Omra · Hadj Badal</span>
+                <span className="eyebrow gold">{t("home.heroEyebrow")}</span>
               </div>
               <h1>
-                Vallfärden börjar med <em>förtroende</em> — sedan 1985.
+                {t("home.heroTitleA")} <em>{t("home.heroTitleEm")}</em> {t("home.heroTitleB")}
               </h1>
-              <p className="hero-lede">
-                Sveriges äldsta arrangör av Hajj och Omra. Resegaranti hos
-                Kammarkollegiet, svensk service från start till hemkomst, och
-                den lokala kunskap som bara fyrtio års erfarenhet ger.
-              </p>
+              <p className="hero-lede">{t("home.heroLede")}</p>
               <p className="hero-accred">
-                <span className="dot" aria-hidden="true">●</span> Medlem i SRF
-                <span className="sep" aria-hidden="true"> · </span>
-                IATA
-                <span className="sep" aria-hidden="true"> · </span>
-                Kammarkollegiet
+                <span className="dot" aria-hidden="true">●</span> {t("home.accreditation")}
               </p>
               <div className="hero-cta-row">
-                <Link href="/omra" className="btn btn-primary">
-                  Se Omra-paket →
+                <Link href={lh("/omra")} className="btn btn-primary">
+                  {t("home.ctaOmra")} →
                 </Link>
-                <Link href="/hajj-2027" className="btn btn-gold">
-                  Hajj 2027 — anmäl intresse
+                <Link href={lh("/hajj-2027")} className="btn btn-gold">
+                  {t("home.ctaHajj")}
                 </Link>
               </div>
 
               <div className="hero-jumpers">
-                <Link href="/omra">
-                  <span className="num">02 · OMRA</span>
-                  <span className="label">Året runt</span>
-                  <span className="desc">Påsk, sommar, vinter</span>
+                <Link href={lh("/omra")}>
+                  <span className="num">02 · {t("nav.omra").toUpperCase()}</span>
+                  <span className="label">{t("nav.omra")}</span>
                 </Link>
-                <Link href="/hajj-2027">
-                  <span className="num">03 · HAJJ 2027</span>
-                  <span className="label">Begränsade platser</span>
-                  <span className="desc">Anmäl intresse</span>
+                <Link href={lh("/hajj-2027")}>
+                  <span className="num">03 · {t("nav.hajj").toUpperCase()}</span>
+                  <span className="label">{t("nav.hajj")}</span>
                 </Link>
-                <Link href="/hadj-badal">
-                  <span className="num">04 · BADAL</span>
-                  <span className="label">Hajj i annans namn</span>
-                  <span className="desc">Bokningsbar tjänst</span>
+                <Link href={lh("/hadj-badal")}>
+                  <span className="num">04 · {t("nav.badal").toUpperCase()}</span>
+                  <span className="label">{t("nav.badal")}</span>
                 </Link>
-                <Link href="/visum">
-                  <span className="num">05 · VISUM</span>
-                  <span className="label">Visumservice</span>
-                  <span className="desc">Med dokumentstöd</span>
+                <Link href={lh("/visum")}>
+                  <span className="num">05 · {t("nav.visa").toUpperCase()}</span>
+                  <span className="label">{t("nav.visa")}</span>
                 </Link>
               </div>
             </div>
@@ -97,40 +97,31 @@ export default async function HomePage() {
         <div className="container">
           <div className="trust-bar">
             <div className="ti">
-              <div className="v">40+ år</div>
-              <div className="l">Erfarenhet</div>
+              <div className="v">{t("home.trustYears")}</div>
+              <div className="l">{t("home.trustYearsLabel")}</div>
             </div>
-            <a
-              className="ti ti-link"
-              href="https://www.kammarkollegiet.se/"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Resegaranti hos Kammarkollegiet — öppnas i ny flik"
-            >
-              <div className="v">Kammarkollegiet</div>
-              <div className="l">Resegaranti ↗</div>
+            <a className="ti ti-link" href="https://www.kammarkollegiet.se/" target="_blank" rel="noopener noreferrer">
+              <div className="v">{t("home.trustGuarantee")}</div>
+              <div className="l">{t("home.trustGuaranteeLabel")} ↗</div>
             </a>
             <div className="ti">
-              <div className="v">Stockholm · Göteborg</div>
-              <div className="l">Svenska kontor</div>
+              <div className="v">{t("home.trustOffices")}</div>
+              <div className="l">{t("home.trustOfficesLabel")}</div>
             </div>
             <div className="ti">
-              <div className="v">Swish · Klarna</div>
-              <div className="l">Svensk betalkultur</div>
+              <div className="v">{t("home.trustPayments")}</div>
+              <div className="l">{t("home.trustPaymentsLabel")}</div>
             </div>
-            {/* TODO: ersätt statiska 4.8 med beräknat snitt från Review-tabellen
-                (prisma.review.aggregate({ _avg: { rating: true }, _count: true }))
-                så snart Review-modellen finns. Visa då även antal omdömen. */}
             <div className="ti">
               <div className="v">
                 <span aria-hidden="true" style={{ color: "var(--c-gold)" }}>★</span>{" "}
-                4.8 / 5
+                {t("home.trustRating")}
               </div>
-              <div className="l">Omdömen</div>
+              <div className="l">{t("home.trustRatingLabel")}</div>
             </div>
             <div className="ti">
-              <div className="v">SV · EN · AR</div>
-              <div className="l">Språk</div>
+              <div className="v">{t("home.trustLanguages")}</div>
+              <div className="l">{t("home.trustLanguagesLabel")}</div>
             </div>
           </div>
         </div>

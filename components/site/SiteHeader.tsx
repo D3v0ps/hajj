@@ -2,22 +2,23 @@ import Link from "next/link";
 import { SITE } from "@/lib/config";
 import { MobileMenu } from "./MobileMenu";
 import { LocaleSwitcher } from "./LocaleSwitcher";
-import { getT } from "@/lib/i18n";
+import { getTranslator, localeHref } from "@/lib/i18n";
 
 export async function SiteHeader() {
-  const t = await getT();
+  const { t, locale } = await getTranslator();
   const NAV = [
-    { href: "/omra", label: t("nav.omra") },
-    { href: "/hajj-2027", label: t("nav.hajj") },
-    { href: "/visum", label: t("nav.visa") },
-    { href: "/hadj-badal", label: t("nav.badal") },
-    { href: "/forbered", label: t("nav.prepare") },
-    { href: "/om-oss", label: t("nav.about") },
+    { href: localeHref("/omra", locale), label: t("nav.omra") },
+    { href: localeHref("/hajj-2027", locale), label: t("nav.hajj") },
+    { href: localeHref("/visum", locale), label: t("nav.visa") },
+    { href: localeHref("/hadj-badal", locale), label: t("nav.badal") },
+    { href: localeHref("/forbered", locale), label: t("nav.prepare") },
+    { href: localeHref("/om-oss", locale), label: t("nav.about") },
   ];
+  const homeHref = localeHref("/", locale);
   return (
     <header className="site-header">
       <div className="container">
-        <Link href="/" className="brand" aria-label="Hadj Omra Resor — startsidan">
+        <Link href={homeHref} className="brand" aria-label="Hadj Omra Resor — startsidan">
           <span className="brand-mark" lang="ar" aria-hidden="true">ح</span>
           <span className="brand-name">
             Hadj Omra Resor
