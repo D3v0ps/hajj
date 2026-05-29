@@ -45,10 +45,10 @@ export default async function BokningDetailPage({ params }: { params: Params }) 
           <li key={t.id}>
             <strong>{t.firstName} {t.lastName}</strong>
             <span className="dim">
-              {t.personnummer ?? "—"}
+              {t.ageCategory === "ADULT" ? "Vuxen" : t.ageCategory === "CHILD" ? "Barn" : "Spädbarn"}
+              {" · "}{t.personnummer ?? "—"}
               {t.passportNo && ` · pass ${t.passportNo}`}
-              {t.isMahram && " · mahram"}
-              {t.needsAssist && " · assistans"}
+              {t.nationality && ` · ${t.nationality}`}
             </span>
           </li>
         ))}

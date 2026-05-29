@@ -22,9 +22,10 @@ export default async function ResenarerPage({ searchParams }: { searchParams: Se
   if (trip && trip !== "ALL") {
     where.booking = { packageId: trip };
   }
-  if (flag === "assist") where.needsAssist = true;
-  if (flag === "mahram") where.isMahram = true;
   if (flag === "nopass") where.passportNo = null;
+  if (flag === "adult") where.ageCategory = "ADULT";
+  if (flag === "child") where.ageCategory = "CHILD";
+  if (flag === "infant") where.ageCategory = "INFANT";
 
   const [travelers, packages, totalCount] = await Promise.all([
     prisma.traveler.findMany({
@@ -83,9 +84,10 @@ export default async function ResenarerPage({ searchParams }: { searchParams: Se
           ))}
         </select>
         <select name="flag" defaultValue={flag ?? ""}>
-          <option value="">Alla</option>
-          <option value="assist">Behöver assistans</option>
-          <option value="mahram">Mahram</option>
+          <option value="">Alla kategorier</option>
+          <option value="adult">Vuxna</option>
+          <option value="child">Barn</option>
+          <option value="infant">Spädbarn</option>
           <option value="nopass">Pass saknas</option>
         </select>
         <button type="submit" className="btn btn-primary" style={{ padding: "10px 18px", fontSize: 13 }}>
@@ -114,8 +116,7 @@ export default async function ResenarerPage({ searchParams }: { searchParams: Se
               <div className="rs-card-name">
                 <h3>{t.firstName} {t.lastName}</h3>
                 <div className="rs-card-badges">
-                  {t.needsAssist && <span className="adm-pill warn">Assistans</span>}
-                  {t.isMahram && <span className="adm-pill gold">Mahram</span>}
+                  <span className="adm-pill outline">{t.ageCategory === "ADULT" ? "Vuxen" : t.ageCategory === "CHILD" ? "Barn" : "Spädbarn"}</span>
                   {!t.passportNo && <span className="adm-pill outline">Pass saknas</span>}
                 </div>
               </div>

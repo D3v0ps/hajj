@@ -86,9 +86,12 @@ model Package {
   description  String?
   city         String?
   departCity   String?
+  departCities String[]
   startDate    DateTime?
   endDate      DateTime?
   durationDays Int?
+  nightsMakkah Int?
+  nightsMadinah Int?
   groupSize    Int?
   status       PackageStatus @default(DRAFT)
   inclusions   String[]
@@ -161,6 +164,11 @@ model Booking {
   status        BookingStatus @default(DRAFT)
   step          Int           @default(1)
   travelerCount Int           @default(1)
+  adultCount    Int           @default(1)
+  childCount    Int           @default(0)
+  infantCount   Int           @default(0)
+  tierQuantities Json?
+  departureCity String?
   totalAmount   Int           @default(0)
   depositAmount Int           @default(5000)
   notes         String?
@@ -202,16 +210,22 @@ model Traveler {
   lastName        String
   email           String?
   phone           String?
+  address         String?
   personnummer    String?
   passportNo      String?
   passportExp     DateTime?
+  passIssueDate   DateTime?
+  passIssuePlace  String?
   birthDate       DateTime?
   gender          String?
   nationality     String?
   civilStatus     String?
+  occupation      String?
   countryOfOrigin String?
+  birthCountry    String?
   birthCity       String?
   residenceCity   String?
+  ageCategory     AgeCategory @default(ADULT)
   roomAssignment  String?
   flightOut       String?
   flightReturn    String?

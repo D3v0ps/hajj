@@ -56,17 +56,31 @@ export function PackageForm({ pkg, action, submitLabel = "Spara" }: { pkg?: Pack
               <option value="VISUM">Visum</option>
             </select>
           </div>
-          <div className="field">
-            <label>Avgångsstad</label>
-            <input name="departCity" defaultValue={pkg?.departCity ?? ""} placeholder="Stockholm" />
+          <div className="field" style={{ gridColumn: "1 / -1" }}>
+            <label>Avreseorter (en per rad — flera tillåtna)</label>
+            <textarea
+              name="departCities"
+              rows={3}
+              defaultValue={(pkg?.departCities && pkg.departCities.length > 0 ? pkg.departCities : pkg?.departCity ? [pkg.departCity] : []).join("\n")}
+              placeholder={"Stockholm\nGöteborg\nMalmö"}
+            />
+            <span className="hint">Resenären väljer avreseort i bokningen. Skriv en stad per rad.</span>
           </div>
           <div className="field">
-            <label>Stad</label>
+            <label>Stad (destination)</label>
             <input name="city" defaultValue={pkg?.city ?? ""} placeholder="Mecka + Medina" />
           </div>
           <div className="field">
-            <label>Antal dagar</label>
+            <label>Antal dagar totalt</label>
             <input name="durationDays" type="number" defaultValue={pkg?.durationDays ?? ""} />
+          </div>
+          <div className="field">
+            <label>Nätter i Makkah</label>
+            <input name="nightsMakkah" type="number" min="0" defaultValue={pkg?.nightsMakkah ?? ""} placeholder="t.ex. 5" />
+          </div>
+          <div className="field">
+            <label>Nätter i Madinah</label>
+            <input name="nightsMadinah" type="number" min="0" defaultValue={pkg?.nightsMadinah ?? ""} placeholder="t.ex. 4" />
           </div>
           <div className="field">
             <label>Startdatum</label>
@@ -75,10 +89,6 @@ export function PackageForm({ pkg, action, submitLabel = "Spara" }: { pkg?: Pack
           <div className="field">
             <label>Slutdatum</label>
             <input name="endDate" type="date" defaultValue={pkg?.endDate ? new Date(pkg.endDate).toISOString().slice(0, 10) : ""} />
-          </div>
-          <div className="field">
-            <label>Gruppstorlek (max)</label>
-            <input name="groupSize" type="number" defaultValue={pkg?.groupSize ?? ""} />
           </div>
         </div>
 

@@ -13,16 +13,15 @@ const NAV = [
     items: [
       { href: "/admin", label: "Dashboard", icon: "◉" },
       { href: "/admin/bokningar", label: "Bokningar", icon: "☰" },
-      { href: "/admin/leads", label: "Leads", icon: "✦" },
+      { href: "/admin/leads", label: "Hajj intresseanmälan", icon: "✦" },
     ],
   },
   {
     label: "Operations",
     items: [
-      { href: "/admin/resor", label: "Resor", icon: "✈" },
+      { href: "/admin/paket", label: "Resor & paket", icon: "✈" },
       { href: "/admin/resegrupper", label: "Resegrupper", icon: "⊞" },
       { href: "/admin/resenarer", label: "Resenärer", icon: "◎" },
-      { href: "/admin/paket", label: "Paketadmin", icon: "▤" },
       { href: "/admin/betalningar", label: "Betalningar", icon: "₪" },
     ],
   },

@@ -9,7 +9,7 @@ import { StepPay } from "./StepPay";
 import { StepDone } from "./StepDone";
 
 type Params = Promise<{ bookingId: string }>;
-type SearchParams = Promise<{ error?: string }>;
+type SearchParams = Promise<{ error?: string; paid?: string; cancelled?: string }>;
 
 export default async function BookingPage({
   params,
@@ -19,7 +19,7 @@ export default async function BookingPage({
   searchParams: SearchParams;
 }) {
   const { bookingId } = await params;
-  const { error } = await searchParams;
+  const { error, paid, cancelled } = await searchParams;
   const session = await auth();
   if (!session?.user?.id) redirect(`/logga-in?next=${encodeURIComponent(`/boka/${bookingId}`)}`);
 
@@ -46,6 +46,16 @@ export default async function BookingPage({
               <strong>Något stämde inte:</strong> {error}
             </div>
           )}
+          {paid && (
+            <div role="status" className="bo-success">
+              <strong>Betalning mottagen.</strong> Tack — din anmälningsavgift är registrerad.
+            </div>
+          )}
+          {cancelled && (
+            <div role="status" className="bo-error">
+              Betalningen avbröts. Du kan försöka igen nedan.
+            </div>
+          )}
 
           {booking.step === 2 && <StepRoom booking={booking} />}
           {booking.step === 3 && <StepTravelers booking={booking} />}
@@ -62,6 +72,14 @@ export default async function BookingPage({
           background: #FBE9E2;
           border: 1px solid var(--c-warn);
           color: var(--c-warn);
+          padding: 14px 18px;
+          margin-bottom: 24px;
+          font-size: 14px;
+        }
+        .bo-success {
+          background: #E6F1EA;
+          border: 1px solid var(--c-green-soft);
+          color: var(--c-green);
           padding: 14px 18px;
           margin-bottom: 24px;
           font-size: 14px;

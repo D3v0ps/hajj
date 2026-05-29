@@ -37,14 +37,20 @@ export function StepReview({ booking }: Props) {
         </div>
 
         <div>
-          <span className="eyebrow">Rumstyp</span>
-          <p className="serif" style={{ fontSize: 18, margin: "6px 0 0" }}>{booking.tier?.name ?? "—"}</p>
-          <span className="dim" style={{ fontSize: 13 }}>{booking.tier?.pricePerPerson?.toLocaleString("sv-SE")} kr per person</span>
+          <span className="eyebrow">Avreseort</span>
+          <p className="serif" style={{ fontSize: 18, margin: "6px 0 0" }}>{booking.departureCity ?? "—"}</p>
         </div>
 
         <div>
           <span className="eyebrow">Resenärer</span>
-          <p className="serif" style={{ fontSize: 18, margin: "6px 0 0" }}>{booking.travelers.length} st</p>
+          <p className="serif" style={{ fontSize: 18, margin: "6px 0 0" }}>{booking.travelerCount} st</p>
+          <span className="dim" style={{ fontSize: 13 }}>
+            {[
+              booking.adultCount > 0 ? `${booking.adultCount} vuxna` : null,
+              booking.childCount > 0 ? `${booking.childCount} barn` : null,
+              booking.infantCount > 0 ? `${booking.infantCount} spädbarn` : null,
+            ].filter(Boolean).join(" · ")}
+          </span>
         </div>
       </div>
 
@@ -54,10 +60,10 @@ export function StepReview({ booking }: Props) {
           <li key={t.id}>
             <strong>{t.firstName} {t.lastName}</strong>
             <span className="dim" style={{ fontSize: 13 }}>
-              {t.personnummer ?? "Personnummer ej angivet"}
+              {t.ageCategory === "ADULT" ? "Vuxen" : t.ageCategory === "CHILD" ? "Barn" : "Spädbarn"}
+              {" · "}{t.personnummer ?? "Personnummer ej angivet"}
               {t.passportNo && ` · Pass ${t.passportNo}`}
-              {t.isMahram && " · Mahram"}
-              {t.needsAssist && " · Assistans"}
+              {t.nationality && ` · ${t.nationality}`}
             </span>
           </li>
         ))}

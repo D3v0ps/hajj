@@ -23,8 +23,8 @@ export default async function AdminLeadsPage() {
 
   return (
     <div>
-      <span className="eyebrow gold">Leads</span>
-      <h1 style={{ fontSize: 32, marginTop: 12, marginBottom: 24 }}>Inkomna förfrågningar</h1>
+      <span className="eyebrow gold">Hajj intresseanmälan</span>
+      <h1 style={{ fontSize: 32, marginTop: 12, marginBottom: 24 }}>Hajj intresseanmälningar</h1>
 
       <div className="table-wrap">
       <table className="table">

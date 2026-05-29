@@ -29,7 +29,17 @@ export default async function PackageDetailPage({ params }: { params: Params }) 
 
   if (!pkg) notFound();
 
-  const fromPrice = pkg.tiers[0]?.pricePerPerson ?? 0;
+  // Visa fyrbäddspriset (vuxen) överst — inte det billigaste barn-/spädbarnspriset.
+  const adultQuad = pkg.tiers
+    .filter((t) => t.ageCategory === "ADULT" && t.roomType === "QUAD")
+    .sort((a, b) => a.pricePerPerson - b.pricePerPerson)[0];
+  const adultCheapest = pkg.tiers
+    .filter((t) => t.ageCategory === "ADULT")
+    .sort((a, b) => a.pricePerPerson - b.pricePerPerson)[0];
+  const fromTier = adultQuad ?? adultCheapest ?? pkg.tiers[0];
+  const fromPrice = fromTier?.pricePerPerson ?? 0;
+  const fromLabel = adultQuad ? "Fyrbädd, pris från" : "Pris från";
+  const departCities = pkg.departCities.length > 0 ? pkg.departCities : pkg.departCity ? [pkg.departCity] : [];
   const fmtDate = (d: Date | null) => (d ? new Date(d).toLocaleDateString("sv-SE") : "—");
 
   return (
@@ -104,7 +114,7 @@ export default async function PackageDetailPage({ params }: { params: Params }) 
               <span className="eyebrow gold">Boka direkt</span>
 
               <div style={{ marginTop: 14 }}>
-                <span className="dim" style={{ fontSize: 12 }}>Pris från</span>
+                <span className="dim" style={{ fontSize: 12 }}>{fromLabel}</span>
                 <div className="serif tnum" style={{ fontSize: 36, color: "var(--c-ink)", lineHeight: 1 }}>
                   {fromPrice.toLocaleString("sv-SE")} kr
                 </div>
@@ -132,16 +142,22 @@ export default async function PackageDetailPage({ params }: { params: Params }) 
                     <dd>{pkg.durationDays}</dd>
                   </>
                 )}
-                {pkg.departCity && (
+                {pkg.nightsMakkah != null && (
                   <>
-                    <dt>Avgång</dt>
-                    <dd>{pkg.departCity}</dd>
+                    <dt>Nätter Makkah</dt>
+                    <dd>{pkg.nightsMakkah}</dd>
                   </>
                 )}
-                {pkg.groupSize && (
+                {pkg.nightsMadinah != null && (
                   <>
-                    <dt>Gruppstorlek</dt>
-                    <dd>max {pkg.groupSize}</dd>
+                    <dt>Nätter Madinah</dt>
+                    <dd>{pkg.nightsMadinah}</dd>
+                  </>
+                )}
+                {departCities.length > 0 && (
+                  <>
+                    <dt>Avreseort{departCities.length > 1 ? "er" : ""}</dt>
+                    <dd>{departCities.join(", ")}</dd>
                   </>
                 )}
               </dl>

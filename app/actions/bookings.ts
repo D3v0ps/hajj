@@ -6,6 +6,8 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
+const DEPOSIT_PER_PERSON = 5000;
+
 async function requireUser() {
   const session = await auth();
   if (!session?.user?.id) redirect("/logga-in");
@@ -39,17 +41,17 @@ export async function createBooking(packageId: string, _formData?: FormData): Pr
   });
   if (existing) redirect(`/boka/${existing.id}`);
 
-  const tier = pkg.tiers[0] ?? null;
-
   const booking = await prisma.booking.create({
     data: {
       userId: user.id,
       packageId: pkg.id,
-      tierId: tier?.id ?? null,
       step: 2,
-      travelerCount: 1,
-      depositAmount: 5000,
-      totalAmount: tier?.pricePerPerson ?? 0,
+      travelerCount: 0,
+      adultCount: 0,
+      childCount: 0,
+      infantCount: 0,
+      depositAmount: DEPOSIT_PER_PERSON,
+      totalAmount: 0,
       contactEmail: user.email ?? undefined,
     },
   });
@@ -57,30 +59,53 @@ export async function createBooking(packageId: string, _formData?: FormData): Pr
   redirect(`/boka/${booking.id}`);
 }
 
-const roomSchema = z.object({
-  tierId: z.string().min(1, "Välj rumstyp"),
-  travelerCount: z.coerce.number().int().min(1).max(10),
-});
-
-export async function saveRoomChoice(bookingId: string, formData: FormData): Promise<void> {
+/**
+ * Steg 2: spara antal per priskombination (rumstyp × ålderskategori) + avreseort.
+ * Räknar ut totalt antal resenärer, ålderskategorifördelning och totalpris.
+ */
+export async function saveTierQuantities(bookingId: string, formData: FormData): Promise<void> {
   const user = await requireUser();
   const booking = await loadOwnedBooking(bookingId, user.id);
 
-  const parsed = roomSchema.safeParse({
-    tierId: formData.get("tierId"),
-    travelerCount: formData.get("travelerCount"),
-  });
-  if (!parsed.success) flashError(bookingId, parsed.error.issues[0]?.message ?? "Ogiltigt val");
+  const quantities: Record<string, number> = {};
+  let total = 0;
+  let adults = 0;
+  let children = 0;
+  let infants = 0;
+  let totalAmount = 0;
+  let primaryTierId: string | null = null;
 
-  const tier = booking.package.tiers.find((t) => t.id === parsed.data!.tierId);
-  if (!tier) flashError(bookingId, "Ogiltig rumstyp");
+  for (const tier of booking.package.tiers) {
+    const raw = formData.get(`qty_${tier.id}`);
+    const qty = Math.max(0, Math.min(20, parseInt(String(raw ?? "0"), 10) || 0));
+    if (qty > 0) {
+      quantities[tier.id] = qty;
+      total += qty;
+      totalAmount += qty * tier.pricePerPerson;
+      if (tier.ageCategory === "CHILD") children += qty;
+      else if (tier.ageCategory === "INFANT") infants += qty;
+      else adults += qty;
+      if (!primaryTierId && tier.ageCategory === "ADULT") primaryTierId = tier.id;
+    }
+  }
+
+  if (total === 0) flashError(bookingId, "Välj minst en resenär (ange antal).");
+
+  const departureCity = String(formData.get("departureCity") ?? "").trim() || null;
 
   await prisma.booking.update({
     where: { id: booking.id },
     data: {
-      tierId: tier!.id,
-      travelerCount: parsed.data!.travelerCount,
-      totalAmount: tier!.pricePerPerson * parsed.data!.travelerCount,
+      tierId: primaryTierId ?? booking.package.tiers[0]?.id ?? null,
+      tierQuantities: quantities,
+      departureCity,
+      travelerCount: total,
+      adultCount: adults,
+      childCount: children,
+      infantCount: infants,
+      // Spädbarn betalar oftast ingen anmälningsavgift — räkna depositen på vuxna + barn.
+      depositAmount: DEPOSIT_PER_PERSON,
+      totalAmount,
       step: Math.max(booking.step, 3),
     },
   });
@@ -90,14 +115,24 @@ export async function saveRoomChoice(bookingId: string, formData: FormData): Pro
 }
 
 const travelerSchema = z.object({
-  firstName: z.string().min(1).max(80),
-  lastName: z.string().min(1).max(80),
+  firstName: z.string().min(1, "Förnamn krävs").max(80),
+  lastName: z.string().min(1, "Efternamn krävs").max(80),
+  ageCategory: z.enum(["ADULT", "CHILD", "INFANT"]).default("ADULT"),
+  email: z.string().email().optional().or(z.literal("")),
+  phone: z.string().max(40).optional().or(z.literal("")),
+  address: z.string().max(200).optional().or(z.literal("")),
   personnummer: z.string().max(13).optional().or(z.literal("")),
   passportNo: z.string().max(20).optional().or(z.literal("")),
+  passportExp: z.string().optional().or(z.literal("")),
+  passIssueDate: z.string().optional().or(z.literal("")),
+  passIssuePlace: z.string().max(120).optional().or(z.literal("")),
   birthDate: z.string().optional().or(z.literal("")),
   gender: z.string().optional().or(z.literal("")),
-  isMahram: z.string().optional().or(z.literal("")),
-  needsAssist: z.string().optional().or(z.literal("")),
+  nationality: z.string().max(80).optional().or(z.literal("")),
+  civilStatus: z.string().max(40).optional().or(z.literal("")),
+  occupation: z.string().max(80).optional().or(z.literal("")),
+  birthCountry: z.string().max(80).optional().or(z.literal("")),
+  birthCity: z.string().max(80).optional().or(z.literal("")),
 });
 
 export async function addTraveler(bookingId: string, formData: FormData): Promise<void> {
@@ -107,12 +142,22 @@ export async function addTraveler(bookingId: string, formData: FormData): Promis
   const parsed = travelerSchema.safeParse({
     firstName: formData.get("firstName"),
     lastName: formData.get("lastName"),
+    ageCategory: formData.get("ageCategory") || "ADULT",
+    email: formData.get("email"),
+    phone: formData.get("phone"),
+    address: formData.get("address"),
     personnummer: formData.get("personnummer"),
     passportNo: formData.get("passportNo"),
+    passportExp: formData.get("passportExp"),
+    passIssueDate: formData.get("passIssueDate"),
+    passIssuePlace: formData.get("passIssuePlace"),
     birthDate: formData.get("birthDate"),
     gender: formData.get("gender"),
-    isMahram: formData.get("isMahram"),
-    needsAssist: formData.get("needsAssist"),
+    nationality: formData.get("nationality"),
+    civilStatus: formData.get("civilStatus"),
+    occupation: formData.get("occupation"),
+    birthCountry: formData.get("birthCountry"),
+    birthCity: formData.get("birthCity"),
   });
   if (!parsed.success) flashError(bookingId, parsed.error.issues[0]?.message ?? "Ogiltigt formulär");
 
@@ -123,16 +168,27 @@ export async function addTraveler(bookingId: string, formData: FormData): Promis
       bookingId: booking.id,
       firstName: d.firstName,
       lastName: d.lastName,
+      ageCategory: d.ageCategory,
+      email: d.email || null,
+      phone: d.phone || null,
+      address: d.address || null,
       personnummer: d.personnummer || null,
       passportNo: d.passportNo || null,
+      passportExp: d.passportExp ? new Date(d.passportExp) : null,
+      passIssueDate: d.passIssueDate ? new Date(d.passIssueDate) : null,
+      passIssuePlace: d.passIssuePlace || null,
       birthDate: d.birthDate ? new Date(d.birthDate) : null,
       gender: d.gender || null,
-      isMahram: d.isMahram === "on",
-      needsAssist: d.needsAssist === "on",
+      nationality: d.nationality || null,
+      civilStatus: d.civilStatus || null,
+      occupation: d.occupation || null,
+      birthCountry: d.birthCountry || null,
+      birthCity: d.birthCity || null,
     },
   });
 
   revalidatePath(`/boka/${booking.id}`);
+  redirect(`/boka/${booking.id}`);
 }
 
 export async function removeTraveler(bookingId: string, travelerId: string): Promise<void> {
@@ -140,12 +196,18 @@ export async function removeTraveler(bookingId: string, travelerId: string): Pro
   await loadOwnedBooking(bookingId, user.id);
   await prisma.traveler.deleteMany({ where: { id: travelerId, userId: user.id, bookingId } });
   revalidatePath(`/boka/${bookingId}`);
+  redirect(`/boka/${bookingId}`);
 }
 
 export async function advanceToReview(bookingId: string): Promise<void> {
   const user = await requireUser();
   const booking = await loadOwnedBooking(bookingId, user.id);
-  if (booking.travelers.length < 1) flashError(bookingId, "Lägg till minst en resenär först");
+  if (booking.travelers.length < booking.travelerCount) {
+    flashError(
+      bookingId,
+      `Registrera alla ${booking.travelerCount} resenärer först (${booking.travelers.length} klara, ${booking.travelerCount - booking.travelers.length} kvar).`,
+    );
+  }
   await prisma.booking.update({
     where: { id: booking.id },
     data: { step: Math.max(booking.step, 4) },
@@ -178,10 +240,13 @@ export async function recordDepositIntent(
   const user = await requireUser();
   const booking = await loadOwnedBooking(bookingId, user.id);
 
+  const payable = booking.adultCount + booking.childCount;
+  const depositTotal = booking.depositAmount * Math.max(1, payable);
+
   await prisma.payment.create({
     data: {
       bookingId: booking.id,
-      amount: booking.depositAmount,
+      amount: depositTotal,
       method,
       status: "PENDING",
       reference: `DEP-${booking.reference.slice(0, 8).toUpperCase()}`,

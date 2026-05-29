@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { COUNTRY_OPTIONS, CIVIL_STATUS_OPTIONS } from "@/lib/countries";
 
 type Params = Promise<{ id: string }>;
 type SearchParams = Promise<{ tab?: string }>;
@@ -52,17 +53,24 @@ async function addTravelerAdmin(bookingId: string, formData: FormData) {
       bookingId,
       firstName: String(formData.get("firstName") ?? ""),
       lastName: String(formData.get("lastName") ?? ""),
+      ageCategory: (["ADULT", "CHILD", "INFANT"].includes(String(formData.get("ageCategory"))) ? String(formData.get("ageCategory")) : "ADULT") as "ADULT" | "CHILD" | "INFANT",
       email: String(formData.get("email") ?? "") || null,
       phone: String(formData.get("phone") ?? "") || null,
+      address: String(formData.get("address") ?? "") || null,
       personnummer: String(formData.get("personnummer") ?? "") || null,
       passportNo: String(formData.get("passportNo") ?? "") || null,
+      passportExp: formData.get("passportExp") ? new Date(String(formData.get("passportExp"))) : null,
+      passIssueDate: formData.get("passIssueDate") ? new Date(String(formData.get("passIssueDate"))) : null,
+      passIssuePlace: String(formData.get("passIssuePlace") ?? "") || null,
       birthDate: formData.get("birthDate") ? new Date(String(formData.get("birthDate"))) : null,
       gender: String(formData.get("gender") ?? "") || null,
       nationality: String(formData.get("nationality") ?? "") || null,
+      civilStatus: String(formData.get("civilStatus") ?? "") || null,
+      occupation: String(formData.get("occupation") ?? "") || null,
+      birthCountry: String(formData.get("birthCountry") ?? "") || null,
+      birthCity: String(formData.get("birthCity") ?? "") || null,
       roomAssignment: String(formData.get("roomAssignment") ?? "") || null,
       notes: String(formData.get("notes") ?? "") || null,
-      isMahram: formData.get("isMahram") === "on",
-      needsAssist: formData.get("needsAssist") === "on",
     },
   });
   revalidatePath(`/admin/bokningar/${bookingId}`);
@@ -253,9 +261,6 @@ export default async function BokningDetailPage({ params, searchParams }: { para
             <div className="tv-quick-stats">
               <span className="tv-qs">{booking.travelers.filter((t) => t.passportNo).length}/{booking.travelers.length} pass</span>
               <span className="tv-qs">{booking.travelers.filter((t) => t.roomAssignment).length}/{booking.travelers.length} rum</span>
-              {booking.travelers.some((t) => t.needsAssist) && (
-                <span className="tv-qs warn">{booking.travelers.filter((t) => t.needsAssist).length} assistans</span>
-              )}
             </div>
           </div>
 
@@ -290,8 +295,7 @@ export default async function BokningDetailPage({ params, searchParams }: { para
                         </span>
                       </div>
                       <div className="tv-sum-badges">
-                        {t.needsAssist && <span className="adm-pill warn">Assistans</span>}
-                        {t.isMahram && <span className="adm-pill gold">Mahram</span>}
+                        <span className="adm-pill outline">{t.ageCategory === "ADULT" ? "Vuxen" : t.ageCategory === "CHILD" ? "Barn" : "Spädbarn"}</span>
                         {missingCount > 0 && <span className="adm-pill outline">{missingCount} saknas</span>}
                       </div>
                       <span className="tv-chevron" aria-hidden="true">›</span>
@@ -305,7 +309,9 @@ export default async function BokningDetailPage({ params, searchParams }: { para
                         <div className="tv-fields">
                           <div><span className="tv-label">E-post</span><span className="tv-value">{t.email ?? booking.contactEmail ?? booking.user.email}</span></div>
                           <div><span className="tv-label">Mobil</span><span className="tv-value">{t.phone ?? booking.user.phone ?? booking.contactPhone ?? "—"}</span></div>
-                          <div><span className="tv-label">Bor i</span><span className="tv-value">{t.residenceCity ?? "—"}</span></div>
+                          <div><span className="tv-label">Adress</span><span className="tv-value">{t.address ?? "—"}</span></div>
+                          <div><span className="tv-label">Yrke</span><span className="tv-value">{t.occupation ?? "—"}</span></div>
+                          <div><span className="tv-label">Civilstånd</span><span className="tv-value">{t.civilStatus ?? "—"}</span></div>
                         </div>
                       </div>
 
@@ -314,22 +320,22 @@ export default async function BokningDetailPage({ params, searchParams }: { para
                         <div className="tv-fields">
                           <div><span className="tv-label">Personnummer</span><span className="tv-value mono">{t.personnummer ?? "—"}</span></div>
                           <div><span className="tv-label">Passnummer</span><span className="tv-value mono">{t.passportNo ?? "—"}</span></div>
+                          <div><span className="tv-label">Pass utfärdat</span><span className="tv-value">{t.passIssueDate ? fmtDate(t.passIssueDate) : "—"}</span></div>
                           <div><span className="tv-label">Pass giltig t.o.m.</span><span className="tv-value">{t.passportExp ? fmtDate(t.passportExp) : "—"}</span></div>
-                          <div><span className="tv-label">Födelsedatum</span><span className="tv-value">{t.birthDate ? fmtDate(t.birthDate) : "—"}</span></div>
+                          <div><span className="tv-label">Utfärdandeort</span><span className="tv-value">{t.passIssuePlace ?? "—"}</span></div>
                           <div><span className="tv-label">Nationalitet</span><span className="tv-value">{t.nationality ?? "—"}</span></div>
-                          <div><span className="tv-label">Ursprung</span><span className="tv-value">{t.countryOfOrigin ?? "—"}</span></div>
                         </div>
                       </div>
 
                       <div className="tv-section">
-                        <span className="tv-section-label">Resa & logistik</span>
+                        <span className="tv-section-label">Födelse & resa</span>
                         <div className="tv-fields">
+                          <div><span className="tv-label">Födelsedatum</span><span className="tv-value">{t.birthDate ? fmtDate(t.birthDate) : "—"}</span></div>
+                          <div><span className="tv-label">Födelseland</span><span className="tv-value">{t.birthCountry ?? "—"}</span></div>
+                          <div><span className="tv-label">Födelseort</span><span className="tv-value">{t.birthCity ?? "—"}</span></div>
                           <div><span className="tv-label">Rumsindelning</span><span className="tv-value">{t.roomAssignment ?? "Ej tilldelat"}</span></div>
                           <div><span className="tv-label">Flyg ut</span><span className="tv-value mono">{t.flightOut ?? "—"}</span></div>
                           <div><span className="tv-label">Flyg hem</span><span className="tv-value mono">{t.flightReturn ?? "—"}</span></div>
-                          <div><span className="tv-label">Civilstånd</span><span className="tv-value">{t.civilStatus ?? "—"}</span></div>
-                          <div><span className="tv-label">Födelsestad</span><span className="tv-value">{t.birthCity ?? "—"}</span></div>
-                          <div><span className="tv-label">Betalning</span><span className="tv-value">{t.paymentNote ?? "—"}</span></div>
                         </div>
                       </div>
                     </div>
@@ -371,22 +377,41 @@ export default async function BokningDetailPage({ params, searchParams }: { para
                 <div className="add-tv-grid">
                   <div className="field"><label>Förnamn *</label><input name="firstName" required /></div>
                   <div className="field"><label>Efternamn *</label><input name="lastName" required /></div>
+                  <div className="field">
+                    <label>Ålderskategori</label>
+                    <select name="ageCategory" defaultValue="ADULT"><option value="ADULT">Vuxen</option><option value="CHILD">Barn</option><option value="INFANT">Spädbarn</option></select>
+                  </div>
                   <div className="field"><label>E-post</label><input name="email" type="email" /></div>
                   <div className="field"><label>Mobilnummer</label><input name="phone" type="tel" /></div>
-                  <div className="field"><label>Personnummer</label><input name="personnummer" inputMode="numeric" placeholder="ÅÅÅÅMMDD-XXXX" /></div>
-                  <div className="field"><label>Passnummer</label><input name="passportNo" /></div>
-                  <div className="field"><label>Födelsedatum</label><input name="birthDate" type="date" /></div>
                   <div className="field">
                     <label>Kön</label>
                     <select name="gender" defaultValue=""><option value="">—</option><option value="M">Man</option><option value="F">Kvinna</option></select>
                   </div>
-                  <div className="field"><label>Nationalitet</label><input name="nationality" defaultValue="SWE" /></div>
+                  <div className="field" style={{ gridColumn: "1 / -1" }}><label>Adress</label><input name="address" placeholder="Gata, postnummer, ort" /></div>
+                  <div className="field"><label>Personnummer</label><input name="personnummer" inputMode="numeric" placeholder="ÅÅÅÅMMDD-XXXX" /></div>
+                  <div className="field"><label>Födelsedatum</label><input name="birthDate" type="date" /></div>
+                  <div className="field">
+                    <label>Civilstånd</label>
+                    <select name="civilStatus" defaultValue=""><option value="">—</option>{CIVIL_STATUS_OPTIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select>
+                  </div>
+                  <div className="field">
+                    <label>Nationalitet</label>
+                    <select name="nationality" defaultValue=""><option value="">Välj land...</option>{COUNTRY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}</select>
+                  </div>
+                  <div className="field">
+                    <label>Födelseland</label>
+                    <select name="birthCountry" defaultValue=""><option value="">Välj land...</option>{COUNTRY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}</select>
+                  </div>
+                  <div className="field"><label>Födelseort</label><input name="birthCity" /></div>
+                  <div className="field"><label>Yrke</label><input name="occupation" /></div>
+                  <div className="field"><label>Passnummer</label><input name="passportNo" /></div>
+                  <div className="field"><label>Pass utfärdat (datum)</label><input name="passIssueDate" type="date" /></div>
+                  <div className="field"><label>Pass giltigt t.o.m.</label><input name="passportExp" type="date" /></div>
+                  <div className="field"><label>Pass utfärdandeort</label><input name="passIssuePlace" /></div>
                   <div className="field"><label>Rum</label><input name="roomAssignment" /></div>
-                  <div className="field" style={{ gridColumn: "1 / -1" }}><label>Anteckning</label><input name="notes" placeholder="Speciella behov, allergier, etc." /></div>
+                  <div className="field" style={{ gridColumn: "1 / -1" }}><label>Övrig viktig information</label><input name="notes" placeholder="Speciella behov, allergier, etc." /></div>
                 </div>
                 <div style={{ display: "flex", gap: 16, alignItems: "center", marginTop: 16 }}>
-                  <label style={{ display: "flex", gap: 6, fontSize: 13, cursor: "pointer" }}><input type="checkbox" name="isMahram" /> Mahram</label>
-                  <label style={{ display: "flex", gap: 6, fontSize: 13, cursor: "pointer" }}><input type="checkbox" name="needsAssist" /> Assistans</label>
                   <button type="submit" className="btn btn-primary" style={{ marginLeft: "auto", padding: "10px 20px", fontSize: 13 }}>Lägg till resenär</button>
                 </div>
               </form>
