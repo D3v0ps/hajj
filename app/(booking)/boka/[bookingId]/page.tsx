@@ -35,6 +35,14 @@ export default async function BookingPage({
 
   if (!booking || booking.userId !== session.user.id) notFound();
 
+  // Hämta sparade profiler för snabb-tillägg (bara relevant i steg 3).
+  const profiles = booking.step === 3
+    ? await prisma.travelerProfile.findMany({
+        where: { userId: session.user.id },
+        orderBy: [{ isSelf: "desc" }, { firstName: "asc" }],
+      })
+    : [];
+
   return (
     <div className="container">
       <div className="bo-grid">
@@ -58,7 +66,7 @@ export default async function BookingPage({
           )}
 
           {booking.step === 2 && <StepRoom booking={booking} />}
-          {booking.step === 3 && <StepTravelers booking={booking} />}
+          {booking.step === 3 && <StepTravelers booking={booking} profiles={profiles} />}
           {booking.step === 4 && <StepReview booking={booking} />}
           {booking.step === 5 && <StepPay booking={booking} />}
           {booking.step >= 6 && <StepDone booking={booking} />}

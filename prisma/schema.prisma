@@ -35,6 +35,7 @@ model User {
   emailVerificationTokens EmailVerificationToken[]
   reviews                 Review[]
   auditLogs               AuditLog[]
+  travelerProfiles        TravelerProfile[]
 }
 
 enum UserRole {
@@ -317,15 +318,52 @@ model Traveler {
   needsAssist     Boolean  @default(false)
   paymentNote     String?
   notes           String?
+  profileId       String?
   createdAt       DateTime @default(now())
 
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  booking   Booking?   @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking   Booking?         @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  profile   TravelerProfile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
   documents Document[]
 
   @@index([userId])
   @@index([bookingId])
   @@index([ageCategory])
+  @@index([profileId])
+}
+
+model TravelerProfile {
+  id              String   @id @default(cuid())
+  userId          String
+  firstName       String
+  lastName        String
+  email           String?
+  phone           String?
+  address         String?
+  personnummer    String?
+  passportNo      String?
+  passportExp     DateTime?
+  passIssueDate   DateTime?
+  passIssuePlace  String?
+  birthDate       DateTime?
+  gender          String?
+  nationality     String?
+  civilStatus     String?
+  occupation      String?
+  birthCountry    String?
+  birthCity       String?
+  ageCategory     AgeCategory @default(ADULT)
+  relationship    String?      // "make", "fru", "barn", "förälder", "syskon"
+  isSelf          Boolean      @default(false)
+  notes           String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  travelers Traveler[]
+
+  @@index([userId])
+  @@index([userId, isSelf])
 }
 
 // -------- DOMÄN: DOKUMENT --------

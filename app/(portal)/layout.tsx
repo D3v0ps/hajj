@@ -26,6 +26,7 @@ export default async function PortalLayout({ children }: { children: React.React
           <nav className="portal-nav">
             <Link href="/min-sida">Översikt</Link>
             <Link href="/min-sida/bokningar">Mina bokningar</Link>
+            <Link href="/min-sida/resenarer">Resenärer</Link>
             <Link href="/min-sida/dokument">Dokument</Link>
             <Link href="/min-sida/meddelanden">Meddelanden</Link>
             <Link href="/min-sida/profil">Profil</Link>

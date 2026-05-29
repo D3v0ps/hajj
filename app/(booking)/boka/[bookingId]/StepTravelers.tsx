@@ -1,5 +1,6 @@
-import type { Booking, Package, PackageTier, Traveler, Payment } from "@prisma/client";
-import { addTraveler, removeTraveler, advanceToReview } from "@/app/actions/bookings";
+import Link from "next/link";
+import type { Booking, Package, PackageTier, Traveler, Payment, TravelerProfile } from "@prisma/client";
+import { addTraveler, addTravelerFromProfile, removeTraveler, advanceToReview } from "@/app/actions/bookings";
 import { TravelerForm } from "./TravelerForm";
 
 type Props = {
@@ -9,11 +10,14 @@ type Props = {
     travelers: Traveler[];
     payments: Payment[];
   };
+  profiles: TravelerProfile[];
 };
 
 const AGE_LABELS: Record<string, string> = { ADULT: "Vuxen", CHILD: "Barn", INFANT: "Spädbarn" };
 
-export function StepTravelers({ booking }: Props) {
+export function StepTravelers({ booking, profiles }: Props) {
+  const usedProfileIds = new Set(booking.travelers.map((t) => t.profileId).filter(Boolean));
+  const availableProfiles = profiles.filter((p) => !usedProfileIds.has(p.id));
   const total = booking.travelerCount;
   const done = booking.travelers.length;
   const remaining = Math.max(0, total - done);
@@ -80,11 +84,47 @@ export function StepTravelers({ booking }: Props) {
         </div>
       )}
 
-      {/* Lägg till nästa resenär (bara om det fattas några) */}
+      {/* Snabb-tillägg från sparade profiler */}
+      {remaining > 0 && availableProfiles.length > 0 && (
+        <details className="add-trv add-trv-profile" open={done === 0}>
+          <summary>👤 Välj från sparade resenärsprofiler</summary>
+          <p className="dim" style={{ fontSize: 13, marginBottom: 14 }}>
+            Klicka för att lägga till en sparad resenär. Du kan redigera uppgifter efter tillägg.
+          </p>
+          <div className="profile-pick">
+            {availableProfiles.map((p) => (
+              <form key={p.id} action={addTravelerFromProfile.bind(null, booking.id)} className="profile-row-form">
+                <input type="hidden" name="profileId" value={p.id} />
+                <button type="submit" className="profile-row">
+                  <span className="pr-name">
+                    {p.firstName} {p.lastName}
+                    {p.isSelf && <span className="pr-self">Du</span>}
+                  </span>
+                  <span className="pr-meta">
+                    {p.relationship ?? AGE_LABELS[p.ageCategory]}
+                    {p.passportNo ? " · Pass ✓" : " · Pass saknas"}
+                  </span>
+                  <span className="pr-arrow">+</span>
+                </button>
+              </form>
+            ))}
+          </div>
+          <p style={{ marginTop: 12, fontSize: 12 }}>
+            <Link href="/min-sida/resenarer" className="btn-link">Hantera mina sparade profiler →</Link>
+          </p>
+        </details>
+      )}
+
+      {/* Lägg till nästa resenär manuellt (bara om det fattas några) */}
       {remaining > 0 && (
-        <details className="add-trv" open={done === 0}>
-          <summary>+ Lägg till resenär ({done + 1} av {total})</summary>
+        <details className="add-trv" open={done === 0 && availableProfiles.length === 0}>
+          <summary>+ Lägg till resenär manuellt ({done + 1} av {total})</summary>
           <TravelerForm bookingId={booking.id} action={addTraveler} defaultAgeCategory={nextAge} />
+          {profiles.length === 0 && (
+            <p className="dim" style={{ fontSize: 12, marginTop: 14 }}>
+              Tips: spara resenärer som <Link href="/min-sida/resenarer" className="btn-link">profiler</Link> så slipper du fylla i samma uppgifter vid nästa bokning.
+            </p>
+          )}
         </details>
       )}
 
@@ -113,7 +153,21 @@ export function StepTravelers({ booking }: Props) {
         .trv-row .num { font-family: var(--f-mono); font-size: 12px; color: var(--c-gold); letter-spacing: 0.12em; }
         .trv-row .info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
         .trv-age-tag { font-family: var(--f-sans); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--c-gold); border: 1px solid var(--c-gold-soft); padding: 1px 6px; margin-left: 6px; }
-        .add-trv { padding: 18px 22px; background: var(--c-paper); border: 1px dashed var(--c-line); margin-bottom: 24px; }
+        .add-trv { padding: 18px 22px; background: var(--c-paper); border: 1px dashed var(--c-line); margin-bottom: 16px; }
+        .add-trv-profile { background: #FFF7E6; border: 1px solid var(--c-gold-soft); }
+        .profile-pick { display: grid; gap: 8px; }
+        .profile-row-form { margin: 0; }
+        .profile-row {
+          width: 100%; text-align: left; padding: 12px 16px; background: #fff;
+          border: 1px solid var(--c-line-soft); cursor: pointer; font: inherit;
+          display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: center;
+          transition: all 120ms;
+        }
+        .profile-row:hover { border-color: var(--c-gold); background: #FFFAEC; }
+        .pr-name { font-family: var(--f-serif); font-size: 16px; color: var(--c-ink); }
+        .pr-self { display: inline-block; margin-left: 8px; font-family: var(--f-sans); font-size: 10px; padding: 1px 6px; background: var(--c-gold); color: #fff; letter-spacing: 0.1em; text-transform: uppercase; }
+        .pr-meta { font-size: 12px; color: var(--c-text-muted); }
+        .pr-arrow { font-family: var(--f-mono); font-size: 18px; color: var(--c-gold); }
         .add-trv summary { font-family: var(--f-serif); font-size: 18px; color: var(--c-ink); cursor: pointer; list-style: none; }
         .add-trv summary::-webkit-details-marker { display: none; }
         .add-trv[open] summary { margin-bottom: 24px; color: var(--c-gold); }

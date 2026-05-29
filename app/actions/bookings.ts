@@ -235,6 +235,79 @@ export async function addTraveler(bookingId: string, formData: FormData): Promis
   redirect(`/boka/${booking.id}`);
 }
 
+/**
+ * Skapar en Traveler-rad i en bokning genom att kopiera fält från en sparad
+ * TravelerProfile. Kunden slipper fylla i samma uppgifter varje gång.
+ */
+export async function addTravelerFromProfile(bookingId: string, formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const booking = await loadOwnedBooking(bookingId, user.id);
+  if (booking.step < 3) flashError(bookingId, "Välj antal resenärer först.");
+  if (booking.step >= 4) flashError(bookingId, "Bokningen är låst för ändringar.");
+  if (booking.travelers.length >= booking.travelerCount) {
+    flashError(bookingId, `Alla ${booking.travelerCount} resenärer är redan registrerade.`);
+  }
+
+  const profileId = String(formData.get("profileId") ?? "");
+  const profile = await prisma.travelerProfile.findFirst({ where: { id: profileId, userId: user.id } });
+  if (!profile) flashError(bookingId, "Profilen hittades inte.");
+
+  // Säkerställ att profilen inte redan är knuten till en resenär i denna bokning.
+  const dupe = booking.travelers.some((t) => t.profileId === profile!.id);
+  if (dupe) flashError(bookingId, "Den här profilen är redan tillagd i bokningen.");
+
+  // Ålderskategori-kontroll: får ej överskrida valda antal.
+  const cat = profile!.ageCategory;
+  const expected = { ADULT: booking.adultCount, CHILD: booking.childCount, INFANT: booking.infantCount };
+  const already = booking.travelers.filter((t) => t.ageCategory === cat).length;
+  if (already >= expected[cat]) {
+    const label = cat === "ADULT" ? "vuxna" : cat === "CHILD" ? "barn" : "spädbarn";
+    flashError(bookingId, `Alla ${expected[cat]} ${label} är redan registrerade. Välj en annan profil.`);
+  }
+
+  // Pass-utgångsvalidering (samma 6-mån-regel som i addTraveler).
+  if (profile!.passportExp) {
+    const refDate = booking.package.endDate ?? booking.package.startDate;
+    if (refDate) {
+      const sixMonthsAfter = new Date(refDate);
+      sixMonthsAfter.setMonth(sixMonthsAfter.getMonth() + 6);
+      if (profile!.passportExp < sixMonthsAfter) {
+        flashError(bookingId, `Passet i profilen löper ut ${new Date(profile!.passportExp).toLocaleDateString("sv-SE")} — uppdatera profilen, det måste gälla minst 6 mån efter resans slut.`);
+      }
+    }
+  }
+
+  await prisma.traveler.create({
+    data: {
+      userId: user.id,
+      bookingId: booking.id,
+      profileId: profile!.id,
+      firstName: profile!.firstName,
+      lastName: profile!.lastName,
+      ageCategory: profile!.ageCategory,
+      email: profile!.email,
+      phone: profile!.phone,
+      address: profile!.address,
+      personnummer: profile!.personnummer,
+      passportNo: profile!.passportNo,
+      passportExp: profile!.passportExp,
+      passIssueDate: profile!.passIssueDate,
+      passIssuePlace: profile!.passIssuePlace,
+      birthDate: profile!.birthDate,
+      gender: profile!.gender,
+      nationality: profile!.nationality,
+      civilStatus: profile!.civilStatus,
+      occupation: profile!.occupation,
+      birthCountry: profile!.birthCountry,
+      birthCity: profile!.birthCity,
+      notes: profile!.notes,
+    },
+  });
+
+  revalidatePath(`/boka/${booking.id}`);
+  redirect(`/boka/${booking.id}`);
+}
+
 export async function removeTraveler(bookingId: string, travelerId: string): Promise<void> {
   const user = await requireUser();
   const booking = await loadOwnedBooking(bookingId, user.id);
