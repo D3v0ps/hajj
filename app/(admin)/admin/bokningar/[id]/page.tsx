@@ -5,9 +5,10 @@ import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { COUNTRY_OPTIONS, CIVIL_STATUS_OPTIONS } from "@/lib/countries";
+import { uploadTravelerDocument, setDocumentStatus, deleteTravelerDocument } from "@/app/actions/documents";
 
 type Params = Promise<{ id: string }>;
-type SearchParams = Promise<{ tab?: string }>;
+type SearchParams = Promise<{ tab?: string; docError?: string; docOk?: string }>;
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,17 @@ const STATUS_LABELS: Record<string, string> = {
   DRAFT: "Utkast", SUBMITTED: "Mottagen", REVIEW: "Granskas",
   CONFIRMED: "Bekräftad", PAID_DEPOSIT: "Reserv. betald",
   PAID_FULL: "Slutbetald", COMPLETED: "Genomförd", CANCELLED: "Avbokad",
+};
+
+const DOC_TYPE_LABELS: Record<string, string> = {
+  PASSPORT: "Pass", PASSPORT_PHOTO: "Passfoto", RESIDENCE_PERMIT: "Uppehållstillstånd",
+  VACCINATION: "Vaccinationsintyg", OTHER: "Övrigt dokument",
+};
+const DOC_STATUS_META: Record<string, { label: string; cls: string }> = {
+  PENDING: { label: "Väntar granskning", cls: "gold" },
+  APPROVED: { label: "Godkänd", cls: "ok" },
+  REJECTED: { label: "Avvisad", cls: "warn" },
+  NEEDS_INFO: { label: "Komplettering", cls: "outline" },
 };
 
 async function requireAdmin() {
@@ -112,7 +124,7 @@ async function sendMessage(bookingId: string, formData: FormData) {
 
 export default async function BokningDetailPage({ params, searchParams }: { params: Params; searchParams: SearchParams }) {
   const { id } = await params;
-  const { tab } = await searchParams;
+  const { tab, docError, docOk } = await searchParams;
   const activeTab = tab ?? "oversikt";
 
   const booking = await prisma.booking.findUnique({
@@ -121,7 +133,7 @@ export default async function BokningDetailPage({ params, searchParams }: { para
       package: { include: { tiers: true } },
       tier: true,
       user: { select: { id: true, email: true, name: true, phone: true } },
-      travelers: { orderBy: { createdAt: "asc" } },
+      travelers: { orderBy: { createdAt: "asc" }, include: { documents: { orderBy: { uploadedAt: "desc" } } } },
       payments: { orderBy: { createdAt: "desc" } },
       messages: { orderBy: { createdAt: "desc" } },
     },
@@ -268,6 +280,13 @@ export default async function BokningDetailPage({ params, searchParams }: { para
             </div>
           </div>
 
+          {docError && (
+            <div className="tv-doc-banner err" role="alert">{docError}</div>
+          )}
+          {docOk && !docError && (
+            <div className="tv-doc-banner ok" role="status">Dokumentet uppdaterades.</div>
+          )}
+
           <div className="traveler-cards">
             {booking.travelers.map((t, i) => {
               const hasPass = !!t.passportNo;
@@ -351,6 +370,61 @@ export default async function BokningDetailPage({ params, searchParams }: { para
                       </div>
                     )}
 
+                    <div className="tv-docs">
+                      <span className="tv-section-label">Resedokument ({t.documents.length})</span>
+                      {t.documents.length > 0 && (
+                        <div className="tv-doc-list">
+                          {t.documents.map((d) => {
+                            const meta = DOC_STATUS_META[d.status] ?? DOC_STATUS_META.PENDING;
+                            return (
+                              <div key={d.id} className="tv-doc-row">
+                                <div className="tv-doc-main">
+                                  <span className="tv-doc-type">{DOC_TYPE_LABELS[d.type] ?? d.type}</span>
+                                  <a href={`/api/documents/${d.id}`} target="_blank" rel="noopener noreferrer" className="tv-doc-file">
+                                    {d.filename}
+                                  </a>
+                                  <span className="tv-doc-size">{Math.max(1, Math.round(d.sizeBytes / 1024))} kB</span>
+                                </div>
+                                <div className="tv-doc-side">
+                                  <span className={`adm-pill ${meta.cls}`}>{meta.label}</span>
+                                  <form action={setDocumentStatus}>
+                                    <input type="hidden" name="documentId" value={d.id} />
+                                    <input type="hidden" name="bookingId" value={booking.id} />
+                                    <select name="status" defaultValue={d.status} className="tv-doc-status" aria-label="Granskningsstatus">
+                                      <option value="PENDING">Väntar</option>
+                                      <option value="APPROVED">Godkänn</option>
+                                      <option value="REJECTED">Avvisa</option>
+                                      <option value="NEEDS_INFO">Komplettering</option>
+                                    </select>
+                                    <button type="submit" className="tv-doc-btn">Spara</button>
+                                  </form>
+                                  <form action={deleteTravelerDocument}>
+                                    <input type="hidden" name="documentId" value={d.id} />
+                                    <input type="hidden" name="bookingId" value={booking.id} />
+                                    <button type="submit" className="tv-doc-btn danger" title="Ta bort dokument" aria-label="Ta bort dokument">✕</button>
+                                  </form>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <form action={uploadTravelerDocument} className="tv-doc-upload" encType="multipart/form-data">
+                        <input type="hidden" name="travelerId" value={t.id} />
+                        <input type="hidden" name="bookingId" value={booking.id} />
+                        <select name="type" defaultValue="PASSPORT" className="tv-doc-status" aria-label="Dokumenttyp">
+                          <option value="PASSPORT">Pass</option>
+                          <option value="PASSPORT_PHOTO">Passfoto</option>
+                          <option value="RESIDENCE_PERMIT">Uppehållstillstånd</option>
+                          <option value="VACCINATION">Vaccinationsintyg</option>
+                          <option value="OTHER">Övrigt</option>
+                        </select>
+                        <input type="file" name="file" accept="image/jpeg,image/png,image/webp,application/pdf" required className="tv-doc-file-input" aria-label="Välj fil" />
+                        <button type="submit" className="btn btn-ghost tv-doc-upload-btn">Ladda upp</button>
+                      </form>
+                      <p className="tv-doc-hint dim">PDF, JPG, PNG eller WEBP · max 8 MB · syns endast för kontoret</p>
+                    </div>
+
                     <div className="tv-actions">
                       <form action={removeTravelerAdmin.bind(null, booking.id, t.id)}>
                         <button type="submit" className="tv-action-btn danger">Ta bort resenär</button>
@@ -421,6 +495,29 @@ export default async function BokningDetailPage({ params, searchParams }: { para
               </form>
             </div>
           </details>
+
+          <style>{`
+            .tv-doc-banner { padding: 10px 14px; margin-bottom: 14px; font-size: 13px; border: 1px solid; }
+            .tv-doc-banner.err { background: #fbeae8; border-color: #e7c3bf; color: #8a1c13; }
+            .tv-doc-banner.ok { background: #e9f5ee; border-color: #bfe0cb; color: #1a5132; }
+            .tv-docs { margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--c-line); }
+            .tv-doc-list { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 14px; }
+            .tv-doc-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 8px 12px; background: var(--c-cream); border: 1px solid var(--c-line-soft); }
+            .tv-doc-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
+            .tv-doc-type { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; color: var(--c-text-muted); }
+            .tv-doc-file { font-size: 13px; color: var(--c-ink); text-decoration: underline; word-break: break-all; }
+            .tv-doc-size { font-size: 11px; color: var(--c-text-faint); font-family: var(--f-mono); }
+            .tv-doc-side { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+            .tv-doc-side form { display: flex; align-items: center; gap: 4px; margin: 0; }
+            .tv-doc-status { padding: 5px 8px; border: 1px solid var(--c-line); background: #fff; font-size: 12px; }
+            .tv-doc-btn { padding: 5px 10px; border: 1px solid var(--c-line); background: #fff; font-size: 12px; cursor: pointer; }
+            .tv-doc-btn:hover { border-color: var(--c-ink); }
+            .tv-doc-btn.danger { color: #b3261e; border-color: #e7c3bf; }
+            .tv-doc-upload { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0; }
+            .tv-doc-file-input { font-size: 12px; max-width: 100%; }
+            .tv-doc-upload-btn { padding: 8px 14px; font-size: 12px; }
+            .tv-doc-hint { font-size: 11px; margin: 8px 0 0; }
+          `}</style>
         </div>
       )}
 

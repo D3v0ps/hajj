@@ -60,6 +60,11 @@ RUN npm install -g prisma@6.19.3 && npm cache clean --force
 COPY --chown=nextjs:nodejs docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
+# Uppladdningskatalog som app-användaren äger. Måste finnas + ägas av nextjs
+# innan named-volymen monteras på /app/uploads, annars ärver volymen root-ägande
+# och appen får EACCES vid skrivning av resedokument.
+RUN mkdir -p /app/uploads && chown nextjs:nodejs /app/uploads
+
 USER nextjs
 EXPOSE 3000
 
