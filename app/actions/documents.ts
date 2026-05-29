@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { saveFile, deleteStoredFile } from "@/lib/storage";
 import { DocumentStatus, DocumentType } from "@prisma/client";
+import { queueEmail, EMAIL_KIND } from "@/lib/email";
+import { logAudit } from "@/lib/audit";
 
 async function requireAdmin() {
   const session = await auth();
@@ -78,7 +80,7 @@ export async function uploadTravelerDocument(formData: FormData): Promise<void> 
 
 /** Sätter granskningsstatus (godkänn/avvisa/komplettering) på ett dokument. */
 export async function setDocumentStatus(formData: FormData): Promise<void> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const documentId = String(formData.get("documentId") ?? "");
   const bookingId = String(formData.get("bookingId") ?? "");
   const statusRaw = String(formData.get("status") ?? "") as DocumentStatus;
@@ -87,10 +89,24 @@ export async function setDocumentStatus(formData: FormData): Promise<void> {
   if (!documentId || !bookingId) redirect("/admin/bokningar");
   if (!DOC_STATUSES.includes(statusRaw)) redirect(backTo(bookingId, { docError: "Ogiltig status" }));
 
-  await prisma.document.update({
+  const doc = await prisma.document.update({
     where: { id: documentId },
     data: { status: statusRaw, reviewNote, reviewedAt: new Date() },
+    include: { user: { select: { email: true, name: true } } },
   });
+
+  // Notifiera kund vid statusändring (bara meningsfulla övergångar).
+  if (doc.user.email && doc.user.email !== "import@system.local" && statusRaw !== "PENDING") {
+    const labels: Record<DocumentStatus, string> = { PENDING: "väntar", APPROVED: "godkänts", REJECTED: "avvisats", NEEDS_INFO: "behöver kompletteras" };
+    await queueEmail({
+      to: doc.user.email,
+      recipientName: doc.user.name,
+      subject: `Ditt dokument har ${labels[statusRaw]}`,
+      body: `Hej ${doc.user.name || "Resenär"},\n\nDitt uppladdade dokument "${doc.filename}" har ${labels[statusRaw]}.${reviewNote ? `\n\nKommentar från kontoret:\n${reviewNote}` : ""}\n\nDu kan se status och ladda upp nya dokument under Min sida → Dokument.\n\nMed vänliga hälsningar,\nHadj Omra Resor`,
+      kind: EMAIL_KIND.DOCUMENT_REVIEWED,
+    });
+  }
+  await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "document.reviewed", targetType: "Document", targetId: doc.id, metadata: { status: statusRaw } });
 
   revalidatePath(`/admin/bokningar/${bookingId}`);
   redirect(backTo(bookingId, { docOk: "1" }));

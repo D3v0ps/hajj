@@ -5,6 +5,11 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { queueEmail, EMAIL_KIND, renderTemplate } from "@/lib/email";
+import { logAudit } from "@/lib/audit";
+import { env } from "@/lib/env";
+
+const TERMS_VERSION = "2026-05-01";
 
 const DEPOSIT_PER_PERSON = 5000;
 
@@ -175,6 +180,20 @@ export async function addTraveler(bookingId: string, formData: FormData): Promis
 
   const d = parsed.data!;
 
+  // Saudi-arabiska visumkravet: passet måste gälla minst 6 månader efter resans slut.
+  // Vi varnar om resedatum finns på paketet och passet löper ut för tidigt.
+  if (d.passportExp) {
+    const expDate = new Date(d.passportExp);
+    const refDate = booking.package.endDate ?? booking.package.startDate;
+    if (refDate) {
+      const sixMonthsAfter = new Date(refDate);
+      sixMonthsAfter.setMonth(sixMonthsAfter.getMonth() + 6);
+      if (expDate < sixMonthsAfter) {
+        flashError(bookingId, `Passet måste gälla minst 6 månader efter resans slut (${sixMonthsAfter.toLocaleDateString("sv-SE")}). Detta pass går ut ${expDate.toLocaleDateString("sv-SE")}.`);
+      }
+    }
+  }
+
   // Får ej registrera fler i en ålderskategori än vad som betalats för i steg 2.
   const expected = { ADULT: booking.adultCount, CHILD: booking.childCount, INFANT: booking.infantCount };
   const already = booking.travelers.filter((t) => t.ageCategory === d.ageCategory).length;
@@ -254,14 +273,53 @@ export async function acceptAndAdvance(bookingId: string, formData: FormData): P
   if (formData.get("acceptTerms") !== "on") flashError(bookingId, "Du måste godkänna resevillkoren");
   if (formData.get("acceptPrivacy") !== "on") flashError(bookingId, "Du måste godkänna integritetspolicyn");
 
-  await prisma.booking.update({
+  const updated = await prisma.booking.update({
     where: { id: booking.id },
     data: {
       step: Math.max(booking.step, 5),
       status: "SUBMITTED",
       submittedAt: new Date(),
+      termsAcceptedAt: new Date(),
+      termsVersion: TERMS_VERSION,
     },
+    include: { user: { select: { email: true, name: true } }, package: { select: { title: true, startDate: true } } },
   });
+
+  // Bekräftelsemejl till kunden (köas — skickas av worker var 60:e sek).
+  if (updated.user.email && updated.user.email !== "import@system.local") {
+    const namn = updated.user.name || "Resenär";
+    const paket = updated.package.title;
+    const ref = updated.reference.slice(0, 12).toUpperCase();
+    const datum = updated.package.startDate ? new Date(updated.package.startDate).toLocaleDateString("sv-SE") : "ej fastställt";
+    await queueEmail({
+      to: updated.user.email,
+      recipientName: updated.user.name,
+      subject: `Vi har mottagit din bokning — ${paket}`,
+      body: renderTemplate(
+        "Hej {{namn}},\n\n" +
+        "Tack för din bokning på {{paket}} (referens {{ref}}).\n\n" +
+        "Avresedatum: {{datum}}.\n" +
+        "Anmälningsavgift: {{deposit}} kr — vi reserverar din plats i 7 dagar i väntan på betalning.\n\n" +
+        "Vi hör av oss inom 24 timmar med nästa steg.\n\n" +
+        "Med vänliga hälsningar,\nHadj Omra Resor",
+        { namn, paket, ref, datum, deposit: (updated.depositAmount * Math.max(1, updated.adultCount + updated.childCount)).toLocaleString("sv-SE") }
+      ),
+      bookingId: updated.id,
+      kind: EMAIL_KIND.BOOKING_SUBMITTED,
+    });
+  }
+  // Intern notis till kontoret.
+  if (env.SITE_EMAIL) {
+    await queueEmail({
+      to: env.SITE_EMAIL,
+      subject: `[Ny bokning] ${updated.package.title} — ${updated.user.name ?? updated.user.email ?? "okänd kund"}`,
+      body: `Ny bokning inkommen.\n\nRef: ${updated.reference.slice(0, 12).toUpperCase()}\nKund: ${updated.user.name ?? "—"} (${updated.user.email})\nPaket: ${updated.package.title}\nResenärer: ${updated.travelerCount}\nBelopp: ${updated.totalAmount.toLocaleString("sv-SE")} kr\n\nAdmin: ${env.APP_URL}/admin/bokningar/${updated.id}`,
+      bookingId: updated.id,
+      kind: EMAIL_KIND.BOOKING_SUBMITTED,
+    });
+  }
+  await logAudit({ actorId: user.id, actorEmail: user.email, action: "booking.submitted", targetType: "Booking", targetId: updated.id });
+
   redirect(`/boka/${booking.id}`);
 }
 

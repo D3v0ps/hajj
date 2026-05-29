@@ -110,9 +110,10 @@ export function DemoFlow() {
     setStep("done");
   }
 
-  async function simulateBankID() {
+  async function simulateLogin() {
+    // Konto-skapande / inloggning med e-post — kort fördröjning för att kännas äkta.
     setStep("login");
-    await delay(1300);
+    await delay(900);
     setStep("details");
   }
 
@@ -141,7 +142,7 @@ export function DemoFlow() {
           <StepPackage
             onPick={(p) => {
               setPkg(p);
-              simulateBankID();
+              simulateLogin();
             }}
           />
         )}
@@ -235,14 +236,14 @@ function StepIntro({ onStart }: { onStart: () => void }) {
         Klicka dig igenom som en kund.
       </h2>
       <p className="dim" style={{ fontSize: 16, maxWidth: 560, lineHeight: 1.6 }}>
-        Du väljer paket, &quot;loggar in&quot; med en låtsas-BankID, väljer rumstyp och
-        resenärer, godkänner villkoren och betalar via Swish, Klarna eller kort.
+        Du väljer paket, skapar ett konto, väljer rumstyp och resenärer,
+        godkänner villkoren och betalar via Swish, Klarna eller kort.
         Ingen riktig data sparas. Du kan göra om så ofta du vill.
       </p>
 
       <ul className="intro-tips">
         <li>Allt händer i webbläsaren — perfekt på mobil för demonstration</li>
-        <li>Realistisk fördröjning på BankID + betalning så det känns äkta</li>
+        <li>Realistisk fördröjning på kontoskapande + betalning så det känns äkta</li>
         <li>Tryck &quot;Spela igen&quot; när du är klar för att börja om</li>
       </ul>
 
@@ -294,17 +295,17 @@ function StepPackage({ onPick }: { onPick: (p: Pkg) => void }) {
 function StepLogin() {
   return (
     <div className="login-mock">
-      <span className="section-mark">Steg 2 av 5 · BankID</span>
-      <h3 style={{ fontSize: 26, marginTop: 12, marginBottom: 24 }}>Logga in med BankID</h3>
+      <span className="section-mark">Steg 2 av 5 · Konto</span>
+      <h3 style={{ fontSize: 26, marginTop: 12, marginBottom: 24 }}>Skapa konto med e-post</h3>
 
       <div className="bankid-box">
         <div className="bankid-spinner" aria-hidden="true">
           <div className="spinner-ring" />
         </div>
-        <p className="bankid-status">Öppnar BankID-appen…</p>
+        <p className="bankid-status">Förbereder ditt konto…</p>
         <p className="dim small">
-          (Demo — ingen riktig BankID-anrop. På den skarpa sajten anropar vi
-          Criipto/BankID-OIDC och får tillbaka personnummer + namn.)
+          (Demo — på den skarpa sajten skapar du ett konto med e-post + lösenord
+          eller loggar in i befintligt konto.)
         </p>
       </div>
     </div>
@@ -377,7 +378,7 @@ function StepDetails({
       </div>
 
       <div className="traveler-card">
-        <span className="eyebrow">Resenär 1 av {travelers} · auto-ifylld från BankID</span>
+        <span className="eyebrow">Resenär 1 av {travelers} · auto-ifylld från ditt konto</span>
         <p style={{ margin: "10px 0 4px", fontFamily: "var(--f-serif)", fontSize: 18 }}>
           Karim Khalil
         </p>
@@ -716,7 +717,7 @@ const styles = `
   .pkg-card-price .small { font-size: 11px; }
   .pkg-card-cta { color: var(--c-gold); font-size: 13px; font-weight: 600; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--c-line-soft); }
 
-  /* BankID-mock */
+  /* Kontoskapande-mock */
   .login-mock { display: flex; flex-direction: column; align-items: flex-start; }
   .bankid-box {
     margin-top: 24px;

@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { hashPassword, signIn } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
+import { rateLimit, ipKey } from "@/lib/rate-limit";
+import { logAudit } from "@/lib/audit";
 
 const registerSchema = z
   .object({
@@ -21,6 +23,12 @@ const loginSchema = z.object({
 });
 
 export async function registerUser(formData: FormData): Promise<never> {
+  // Rate-limit: 5 nya konton per IP per 10 min — bromsar massregistrering.
+  const rl = rateLimit(await ipKey("register"), 5, 10 * 60_000);
+  if (!rl.ok) {
+    redirect(`/skapa-konto?error=${encodeURIComponent("För många försök — vänta en stund och försök igen.")}`);
+  }
+
   const raw = {
     name: String(formData.get("name") ?? ""),
     email: String(formData.get("email") ?? "").toLowerCase(),
@@ -68,6 +76,13 @@ export async function registerUser(formData: FormData): Promise<never> {
 }
 
 export async function loginUser(formData: FormData): Promise<never> {
+  // Rate-limit: 10 inloggningsförsök per IP per 5 min (skydd mot credential stuffing
+  // + scrypt-CPU-DoS). Kombineras med per-email-räknare nedan.
+  const ipLimit = rateLimit(await ipKey("login"), 10, 5 * 60_000);
+  if (!ipLimit.ok) {
+    redirect(`/logga-in?error=${encodeURIComponent("För många inloggningsförsök — vänta en stund.")}`);
+  }
+
   const raw = {
     email: String(formData.get("email") ?? "").toLowerCase(),
     password: String(formData.get("password") ?? ""),
@@ -78,6 +93,13 @@ export async function loginUser(formData: FormData): Promise<never> {
     redirect("/logga-in?error=credentials");
   }
 
+  // Per-email-räknare: 5 misslyckade försök per 15 min per emailaddress.
+  const emailLimit = rateLimit(`login:email:${parsed.data.email}`, 5, 15 * 60_000);
+  if (!emailLimit.ok) {
+    await logAudit({ actorEmail: parsed.data.email, action: "auth.loginThrottled" });
+    redirect(`/logga-in?error=${encodeURIComponent("Kontot är tillfälligt låst pga för många försök.")}`);
+  }
+
   try {
     await signIn("credentials", {
       email: parsed.data.email,
@@ -86,6 +108,7 @@ export async function loginUser(formData: FormData): Promise<never> {
     });
   } catch (e) {
     if (e instanceof AuthError) {
+      await logAudit({ actorEmail: parsed.data.email, action: "auth.loginFailed" });
       redirect("/logga-in?error=credentials");
     }
     throw e;

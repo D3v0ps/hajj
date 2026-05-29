@@ -4,7 +4,7 @@ import { DemoFlow } from "./DemoFlow";
 export const metadata: Metadata = {
   title: "Demo — så fungerar bokningen",
   description:
-    "Klicka dig igenom hela bokningsflödet som om du var en kund. Visar paketval, BankID-inloggning, dokument, granskning och betalning — utan att skapa något riktigt.",
+    "Klicka dig igenom hela bokningsflödet som om du var en kund. Visar paketval, kontoskapande, dokument, granskning och betalning — utan att skapa något riktigt.",
 };
 
 export default function DemoPage() {

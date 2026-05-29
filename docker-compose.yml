@@ -101,6 +101,10 @@ services:
               find /backups -maxdepth 1 -name 'hajj-*.dump' -mtime +14 -delete 2>/dev/null;
               sleep 70;
             fi;
+            if [ \"$$NOW\" = \"0400\" ] && [ -n \"$$WORKER_TOKEN\" ]; then
+              curl -fsS -m 60 -H \"Authorization: Bearer $$WORKER_TOKEN\" http://app:3000/api/cron/reminders > /dev/null 2>&1 || true;
+              sleep 70;
+            fi;
             sleep 50;
           done
         ) &
