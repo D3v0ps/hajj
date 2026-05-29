@@ -42,18 +42,46 @@ const packageSchema = z.object({
   gatheringPoint: z.string().max(200).optional().or(z.literal("")),
   gatheringTime: z.string().max(120).optional().or(z.literal("")),
   whatsappLink: z.string().max(500).optional().or(z.literal("")),
-  flightOutbound: z.string().optional().or(z.literal("")),
-  flightReturn: z.string().optional().or(z.literal("")),
-  hotels: z.string().optional().or(z.literal("")),
-  transfers: z.string().optional().or(z.literal("")),
-  itinerary: z.string().optional().or(z.literal("")),
 });
 
-// Tolkar ett textfält som JSON; tomt → null. Ogiltig JSON → null (fel rapporteras inte
-// inline här eftersom hela detta är optional admin-data; admin ser kvar texten i editorn).
-function parseJsonField(raw: string | undefined | null): unknown {
-  if (!raw || !raw.trim()) return null;
-  try { return JSON.parse(raw); } catch { return null; }
+// Samlar flight-fält "flightOutbound.airline" osv från FormData → objekt. Tomma fält → null.
+function collectFlight(fd: FormData, prefix: "flightOutbound" | "flightReturn"): object | null {
+  const fields = ["airline", "flightNo", "from", "to", "departTime", "arriveTime", "terminal", "notes"];
+  const obj: Record<string, string> = {};
+  let hasAny = false;
+  for (const f of fields) {
+    const v = String(fd.get(`${prefix}.${f}`) ?? "").trim();
+    if (v) { obj[f] = v; hasAny = true; }
+  }
+  return hasAny ? obj : null;
+}
+
+// Samlar array-rader: "hotels.0.name", "hotels.0.city", … "hotels.4.name". Tomma rader sluts.
+function collectArray(fd: FormData, prefix: string, fields: string[], indexCap = 30): object[] | null {
+  const rows: Record<string, string | number>[] = [];
+  for (let i = 0; i < indexCap; i++) {
+    const row: Record<string, string | number> = {};
+    let hasAny = false;
+    for (const f of fields) {
+      const v = String(fd.get(`${prefix}.${i}.${f}`) ?? "").trim();
+      if (v) {
+        // rating → number
+        if (f === "rating") {
+          const n = parseInt(v);
+          if (!Number.isNaN(n)) { row[f] = n; hasAny = true; }
+        } else if (f === "highlights") {
+          // kommaseparerad → array (lagras direkt här som array sen vid spar-tid)
+          row[f] = v;
+          hasAny = true;
+        } else {
+          row[f] = v;
+          hasAny = true;
+        }
+      }
+    }
+    if (hasAny) rows.push(row);
+  }
+  return rows.length > 0 ? rows : null;
 }
 
 function fromForm(formData: FormData) {
@@ -84,15 +112,23 @@ function fromForm(formData: FormData) {
     gatheringPoint: String(formData.get("gatheringPoint") ?? ""),
     gatheringTime: String(formData.get("gatheringTime") ?? ""),
     whatsappLink: String(formData.get("whatsappLink") ?? ""),
-    flightOutbound: String(formData.get("flightOutbound") ?? ""),
-    flightReturn: String(formData.get("flightReturn") ?? ""),
-    hotels: String(formData.get("hotels") ?? ""),
-    transfers: String(formData.get("transfers") ?? ""),
-    itinerary: String(formData.get("itinerary") ?? ""),
   };
 }
 
-function dataFromParsed(p: z.infer<typeof packageSchema>) {
+function dataFromParsed(p: z.infer<typeof packageSchema>, formData: FormData) {
+  const flightOutbound = collectFlight(formData, "flightOutbound");
+  const flightReturn = collectFlight(formData, "flightReturn");
+  const hotels = collectArray(formData, "hotels", ["city", "name", "rating", "address", "distHaram", "checkIn", "checkOut", "phone", "notes"]);
+  const transfers = collectArray(formData, "transfers", ["type", "from", "to", "notes"]);
+  const itineraryRaw = collectArray(formData, "itinerary", ["date", "title", "description", "highlights"]);
+  // Splittra highlights "a, b, c" → array.
+  const itinerary = itineraryRaw?.map((row) => {
+    const r = row as Record<string, unknown>;
+    if (typeof r.highlights === "string") {
+      r.highlights = (r.highlights as string).split(",").map((s) => s.trim()).filter(Boolean);
+    }
+    return r;
+  }) ?? null;
   return {
     slug: p.slug,
     type: p.type,
@@ -121,11 +157,11 @@ function dataFromParsed(p: z.infer<typeof packageSchema>) {
     gatheringPoint: p.gatheringPoint || null,
     gatheringTime: p.gatheringTime || null,
     whatsappLink: p.whatsappLink || null,
-    flightOutbound: (parseJsonField(p.flightOutbound) ?? Prisma.DbNull) as Prisma.InputJsonValue | typeof Prisma.DbNull,
-    flightReturn: (parseJsonField(p.flightReturn) ?? Prisma.DbNull) as Prisma.InputJsonValue | typeof Prisma.DbNull,
-    hotels: (parseJsonField(p.hotels) ?? Prisma.DbNull) as Prisma.InputJsonValue | typeof Prisma.DbNull,
-    transfers: (parseJsonField(p.transfers) ?? Prisma.DbNull) as Prisma.InputJsonValue | typeof Prisma.DbNull,
-    itinerary: (parseJsonField(p.itinerary) ?? Prisma.DbNull) as Prisma.InputJsonValue | typeof Prisma.DbNull,
+    flightOutbound: (flightOutbound ?? Prisma.DbNull) as Prisma.InputJsonValue | typeof Prisma.DbNull,
+    flightReturn: (flightReturn ?? Prisma.DbNull) as Prisma.InputJsonValue | typeof Prisma.DbNull,
+    hotels: (hotels ?? Prisma.DbNull) as Prisma.InputJsonValue | typeof Prisma.DbNull,
+    transfers: (transfers ?? Prisma.DbNull) as Prisma.InputJsonValue | typeof Prisma.DbNull,
+    itinerary: (itinerary ?? Prisma.DbNull) as Prisma.InputJsonValue | typeof Prisma.DbNull,
   };
 }
 
@@ -137,7 +173,7 @@ export async function createPackage(formData: FormData) {
   const exists = await prisma.package.findUnique({ where: { slug: parsed.data.slug } });
   if (exists) return { ok: false, error: "Slug är redan upptagen" };
 
-  const created = await prisma.package.create({ data: dataFromParsed(parsed.data) });
+  const created = await prisma.package.create({ data: dataFromParsed(parsed.data, formData) });
   revalidatePath("/admin/paket");
   redirect(`/admin/paket/${created.id}`);
 }
@@ -147,7 +183,7 @@ export async function updatePackage(id: string, formData: FormData) {
   const parsed = packageSchema.safeParse(fromForm(formData));
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Ogiltiga fält" };
 
-  await prisma.package.update({ where: { id }, data: dataFromParsed(parsed.data) });
+  await prisma.package.update({ where: { id }, data: dataFromParsed(parsed.data, formData) });
   revalidatePath("/admin/paket");
   revalidatePath(`/admin/paket/${id}`);
   revalidatePath("/");
