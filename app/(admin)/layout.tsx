@@ -23,6 +23,7 @@ const NAV = [
       { href: "/admin/resegrupper", label: "Resegrupper", icon: "⊞" },
       { href: "/admin/resenarer", label: "Resenärer", icon: "◎" },
       { href: "/admin/betalningar", label: "Betalningar", icon: "₪" },
+      { href: "/admin/recensioner", label: "Omdömen", icon: "★" },
     ],
   },
   {

@@ -18,6 +18,20 @@ export default async function BokningDetailPage({ params }: { params: Params }) 
   });
   if (!booking || booking.userId !== session.user.id) notFound();
 
+  // Hämta ev. omdöme för att visa rätt CTA/kvittens vid avslutad resa.
+  const existingReview =
+    booking.status === "COMPLETED"
+      ? await prisma.review.findUnique({
+          where: {
+            bookingId_userId: {
+              bookingId: booking.id,
+              userId: session.user.id,
+            },
+          },
+          select: { id: true },
+        })
+      : null;
+
   const fmtDate = (d: Date | null) => (d ? new Date(d).toLocaleDateString("sv-SE") : "—");
 
   return (
@@ -38,6 +52,39 @@ export default async function BokningDetailPage({ params }: { params: Params }) 
         <div><span className="eyebrow">Resenärer</span><p className="serif">{booking.travelers.length}</p></div>
         <div><span className="eyebrow">Totalpris</span><p className="serif tnum">{booking.totalAmount.toLocaleString("sv-SE")} kr</p></div>
       </div>
+
+      {booking.status === "COMPLETED" && (
+        <div className="review-cta">
+          {existingReview ? (
+            <>
+              <p className="serif" style={{ fontSize: 17, marginBottom: 8 }}>
+                Du har lämnat ett omdöme — tack!
+              </p>
+              <Link
+                href={`/min-sida/bokningar/${booking.id}/recension`}
+                className="btn-link"
+              >
+                Se ditt omdöme →
+              </Link>
+            </>
+          ) : (
+            <>
+              <p className="serif" style={{ fontSize: 17, marginBottom: 4 }}>
+                Hur var din resa?
+              </p>
+              <p className="dim" style={{ fontSize: 13, marginBottom: 14 }}>
+                Berätta om upplevelsen — det tar bara en minut.
+              </p>
+              <Link
+                href={`/min-sida/bokningar/${booking.id}/recension`}
+                className="btn btn-gold"
+              >
+                Lämna omdöme
+              </Link>
+            </>
+          )}
+        </div>
+      )}
 
       <h2 style={{ fontSize: 24, marginTop: 40, marginBottom: 16 }}>Resenärer</h2>
       <ul className="trv-grid">
@@ -83,6 +130,7 @@ export default async function BokningDetailPage({ params }: { params: Params }) 
         .trv-grid { list-style: none; padding: 0; display: grid; gap: 8px; }
         .trv-grid li { padding: 14px 18px; background: #fff; border: 1px solid var(--c-line-soft); display: grid; gap: 4px; }
         .trv-grid strong { font-family: var(--f-serif); font-size: 17px; color: var(--c-ink); }
+        .review-cta { margin-top: 24px; padding: 20px 24px; background: var(--c-cream); border-left: 3px solid var(--c-gold); }
         @media (max-width: 900px) { .kv-grid { grid-template-columns: 1fr 1fr; gap: 14px; padding: 18px; } }
         @media (max-width: 480px) { .kv-grid { grid-template-columns: 1fr; padding: 16px; } }
       `}</style>
