@@ -9,7 +9,7 @@ export function SiteFooter() {
       <div className="container">
         <div className="footer-grid">
           <div>
-            <div className="brand-mark-foot">ح</div>
+            <div className="brand-mark-foot" lang="ar" aria-hidden="true">ح</div>
             <div className="brand-name-foot">
               Hadj Omra Resor
               <small>Vallfärd från Sverige sedan 1985</small>

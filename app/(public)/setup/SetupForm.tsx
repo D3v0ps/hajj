@@ -3,9 +3,9 @@
 import { useState } from "react";
 
 export function SetupForm() {
-  const [email, setEmail] = useState("admin@karimkhalil.se");
-  const [password, setPassword] = useState("test123");
-  const [name, setName] = useState("Admin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [result, setResult] = useState<{ ok?: boolean; error?: string; message?: string } | null>(null);
   const [loading, setLoading] = useState(false);
 

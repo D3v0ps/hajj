@@ -17,6 +17,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
 
   app:
     image: ${APP_IMAGE:-ghcr.io/d3v0ps/hajj:latest}
@@ -28,9 +32,13 @@ services:
       APP_URL: https://${DOMAIN:-hajj.karimkhalil.se}
       AUTH_TRUST_HOST: "true"
       RUN_SEED: ${RUN_SEED:-1}
-      SETUP_MODE: ${SETUP_MODE:-1}
+      # SETUP_MODE default 0 — /setup öppnas bara om uttryckligen satt till 1.
+      SETUP_MODE: ${SETUP_MODE:-0}
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      SITE_ORG_NR: ${SITE_ORG_NR:-}
       NODE_ENV: production
     depends_on:
       postgres:
@@ -40,6 +48,16 @@ services:
       - web
     volumes:
       - app-uploads:/app/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 8s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1536M
 
   caddy:
     image: caddy:2-alpine
@@ -58,7 +76,8 @@ services:
     networks:
       - web
     depends_on:
-      - app
+      app:
+        condition: service_healthy
 
 volumes:
   postgres-data:

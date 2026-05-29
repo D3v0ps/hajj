@@ -37,8 +37,12 @@ async function updateStatus(bookingId: string, formData: FormData) {
 async function verifyPayment(paymentId: string) {
   "use server";
   await requireAdmin();
-  await prisma.payment.update({ where: { id: paymentId }, data: { status: "COMPLETED", paidAt: new Date() } });
   const payment = await prisma.payment.findUnique({ where: { id: paymentId }, select: { bookingId: true } });
+  // Idempotent: bara PENDING → COMPLETED (en redan betald post stämplas inte om).
+  await prisma.payment.updateMany({
+    where: { id: paymentId, status: "PENDING" },
+    data: { status: "COMPLETED", paidAt: new Date() },
+  });
   if (payment) revalidatePath(`/admin/bokningar/${payment.bookingId}`);
 }
 
@@ -756,8 +760,8 @@ export default async function BokningDetailPage({ params, searchParams }: { para
           .notes-card { max-height: 300px; }
           .fact-row { grid-template-columns: repeat(3, 1fr); }
           .fact-row > div { padding: 8px 12px; }
-          .case-head { padding: 20px; margin: -28px -32px 0; }
-          .status-pipeline { padding: 14px 20px; margin: 0 -32px; }
+          .case-head { padding: 20px; margin: -20px -16px 0; }
+          .status-pipeline { padding: 14px 16px; margin: 0 -16px; }
         }
         @media (max-width: 640px) {
           .fact-row { grid-template-columns: 1fr 1fr; }

@@ -47,6 +47,8 @@ export async function POST(req: NextRequest) {
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
   if (!file) return Response.json({ error: "No file" }, { status: 400 });
+  if (file.size > 15 * 1024 * 1024) return Response.json({ error: "Filen är för stor (max 15 MB)." }, { status: 413 });
+  if (!/\.(xlsx|xls)$/i.test(file.name)) return Response.json({ error: "Endast .xlsx/.xls stöds." }, { status: 415 });
 
   const buffer = await file.arrayBuffer();
   const wb = XLSX.read(buffer, { type: "array" });

@@ -38,8 +38,8 @@ export default async function MinSidaPage() {
       orderBy: { updatedAt: "desc" },
     }),
     prisma.traveler.count({ where: { userId: session.user.id } }),
-    prisma.document.findMany({ where: { userId: session.user.id }, orderBy: { uploadedAt: "desc" }, take: 5 }),
-    prisma.message.count({ where: { userId: session.user.id, readAt: null, direction: "OUTBOUND" } }),
+    prisma.document.count({ where: { userId: session.user.id } }),
+    prisma.message.count({ where: { userId: session.user.id, readAt: null, direction: "OUTBOUND", isInternal: false } }),
   ]);
 
   return (
@@ -62,7 +62,7 @@ export default async function MinSidaPage() {
           <div className="stat-l">Resenärer registrerade</div>
         </div>
         <div className="stat">
-          <div className="stat-v">{documents.length}</div>
+          <div className="stat-v">{documents}</div>
           <div className="stat-l">Dokument uppladdade</div>
         </div>
         <div className="stat">

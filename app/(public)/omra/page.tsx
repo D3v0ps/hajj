@@ -82,7 +82,7 @@ export default async function OmraPage() {
                         {pkg.startDate && (
                           <span>
                             {new Date(pkg.startDate).toLocaleDateString("sv-SE")} —{" "}
-                            {pkg.endDate ? new Date(pkg.endDate).toLocaleDateString("sv-SE") : "tbd"}
+                            {pkg.endDate ? new Date(pkg.endDate).toLocaleDateString("sv-SE") : "ej fastställt"}
                           </span>
                         )}
                         {pkg.durationDays && <span>{pkg.durationDays} dagar</span>}

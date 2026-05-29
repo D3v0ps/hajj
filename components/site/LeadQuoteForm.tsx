@@ -10,7 +10,7 @@ export function LeadQuoteForm() {
 
   if (done) {
     return (
-      <div className="quote-card success-card">
+      <div className="quote-card success-card" role="status" aria-live="polite">
         <div className="ribbon">Tack — vi hör av oss</div>
         <h3 style={{ marginBottom: 12 }}>Förfrågan mottagen</h3>
         <p className="dim" style={{ fontSize: 14 }}>
@@ -80,7 +80,7 @@ export function LeadQuoteForm() {
         </div>
       </div>
 
-      {error && <p className="err" style={{ marginTop: 12 }}>{error}</p>}
+      {error && <p className="err" role="alert" style={{ marginTop: 12 }}>{error}</p>}
 
       <button type="submit" className="btn btn-primary" style={{ marginTop: 20, width: "100%", justifyContent: "center" }} disabled={pending}>
         {pending ? "Skickar..." : "Skicka förfrågan →"}

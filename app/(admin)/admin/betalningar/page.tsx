@@ -94,6 +94,8 @@ export default async function BetalningarPage() {
         startDate: true,
         createdAt: true,
         bookings: {
+          // Exkludera utkast och avbokade — de ska inte räknas som fakturerat.
+          where: { status: { notIn: ["DRAFT", "CANCELLED"] } },
           select: {
             id: true,
             totalAmount: true,

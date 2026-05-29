@@ -107,6 +107,8 @@ model Package {
   tiers      PackageTier[]
   bookings   Booking[]
   emailSends EmailSend[]
+
+  @@index([status, type, startDate])
 }
 
 enum PackageType {
@@ -178,7 +180,9 @@ model Booking {
   updatedAt     DateTime      @updatedAt
   submittedAt   DateTime?
 
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Restrict: skydda finansiell historik. En User med bokningar kan inte
+  // raderas av misstag (radera/anonymisera bokningar separat vid behov).
+  user      User         @relation(fields: [userId], references: [id], onDelete: Restrict)
   package   Package      @relation(fields: [packageId], references: [id])
   tier      PackageTier? @relation(fields: [tierId], references: [id])
   travelers  Traveler[]
@@ -241,6 +245,7 @@ model Traveler {
 
   @@index([userId])
   @@index([bookingId])
+  @@index([ageCategory])
 }
 
 // -------- DOMÄN: DOKUMENT --------
@@ -291,7 +296,7 @@ model Payment {
   method      PaymentMethod
   status      PaymentStatus @default(PENDING)
   reference   String?
-  providerRef String?
+  providerRef String?  @unique
   paidAt      DateTime?
   createdAt   DateTime      @default(now())
   metadata    Json?
@@ -416,6 +421,9 @@ model Lead {
   status        LeadStatus @default(NEW)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
 }
 
 enum LeadStatus {

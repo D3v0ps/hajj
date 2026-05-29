@@ -16,26 +16,38 @@ const CATEGORY_LABELS: Record<string, string> = {
   GENERAL: "Allmänt",
 };
 
-async function createTemplate(formData: FormData) {
-  "use server";
+async function requireAdmin() {
   const session = await auth();
   if (!session?.user?.id) redirect("/logga-in");
+  if (session.user.role !== "ADMIN" && session.user.role !== "STAFF") redirect("/min-sida");
+  return session.user;
+}
 
-  const name = String(formData.get("name") ?? "");
-  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "");
+async function createTemplate(formData: FormData) {
+  "use server";
+  await requireAdmin();
+
+  const name = String(formData.get("name") ?? "").trim();
+  if (name.length < 2) return;
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "") || `mall-${Date.now()}`;
   const subject = String(formData.get("subject") ?? "");
   const body = String(formData.get("body") ?? "");
   const category = String(formData.get("category") ?? "GENERAL") as "BOOKING_CONFIRM" | "PAYMENT_REQUEST" | "PAYMENT_REMINDER" | "TRIP_INFO" | "PRE_DEPARTURE" | "VISA_STATUS" | "GENERAL";
 
-  await prisma.emailTemplate.create({
-    data: { slug, name, subject, body, category, variables: [] },
-  });
+  try {
+    await prisma.emailTemplate.create({
+      data: { slug, name, subject, body, category, variables: [] },
+    });
+  } catch {
+    // slug-kollision e.d. — tyst, mallen skapas inte
+  }
   revalidatePath("/admin/mejl");
 }
 
 async function deleteTemplate(id: string) {
   "use server";
-  await prisma.emailTemplate.delete({ where: { id } });
+  await requireAdmin();
+  await prisma.emailTemplate.delete({ where: { id } }).catch(() => {});
   revalidatePath("/admin/mejl");
 }
 

@@ -19,7 +19,7 @@ export function StepReview({ booking }: Props) {
       <span className="section-mark">— Steg 4 av 5</span>
       <h2 style={{ fontSize: 32, marginTop: 12, marginBottom: 16 }}>Granska bokningen</h2>
       <p className="dim" style={{ marginBottom: 32 }}>
-        Kontrollera att allt stämmer. När du fortsätter registreras bokningen som mottagen och kontoret kontaktar dig för dokumentupload och slutbetalning.
+        Kontrollera att allt stämmer. När du fortsätter registreras bokningen som mottagen och kontoret kontaktar dig för dokumentuppladdning och slutbetalning.
       </p>
 
       <div className="rev-grid">

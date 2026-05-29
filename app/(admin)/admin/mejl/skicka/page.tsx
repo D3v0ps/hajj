@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
 import { SITE } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +15,7 @@ async function sendBulk(formData: FormData) {
   "use server";
   const session = await auth();
   if (!session?.user?.id) redirect("/logga-in");
+  if (session.user.role !== "ADMIN" && session.user.role !== "STAFF") redirect("/min-sida");
 
   const templateId = String(formData.get("templateId") ?? "");
   const packageId = String(formData.get("packageId") ?? "");
@@ -38,8 +38,13 @@ async function sendBulk(formData: FormData) {
   });
 
   let sent = 0;
+  const seenEmails = new Set<string>();
   for (const b of bookings) {
     if (!b.user.email || b.user.email === "import@system.local") continue;
+    // Dedup: en mottagare med flera bokningar på paketet får bara ett mejl.
+    const emailKey = b.user.email.toLowerCase();
+    if (seenEmails.has(emailKey)) continue;
+    seenEmails.add(emailKey);
 
     const vars: Record<string, string> = {
       namn: b.user.name ?? b.travelers[0]?.firstName ?? "Resenär",
@@ -161,10 +166,16 @@ export default async function SkickaMejlPage({ searchParams }: { searchParams: S
               <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, lineHeight: 1.7 }}>
                 <li>Mejl köas med status <strong>QUEUED</strong> i utskicksloggen</li>
                 <li>Variabler ersätts per mottagare ({"{{namn}}"} → resenärens namn etc.)</li>
+                <li>En mottagare med flera bokningar får bara <strong>ett</strong> mejl</li>
                 <li>Import-användare (import@system.local) hoppas över</li>
                 <li>Faktisk sändning sker när e-posttjänst (Resend/SMTP) kopplas in</li>
               </ul>
             </div>
+
+            <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 14, marginBottom: 16, cursor: "pointer" }}>
+              <input type="checkbox" name="confirm" value="yes" required style={{ marginTop: 3 }} />
+              <span>Jag bekräftar att utskicket köas till alla mottagare i vald målgrupp.</span>
+            </label>
 
             <button type="submit" className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }}>
               Köa utskick →

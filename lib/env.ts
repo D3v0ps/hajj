@@ -12,6 +12,9 @@ const schema = z.object({
   SITE_PHONE_DISPLAY: z.string().optional(),
   SITE_EMAIL: z.string().email().optional(),
   SITE_DOMAIN: z.string().optional(),
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  SETUP_MODE: z.string().optional(),
 });
 
 type Env = z.infer<typeof schema>;
@@ -38,6 +41,9 @@ function load(): Env {
     SITE_PHONE_DISPLAY: process.env.SITE_PHONE_DISPLAY,
     SITE_EMAIL: process.env.SITE_EMAIL,
     SITE_DOMAIN: process.env.SITE_DOMAIN,
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    SETUP_MODE: process.env.SETUP_MODE,
   });
   return cached;
 }

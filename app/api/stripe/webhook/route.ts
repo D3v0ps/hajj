@@ -33,9 +33,9 @@ export async function POST(req: NextRequest) {
     const cs = event.data.object as Stripe.Checkout.Session;
     const bookingId = cs.metadata?.bookingId;
 
-    // Markera betalningen (matchad på providerRef = session-id) som COMPLETED
+    // Idempotent: bara PENDING → COMPLETED (replay stämplar inte om paidAt).
     await prisma.payment.updateMany({
-      where: { providerRef: cs.id },
+      where: { providerRef: cs.id, status: "PENDING" },
       data: { status: "COMPLETED", paidAt: new Date() },
     });
 
@@ -45,6 +45,14 @@ export async function POST(req: NextRequest) {
         data: { status: "PAID_DEPOSIT", step: 6 },
       }).catch(() => {});
     }
+  } else if (event.type === "checkout.session.expired") {
+    // Övergiven/utgången session — markera betalningsförsöket som misslyckat
+    // så det inte blockerar en ny betalning.
+    const cs = event.data.object as Stripe.Checkout.Session;
+    await prisma.payment.updateMany({
+      where: { providerRef: cs.id, status: "PENDING" },
+      data: { status: "FAILED" },
+    });
   }
 
   return Response.json({ received: true });

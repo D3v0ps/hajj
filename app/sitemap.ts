@@ -10,6 +10,7 @@ const STATIC_PATHS = [
   "/forbered",
   "/om-oss",
   "/kontakt",
+  "/demo",
   "/villkor",
   "/integritet",
   "/cookies",

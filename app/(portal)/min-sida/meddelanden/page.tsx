@@ -9,7 +9,8 @@ export default async function MeddelandenPage() {
   if (!session?.user?.id) redirect("/logga-in");
 
   const messages = await prisma.message.findMany({
-    where: { userId: session.user.id },
+    // isInternal: false — interna anteckningar från kontoret får ALDRIG visas för kund.
+    where: { userId: session.user.id, isInternal: false },
     orderBy: { createdAt: "desc" },
     take: 50,
   });

@@ -75,20 +75,42 @@ function inferSeason(name: string): string {
 
 function normalizeGender(val: string): string | null {
   const v = val.toUpperCase().trim();
-  if (v === "MR" || v === "M" || v === "MAN") return "M";
-  if (v === "MRS" || v === "F" || v === "KVINNA" || v === "MS") return "F";
-  return v || null;
+  if (v === "MR" || v === "M" || v === "MAN" || v === "MALE" || v === "POJKE") return "M";
+  if (v === "MRS" || v === "F" || v === "KVINNA" || v === "MS" || v === "FEMALE" || v === "FLICKA") return "F";
+  return null; // okänt värde sparas inte (undvik skräp)
 }
 
 function parseBirthDate(val: string): Date | null {
   if (!val) return null;
   const clean = val.replace(/\D/g, "");
+  // 8 siffror: ÅÅÅÅMMDD
   if (clean.length === 8) {
     const d = new Date(`${clean.slice(0, 4)}-${clean.slice(4, 6)}-${clean.slice(6, 8)}`);
     if (!isNaN(d.getTime())) return d;
   }
+  // 12 siffror: ÅÅÅÅMMDDXXXX (svenskt personnummer) — ta de 8 första
+  if (clean.length === 12) {
+    const d = new Date(`${clean.slice(0, 4)}-${clean.slice(4, 6)}-${clean.slice(6, 8)}`);
+    if (!isNaN(d.getTime())) return d;
+  }
+  // 10 siffror: ÅÅMMDDXXXX — pivot 1900/2000
+  if (clean.length === 10) {
+    const yy = parseInt(clean.slice(0, 2), 10);
+    const year = yy > new Date().getFullYear() % 100 ? 1900 + yy : 2000 + yy;
+    const d = new Date(`${year}-${clean.slice(2, 4)}-${clean.slice(4, 6)}`);
+    if (!isNaN(d.getTime())) return d;
+  }
   const d = new Date(val);
   return isNaN(d.getTime()) ? null : d;
+}
+
+function inferAgeCategory(birthDate: Date | null): "ADULT" | "CHILD" | "INFANT" {
+  if (!birthDate) return "ADULT";
+  const ageMs = Date.now() - birthDate.getTime();
+  const years = ageMs / (365.25 * 24 * 3600 * 1000);
+  if (years < 2) return "INFANT";
+  if (years < 12) return "CHILD";
+  return "ADULT";
 }
 
 function normalizeHeaders(raw: unknown[]): string[] {
@@ -108,6 +130,9 @@ export async function POST(req: NextRequest) {
   const file = formData.get("file") as File | null;
   const selectedRaw = formData.get("selectedSheets") as string | null;
   if (!file || !selectedRaw) return Response.json({ error: "Missing file or selection" }, { status: 400 });
+  // Skydd mot OOM/DoS: max 15 MB, endast Excel.
+  if (file.size > 15 * 1024 * 1024) return Response.json({ error: "Filen är för stor (max 15 MB)." }, { status: 413 });
+  if (!/\.(xlsx|xls)$/i.test(file.name)) return Response.json({ error: "Endast .xlsx/.xls stöds." }, { status: 415 });
 
   const selectedSheets: string[] = JSON.parse(selectedRaw);
   const buffer = await file.arrayBuffer();
@@ -199,6 +224,7 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
+      const birthDate = parseBirthDate(data.birthDate || data.personnummer || "");
       try {
         await prisma.traveler.create({
           data: {
@@ -206,11 +232,12 @@ export async function POST(req: NextRequest) {
             bookingId: booking.id,
             firstName,
             lastName,
+            ageCategory: inferAgeCategory(birthDate),
             email: data.email || null,
             phone: data.phone || null,
             personnummer: data.personnummer || null,
             passportNo: data.passportNo || null,
-            birthDate: parseBirthDate(data.birthDate || ""),
+            birthDate,
             gender: data.gender ? normalizeGender(data.gender) : null,
             nationality: data.nationality || null,
             civilStatus: data.civilStatus || null,

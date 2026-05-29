@@ -1,8 +1,23 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { LeadQuoteForm } from "@/components/site/LeadQuoteForm";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Hadj Omra Resor — Hajj & Omra från Sverige sedan 1985",
+  description:
+    "Sveriges äldsta arrangör av Hajj och Omra. Resegaranti hos Kammarkollegiet, svensk reseledare, BankID och Swish. Boka tryggt från Stockholm.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Hadj Omra Resor — Hajj & Omra från Sverige sedan 1985",
+    description:
+      "Sveriges äldsta arrangör av Hajj och Omra. Resegaranti hos Kammarkollegiet, svensk reseledare, BankID och Swish.",
+    type: "website",
+    locale: "sv_SE",
+  },
+};
 
 export default async function HomePage() {
   const featured = await prisma.package
@@ -138,7 +153,7 @@ export default async function HomePage() {
                           {new Date(pkg.startDate).toLocaleDateString("sv-SE")} —{" "}
                           {pkg.endDate
                             ? new Date(pkg.endDate).toLocaleDateString("sv-SE")
-                            : "tbd"}
+                            : "ej fastställt"}
                         </p>
                       )}
                       <div className="pkg-price">
@@ -210,7 +225,7 @@ export default async function HomePage() {
 
           <ol className="process">
             {[
-              { t: "Begär offert eller välj paket", b: "Använd vår quote-form för en skräddarsydd offert, eller boka direkt ett av våra publicerade paket. Du får svar inom 24 timmar." },
+              { t: "Begär offert eller välj paket", b: "Använd vårt offertformulär för en skräddarsydd offert, eller boka direkt ett av våra publicerade paket. Du får svar inom 24 timmar." },
               { t: "Skapa konto och fyll i ansökan", b: "Logga in med e-post eller BankID. Lägg till resenärer, ladda upp pass via kamera, och ange eventuella särskilda behov." },
               { t: "Ladda upp dokument", b: "Pass, passfoto, eventuellt uppehållstillstånd. Vi granskar och återkommer om något behöver kompletteras." },
               { t: "Granska och betala anmälningsavgift", b: "5 000 kr per person bekräftar din plats. Slutbetalning 30 dagar före avresa, via Swish, Klarna, kort eller bankgiro." },

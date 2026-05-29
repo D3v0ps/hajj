@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { LeadQuoteForm } from "@/components/site/LeadQuoteForm";
 import type { Metadata } from "next";
 
@@ -35,7 +34,7 @@ export default function VisumPage() {
               {[
                 { t: "Omra-visum", b: "Specifikt för Omra-resor. Tidsbegränsat och knutet till resa under viss period.", p: "1 800 kr" },
                 { t: "Hajj-visum", b: "Endast via vår partner och inom kvotsystem. Hanteras inom våra Hajj-paket.", p: "Inkluderat i Hajj-paket" },
-                { t: "Turistvisum (e-Visa)", b: "För turism, släktbesök och religiösa besök till Mecka utanför Hajj-period.", p: "1 500 kr" },
+                { t: "Turistvisum (e-visum)", b: "För turism, släktbesök och religiösa besök till Mecka utanför Hajj-period.", p: "1 500 kr" },
                 { t: "Visum för uppehållstillståndsinnehavare", b: "Hjälp för dig med svenskt UT som behöver dokument-extraservice.", p: "2 200 kr" },
               ].map((v) => (
                 <article key={v.t} className="visa-card">

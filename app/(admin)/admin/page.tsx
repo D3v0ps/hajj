@@ -3,12 +3,6 @@ import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-const STATUS_COLORS: Record<string, string> = {
-  DRAFT: "outline", SUBMITTED: "gold", REVIEW: "info",
-  CONFIRMED: "ok", PAID_DEPOSIT: "ok", PAID_FULL: "ok",
-  COMPLETED: "ok", CANCELLED: "warn",
-};
-
 const PIPELINE_COLS = [
   { status: "SUBMITTED", label: "Mottagen", dot: "#B5894B" },
   { status: "REVIEW", label: "Granskas", dot: "#0C1E3E" },
@@ -268,6 +262,9 @@ export default async function AdminDashboard() {
         @media (max-width: 720px) {
           .pipeline { grid-template-columns: 1fr 1fr; }
           .pipe-head { padding: 10px 12px; }
+        }
+        @media (max-width: 480px) {
+          .pipeline { grid-template-columns: 1fr; }
         }
       `}</style>
     </div>

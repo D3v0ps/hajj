@@ -12,17 +12,6 @@ const TYPE_LABEL: Record<string, string> = {
   VISUM: "Visum",
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  DRAFT: "Utkast",
-  SUBMITTED: "Inskickad",
-  REVIEW: "Granskas",
-  CONFIRMED: "Bekräftad",
-  PAID_DEPOSIT: "Depositionen betald",
-  PAID_FULL: "Fullt betald",
-  COMPLETED: "Slutförd",
-  CANCELLED: "Avbokad",
-};
-
 export default async function ResegrupperPage({ searchParams }: { searchParams: SearchParams }) {
   const { trip } = await searchParams;
 
@@ -371,6 +360,7 @@ export default async function ResegrupperPage({ searchParams }: { searchParams: 
         }
 
         /* Resenärstabell */
+        .table-wrap .gr-table { min-width: 1100px; }
         .gr-table { font-size: 12.5px; }
         .gr-table th, .gr-table td { padding: 10px 12px; vertical-align: top; }
         .gr-table .mono { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.02em; white-space: nowrap; }

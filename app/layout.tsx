@@ -38,8 +38,9 @@ export const metadata: Metadata = {
     template: "%s · Hadj Omra Resor",
   },
   description:
-    "Sveriges ledande arrangör av Hajj och Omra. Resegaranti hos Kammarkollegiet, 40+ års erfarenhet, svensk service från start till hemkomst.",
+    "Sveriges äldsta arrangör av Hajj och Omra. Resegaranti hos Kammarkollegiet, 40+ års erfarenhet, svensk service från start till hemkomst.",
   metadataBase: new URL(process.env.APP_URL ?? "https://hajj.karimkhalil.se"),
+  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     locale: "sv_SE",
@@ -47,10 +48,32 @@ export const metadata: Metadata = {
   },
 };
 
+const ORG_JSONLD = {
+  "@context": "https://schema.org",
+  "@type": "TravelAgency",
+  name: "Hadj Omra Resor",
+  description: "Sveriges äldsta arrangör av Hajj och Omra.",
+  url: process.env.APP_URL ?? "https://hajj.karimkhalil.se",
+  areaServed: "SE",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "Kapellgränd 10",
+    postalCode: "116 25",
+    addressLocality: "Stockholm",
+    addressCountry: "SE",
+  },
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="sv" className={`${newsreader.variable} ${manrope.variable} ${mono.variable}`}>
-      <body>{children}</body>
+      <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_JSONLD) }}
+        />
+        {children}
+      </body>
     </html>
   );
 }

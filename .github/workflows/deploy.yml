@@ -122,6 +122,10 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           SEED_ADMIN_EMAIL: ${{ secrets.SEED_ADMIN_EMAIL }}
           SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          SITE_ORG_NR: ${{ secrets.SITE_ORG_NR }}
+          SETUP_MODE: ${{ vars.SETUP_MODE || '0' }}
           GH_ACTOR: ${{ github.actor }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO_LC: ${{ github.repository }}
@@ -143,6 +147,10 @@ jobs:
             AUTH_SECRET="$AUTH_SECRET" \
             SEED_ADMIN_EMAIL="$SEED_ADMIN_EMAIL" \
             SEED_ADMIN_PASSWORD="$SEED_ADMIN_PASSWORD" \
+            STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY" \
+            STRIPE_WEBHOOK_SECRET="$STRIPE_WEBHOOK_SECRET" \
+            SITE_ORG_NR="$SITE_ORG_NR" \
+            SETUP_MODE="$SETUP_MODE" \
             GH_ACTOR="$GH_ACTOR" \
             GH_TOKEN="$GH_TOKEN" \
             bash -s <<'REMOTE'
@@ -161,7 +169,10 @@ jobs:
             echo "SEED_ADMIN_EMAIL=${SEED_ADMIN_EMAIL:-}"
             echo "SEED_ADMIN_PASSWORD=${SEED_ADMIN_PASSWORD:-}"
             echo "RUN_SEED=1"
-            echo "SETUP_MODE=1"
+            echo "SETUP_MODE=${SETUP_MODE:-0}"
+            echo "STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}"
+            echo "STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}"
+            echo "SITE_ORG_NR=${SITE_ORG_NR:-}"
           } > .env
 
           # Logga in på GHCR med workflow-token (kräver packages: read i deploy-jobbet)

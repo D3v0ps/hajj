@@ -35,13 +35,14 @@ export async function registerUser(formData: FormData): Promise<never> {
   }
 
   const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } });
-  await hashPassword(parsed.data.password);
+
+  // Email enumeration-skydd: hasha alltid (jämn timing), men avslöja inte om
+  // kontot fanns — visa samma "registrerad"-flöde oavsett.
+  const passwordHash = await hashPassword(parsed.data.password);
 
   if (existing) {
     redirect("/logga-in?registered=1");
   }
-
-  const passwordHash = await hashPassword(parsed.data.password);
 
   await prisma.user.create({
     data: {
