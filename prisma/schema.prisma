@@ -31,6 +31,10 @@ model User {
   bookings  Booking[]
   documents Document[]
   messages  Message[]
+  passwordResetTokens     PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  reviews                 Review[]
+  auditLogs               AuditLog[]
 }
 
 enum UserRole {
@@ -176,6 +180,11 @@ model Booking {
   notes         String?
   contactPhone  String?
   contactEmail  String?
+  termsAcceptedAt   DateTime?
+  termsVersion      String?
+  refundRequestedAt DateTime?
+  refundReason      String?
+  refundStatus      RefundStatus @default(NONE)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   submittedAt   DateTime?
@@ -189,10 +198,81 @@ model Booking {
   payments   Payment[]
   messages   Message[]
   emailSends EmailSend[]
+  reviews    Review[]
 
   @@index([userId])
   @@index([packageId])
   @@index([status])
+  @@index([refundStatus])
+}
+
+enum RefundStatus {
+  NONE
+  REQUESTED
+  APPROVED
+  REJECTED
+  PROCESSED
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  bookingId String
+  rating    Int
+  body      String?
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId, userId])
+  @@index([userId])
+  @@index([isPublic])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actorEmail String?
+  action     String
+  targetType String?
+  targetId   String?
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([action, createdAt])
+  @@index([targetType, targetId])
 }
 
 enum BookingStatus {
@@ -382,6 +462,8 @@ model EmailSend {
   subject      String
   body         String
   status       EmailSendStatus @default(QUEUED)
+  providerRef  String?
+  kind         String?
   sentAt       DateTime?
   errorMessage String?
   bookingId    String?
@@ -396,10 +478,12 @@ model EmailSend {
   @@index([templateId])
   @@index([bookingId])
   @@index([status])
+  @@index([kind])
 }
 
 enum EmailSendStatus {
   QUEUED
+  SENDING
   SENT
   FAILED
   SKIPPED

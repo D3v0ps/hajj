@@ -15,6 +15,10 @@ const schema = z.object({
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   SETUP_MODE: z.string().optional(),
+  RESEND_API_KEY: z.string().optional(),
+  SITE_EMAIL_FROM: z.string().optional(),
+  WORKER_TOKEN: z.string().optional(),
+  UPLOADS_DIR: z.string().optional(),
 });
 
 type Env = z.infer<typeof schema>;
@@ -44,6 +48,10 @@ function load(): Env {
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
     SETUP_MODE: process.env.SETUP_MODE,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    SITE_EMAIL_FROM: process.env.SITE_EMAIL_FROM,
+    WORKER_TOKEN: process.env.WORKER_TOKEN,
+    UPLOADS_DIR: process.env.UPLOADS_DIR,
   });
   return cached;
 }
