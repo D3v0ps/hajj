@@ -6,9 +6,18 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { COUNTRY_OPTIONS, CIVIL_STATUS_OPTIONS } from "@/lib/countries";
 import { uploadTravelerDocument, setDocumentStatus, deleteTravelerDocument } from "@/app/actions/documents";
+import { updateRefundStatus } from "@/app/actions/refunds";
 
 type Params = Promise<{ id: string }>;
-type SearchParams = Promise<{ tab?: string; docError?: string; docOk?: string }>;
+type SearchParams = Promise<{ tab?: string; docError?: string; docOk?: string; refundError?: string; refundOk?: string }>;
+
+const REFUND_STATUSES = ["REQUESTED", "APPROVED", "REJECTED", "PROCESSED"] as const;
+const REFUND_STATUS_LABELS: Record<string, string> = {
+  REQUESTED: "Mottagen / under granskning",
+  APPROVED: "Godkänd",
+  REJECTED: "Avslagen",
+  PROCESSED: "Återbetald",
+};
 
 export const dynamic = "force-dynamic";
 
@@ -124,7 +133,7 @@ async function sendMessage(bookingId: string, formData: FormData) {
 
 export default async function BokningDetailPage({ params, searchParams }: { params: Params; searchParams: SearchParams }) {
   const { id } = await params;
-  const { tab, docError, docOk } = await searchParams;
+  const { tab, docError, docOk, refundError, refundOk } = await searchParams;
   const activeTab = tab ?? "oversikt";
 
   const booking = await prisma.booking.findUnique({
@@ -192,6 +201,64 @@ export default async function BokningDetailPage({ params, searchParams }: { para
         <div><span className="f-l">Väntande</span><span className="f-v tnum" style={{ color: pendingTotal > 0 ? "var(--c-warn)" : "var(--c-text-muted)" }}>{fmtKr(pendingTotal)} kr</span></div>
         <div><span className="f-l">Kund</span><span className="f-v">{booking.user.email}</span></div>
       </div>
+
+      {/* Refund / cancellation case (visas bara om kunden begärt avbokning) */}
+      {booking.refundStatus !== "NONE" && (
+        <section className={`rf-card rf-card-${booking.refundStatus.toLowerCase()}`} aria-label="Avbokningsbegäran">
+          <div className="rf-card-head">
+            <div>
+              <span className="rf-eyebrow">Avbokningsbegäran</span>
+              <h2 className="rf-card-title">
+                Status: <span className={`rf-pill rf-pill-${booking.refundStatus.toLowerCase()}`}>{REFUND_STATUS_LABELS[booking.refundStatus] ?? booking.refundStatus}</span>
+              </h2>
+              <p className="rf-card-meta">
+                Mottagen {booking.refundRequestedAt
+                  ? new Date(booking.refundRequestedAt).toLocaleString("sv-SE", { dateStyle: "medium", timeStyle: "short" })
+                  : "—"}
+              </p>
+            </div>
+          </div>
+
+          {refundError && <div className="rf-flash err" role="alert">{refundError}</div>}
+          {refundOk && !refundError && <div className="rf-flash ok" role="status">Statusen uppdaterades.</div>}
+
+          {booking.refundReason && (
+            <div className="rf-reason">
+              <span className="rf-eyebrow">Kundens anledning</span>
+              <p className="rf-reason-text">{booking.refundReason}</p>
+            </div>
+          )}
+
+          <form action={updateRefundStatus} className="rf-form">
+            <input type="hidden" name="bookingId" value={booking.id} />
+            <div className="rf-form-row">
+              <label htmlFor={`rf-status-${booking.id}`} className="rf-form-label">Ny status</label>
+              <select id={`rf-status-${booking.id}`} name="status" defaultValue={booking.refundStatus} className="rf-select">
+                {REFUND_STATUSES.map((s) => (
+                  <option key={s} value={s}>{REFUND_STATUS_LABELS[s]}</option>
+                ))}
+              </select>
+            </div>
+            <div className="rf-form-row">
+              <label htmlFor={`rf-comment-${booking.id}`} className="rf-form-label">Kommentar (valfri)</label>
+              <textarea
+                id={`rf-comment-${booking.id}`}
+                name="comment"
+                rows={3}
+                maxLength={2000}
+                placeholder="Visas alltid som intern anteckning. Vid Godkänd/Avslagen skickas även som meddelande och mejl till kunden."
+                className="rf-textarea"
+              />
+            </div>
+            <div className="rf-form-actions">
+              <p className="rf-hint dim">
+                Bokningens status (DRAFT/SUBMITTED/…) ändras inte automatiskt — sätt CANCELLED manuellt via statusväljaren när beslut är taget.
+              </p>
+              <button type="submit" className="btn btn-primary" style={{ padding: "8px 18px", fontSize: 12 }}>Spara</button>
+            </div>
+          </form>
+        </section>
+      )}
 
       {/* Tabs */}
       <div className="adm-tabs">
@@ -715,6 +782,64 @@ export default async function BokningDetailPage({ params, searchParams }: { para
         .fact-row > div:last-child { border-right: 0; }
         .f-l { display: block; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--c-text-muted); font-weight: 700; }
         .f-v { display: block; font-family: var(--f-serif); font-size: 16px; color: var(--c-ink); margin-top: 4px; }
+
+        /* Avbokning/återbetalning-kort */
+        .rf-card {
+          background: #fff; border: 1px solid var(--c-line-soft);
+          border-left: 4px solid var(--c-gold);
+          padding: 20px 24px; margin-bottom: 20px;
+        }
+        .rf-card-requested { border-left-color: var(--c-gold); background: #FFFCEF; }
+        .rf-card-approved  { border-left-color: var(--c-green-soft); }
+        .rf-card-rejected  { border-left-color: var(--c-warn); }
+        .rf-card-processed { border-left-color: var(--c-ink); }
+        .rf-card-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+        .rf-eyebrow {
+          display: block; font-size: 10px; letter-spacing: 0.16em;
+          text-transform: uppercase; color: var(--c-gold); font-weight: 700; margin-bottom: 4px;
+        }
+        .rf-card-title { font-family: var(--f-serif); font-size: 20px; margin: 0 0 4px 0; color: var(--c-ink); font-weight: 500; }
+        .rf-card-meta { font-size: 12px; color: var(--c-text-muted); margin: 0; }
+
+        .rf-pill {
+          display: inline-flex; align-items: center;
+          padding: 3px 10px; font-size: 11px; font-weight: 700;
+          letter-spacing: 0.06em; text-transform: uppercase;
+          border: 1px solid; background: transparent;
+          font-family: var(--f-sans); vertical-align: middle;
+        }
+        .rf-pill-requested { color: var(--c-gold);  border-color: var(--c-gold); background: #FFF7E6; }
+        .rf-pill-approved  { color: var(--c-green); border-color: var(--c-green-soft); background: #E6F1EA; }
+        .rf-pill-rejected  { color: var(--c-warn);  border-color: var(--c-warn); background: #FBE9E2; }
+        .rf-pill-processed { color: var(--c-ink);   border-color: var(--c-ink);  background: #fff; }
+
+        .rf-flash { padding: 8px 12px; font-size: 12px; margin: 10px 0; border: 1px solid; }
+        .rf-flash.err { background: #FBE9E2; border-color: var(--c-warn); color: var(--c-warn); }
+        .rf-flash.ok  { background: #E6F1EA; border-color: var(--c-green-soft); color: var(--c-green); }
+
+        .rf-reason {
+          background: var(--c-paper); border-left: 3px solid var(--c-gold);
+          padding: 10px 14px; margin: 12px 0 14px;
+        }
+        .rf-reason-text { margin: 4px 0 0; white-space: pre-wrap; line-height: 1.55; font-size: 13.5px; }
+
+        .rf-form { display: grid; gap: 10px; margin-top: 6px; padding-top: 12px; border-top: 1px dashed var(--c-line-soft); }
+        .rf-form-row { display: grid; gap: 6px; }
+        .rf-form-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: var(--c-text-muted); }
+        .rf-select {
+          padding: 7px 10px; border: 1px solid var(--c-line); background: #fff;
+          font-size: 13px; font-family: var(--f-sans); max-width: 280px;
+        }
+        .rf-textarea {
+          padding: 10px 12px; border: 1px solid var(--c-line); background: var(--c-paper);
+          font-size: 13px; font-family: var(--f-sans); resize: vertical; min-height: 70px;
+        }
+        .rf-textarea:focus { background: #fff; border-color: var(--c-ink); outline: none; }
+        .rf-form-actions {
+          display: flex; justify-content: space-between; align-items: center;
+          gap: 12px; flex-wrap: wrap; margin-top: 4px;
+        }
+        .rf-hint { font-size: 11.5px; margin: 0; max-width: 540px; }
 
         .tab-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
         .tab-grid aside { display: flex; flex-direction: column; gap: 16px; }

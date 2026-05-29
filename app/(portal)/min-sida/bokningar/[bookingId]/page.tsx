@@ -8,6 +8,17 @@ export const dynamic = "force-dynamic";
 type Params = Promise<{ bookingId: string }>;
 type SearchParams = Promise<{ paid?: string }>;
 
+// Speglar `BLOCKED_FOR_REFUND_REQUEST` i app/actions/refunds.ts — håll synkat.
+const REFUND_BLOCKED_STATUSES = ["COMPLETED", "CANCELLED"] as const;
+
+const REFUND_LABELS: Record<string, string> = {
+  NONE: "—",
+  REQUESTED: "Avbokning begärd",
+  APPROVED: "Avbokning godkänd",
+  REJECTED: "Avbokning avslagen",
+  PROCESSED: "Återbetald",
+};
+
 export default async function BokningDetailPage({
   params,
   searchParams,
@@ -41,6 +52,12 @@ export default async function BokningDetailPage({
       : null;
 
   const fmtDate = (d: Date | null) => (d ? new Date(d).toLocaleDateString("sv-SE") : "—");
+  const refundAllowed =
+    booking.refundStatus === "NONE" &&
+    !(REFUND_BLOCKED_STATUSES as readonly string[]).includes(booking.status);
+  const refundActive = booking.refundStatus !== "NONE";
+  const refundClass = booking.refundStatus.toLowerCase();
+  const refundLabel = REFUND_LABELS[booking.refundStatus] ?? booking.refundStatus;
 
   // Slutbetalning: visa CTA när anmälningsavgiften är betald men slutpriset
   // återstår. Visa "Slutbetalt" när bokningen är PAID_FULL.
@@ -62,6 +79,16 @@ export default async function BokningDetailPage({
       </span>
       <h1 style={{ fontSize: 36, marginTop: 14, marginBottom: 8 }}>{booking.package.title}</h1>
       <p className="dim">{booking.package.subtitle}</p>
+
+      {refundActive && (
+        <div className={`rf-banner rf-banner-${refundClass}`} role="status">
+          <span className={`rf-pill rf-pill-${refundClass}`}>{refundLabel}</span>
+          <span className="rf-banner-text">
+            Mottagen {booking.refundRequestedAt ? new Date(booking.refundRequestedAt).toLocaleDateString("sv-SE") : "—"}.{" "}
+            <Link href={`/min-sida/bokningar/${booking.id}/avboka`} className="btn-link">Visa detaljer →</Link>
+          </span>
+        </div>
+      )}
 
       <div className="kv-grid">
         <div><span className="eyebrow">Status</span><p className="serif">{booking.status}</p></div>
@@ -106,6 +133,21 @@ export default async function BokningDetailPage({
           >
             Betala slutbelopp →
           </Link>
+        </div>
+      )}
+
+      {refundAllowed && (
+        <div className="rf-cta">
+          <Link
+            href={`/min-sida/bokningar/${booking.id}/avboka`}
+            className="btn btn-ghost"
+            style={{ padding: "10px 22px", fontSize: 13 }}
+          >
+            Begär avbokning
+          </Link>
+          <span className="dim" style={{ fontSize: 12 }}>
+            Avgifter följer <Link href="/villkor" className="btn-link">resevillkoren</Link>.
+          </span>
         </div>
       )}
 
@@ -191,6 +233,35 @@ export default async function BokningDetailPage({
         .fin-banner { display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: #fff; border: 1px solid var(--c-line-soft); margin-top: 24px; }
         .paid-ok { padding: 14px 18px; background: #fff; border: 1px solid var(--c-green-soft); margin-top: 20px; }
         .paid-ok strong { color: var(--c-ink); font-size: 16px; }
+
+        .rf-banner {
+          margin-top: 22px; padding: 14px 18px;
+          display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+          background: #fff; border: 1px solid var(--c-line-soft);
+          border-left: 3px solid var(--c-gold);
+          font-size: 14px;
+        }
+        .rf-banner-approved  { border-left-color: var(--c-green-soft); }
+        .rf-banner-rejected  { border-left-color: var(--c-warn); }
+        .rf-banner-processed { border-left-color: var(--c-ink); }
+        .rf-banner-text { color: var(--c-text); }
+
+        .rf-pill {
+          display: inline-flex; align-items: center;
+          padding: 4px 10px; font-size: 11px; font-weight: 700;
+          letter-spacing: 0.06em; text-transform: uppercase;
+          border: 1px solid; background: transparent;
+        }
+        .rf-pill-requested { color: var(--c-gold);  border-color: var(--c-gold); background: #FFF7E6; }
+        .rf-pill-approved  { color: var(--c-green); border-color: var(--c-green-soft); background: #E6F1EA; }
+        .rf-pill-rejected  { color: var(--c-warn);  border-color: var(--c-warn); background: #FBE9E2; }
+        .rf-pill-processed { color: var(--c-ink);   border-color: var(--c-ink);  background: #fff; }
+        .rf-pill-none      { color: var(--c-text-muted); border-color: var(--c-line); }
+
+        .rf-cta {
+          margin-top: 18px; display: flex; align-items: center;
+          gap: 12px; flex-wrap: wrap;
+        }
         @media (max-width: 900px) { .kv-grid { grid-template-columns: 1fr 1fr; gap: 14px; padding: 18px; } }
         @media (max-width: 640px) { .fin-cta { flex-direction: column; align-items: stretch; gap: 14px; } }
         @media (max-width: 480px) { .kv-grid { grid-template-columns: 1fr; padding: 16px; } }
