@@ -8,12 +8,12 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Hadj Omra Resor — Hajj & Omra från Sverige sedan 1985",
   description:
-    "Sveriges äldsta arrangör av Hajj och Omra. Resegaranti hos Kammarkollegiet, svensk reseledare, BankID och Swish. Boka tryggt från Stockholm.",
+    "Sveriges äldsta arrangör av Hajj och Omra. Resegaranti hos Kammarkollegiet, svensk reseledare, Swish och Klarna. Boka tryggt från Stockholm.",
   alternates: { canonical: "/" },
   openGraph: {
     title: "Hadj Omra Resor — Hajj & Omra från Sverige sedan 1985",
     description:
-      "Sveriges äldsta arrangör av Hajj och Omra. Resegaranti hos Kammarkollegiet, svensk reseledare, BankID och Swish.",
+      "Sveriges äldsta arrangör av Hajj och Omra. Resegaranti hos Kammarkollegiet, svensk reseledare, Swish och Klarna.",
     type: "website",
     locale: "sv_SE",
   },
@@ -197,7 +197,7 @@ export default async function HomePage() {
               { n: "01", t: "Resegaranti hos Kammarkollegiet", b: "Säkrad inbetalning, utbetalas tillbaka om vi som arrangör inte kan uppfylla resan. Verifierbart hos myndigheten." },
               { n: "02", t: "Svenska kontor och kontaktvägar", b: "Stockholms moské på Kapellgränd, Göteborg efter bokning. Telefon, e-post och kontaktblanketter — på svenska, av svensktalande." },
               { n: "03", t: "Reseledare på plats", b: "Erfarna ledare som följer gruppen genom hela resan. Rituella förklaringar, gruppöversyn, akut-stöd dygnet runt under resan." },
-              { n: "04", t: "BankID och Swish", b: "Säker inloggning, svensk betalmiljö, GDPR. Inga internationella betalningsmellanhänder för dig som kund." },
+              { n: "04", t: "Svensk betalmiljö", b: "Swish, Klarna och kort i en trygg svensk betalmiljö enligt GDPR. Inga internationella betalningsmellanhänder för dig som kund." },
               { n: "05", t: "Religiös förankring", b: "Vi följer Saudiarabiens officiella process via Nusuk och respekterar resans andliga karaktär i varje moment." },
               { n: "06", t: "Tusentals pilgrimer", b: "Fyrtio år av Hajj och Omra-arrangemang. Vi vet vad som fungerar — och vad som inte gör det." },
             ].map((it) => (
@@ -226,7 +226,7 @@ export default async function HomePage() {
           <ol className="process">
             {[
               { t: "Begär offert eller välj paket", b: "Använd vårt offertformulär för en skräddarsydd offert, eller boka direkt ett av våra publicerade paket. Du får svar inom 24 timmar." },
-              { t: "Skapa konto och fyll i ansökan", b: "Logga in med e-post eller BankID. Lägg till resenärer, ladda upp pass via kamera, och ange eventuella särskilda behov." },
+              { t: "Skapa konto och fyll i ansökan", b: "Skapa ett konto med e-post. Lägg till resenärer, ladda upp pass via kamera, och ange eventuella särskilda behov." },
               { t: "Ladda upp dokument", b: "Pass, passfoto, eventuellt uppehållstillstånd. Vi granskar och återkommer om något behöver kompletteras." },
               { t: "Granska och betala anmälningsavgift", b: "5 000 kr per person bekräftar din plats. Slutbetalning 30 dagar före avresa, via Swish, Klarna, kort eller bankgiro." },
               { t: "Resa, ritualer, hemkomst", b: "Reseledare följer gruppen, dagligt program, akutkontakt dygnet runt. Efter hemkomst: kvitto, intyg, möjlighet att lämna omdöme." },

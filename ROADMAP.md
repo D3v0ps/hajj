@@ -178,19 +178,16 @@ Dessa är inte "features" i sig men varje fas-2/3-punkt hänger på dem. Priorit
 
 ---
 
-## 6. Beslutspunkter (kräver ditt svar innan vi bygger)
+## 6. Beslutspunkter — beslut fattade 2026-05
 
-Dessa är inte tekniska val utan affärs-/budgetval — jag vill ha din riktning:
-
-1. **BankID** — bygga riktig inloggning/signering (Criipto/ZignSec, ~L + löpande kostnad)
-   eller ta bort löftet från hero/process tills vidare? *Påverkar F2-19, F1-13.*
-2. **Flerspråkighet** — bygga sv/en/ar nu (E4, L + RTL + översättningar) eller börja
-   med bara svenska och ta bort "SV·EN·AR" från trust-baren?
-3. **Swish som betalmetod** — riktig Swish (kräver aggregator: Billmate/Svea/Brite,
-   eller Swish Handel direkt) eller fortsatt manuell bankgiro/Swish-avstämning?
-4. **Bokföring** — Fortnox-integration (L) eller exportfil som revisorn matar in manuellt?
-5. **WhatsApp** — manuell `wa.me`-länk (S, räcker länge) eller WhatsApp Business API (L)?
-6. **Bilder** — har byrån egen bildbank (Mecka/Medina/grupper) eller ska vi licensiera?
+| # | Fråga | Beslut |
+|---|---|---|
+| 1 | **BankID** | **Byggs ej.** BankID-omnämnanden borttagna ur publik marknadsföringscopy (hero-metadata, why-kort, process). F2-19 (e-signering via BankID) utgår; F1-13 (dokument) klart utan BankID. *Kvar: demo-flödet (`/demo`) har fortfarande ett låtsas-BankID-steg — bör arbetas om separat.* |
+| 2 | **Flerspråkighet (sv/en/ar)** | **Ja, byggs** (E4, L). RTL för arabiska. |
+| 3 | **Swish** | **Avvaktar.** Fortsatt manuell bankgiro/Swish-avstämning tills vidare (ingen aggregator nu). |
+| 4 | **Bokföring** | **Ja** — Fortnox-integration planeras (F2-20). |
+| 5 | **WhatsApp** | **Ok** — manuell `wa.me`-länk nu, Business API senare vid behov (F2-12). |
+| 6 | **Bilder** | Egen bildbank kommer senare → bildpipeline (F3-7) avvaktar tills bilderna finns. |
 
 ---
 
