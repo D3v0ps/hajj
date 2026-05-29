@@ -42,8 +42,96 @@ export default async function PackageDetailPage({ params }: { params: Params }) 
   const departCities = pkg.departCities.length > 0 ? pkg.departCities : pkg.departCity ? [pkg.departCity] : [];
   const fmtDate = (d: Date | null) => (d ? new Date(d).toLocaleDateString("sv-SE") : "—");
 
+  // ── Strukturerad data ────────────────────────────────────────────────
+  // Lägsta pris bland alla tiers → Offer.price. Vi använder Math.min så vi
+  // täcker även fall där den enda tiern är barn/spädbarn.
+  const lowestPrice =
+    pkg.tiers.length > 0
+      ? Math.min(...pkg.tiers.map((t) => t.pricePerPerson))
+      : 0;
+  // ISO-datum (YYYY-MM-DD) för Offer.validFrom — schema.org godtar Date eller DateTime.
+  const validFromIso = pkg.startDate
+    ? new Date(pkg.startDate).toISOString().slice(0, 10)
+    : undefined;
+  // PUBLISHED → InStock, övrigt (DRAFT/ARCHIVED) → PreOrder så Google inte indexerar dem som direkt köpbara.
+  const availability =
+    pkg.status === "PUBLISHED"
+      ? "https://schema.org/InStock"
+      : "https://schema.org/PreOrder";
+  const baseUrl = process.env.APP_URL ?? "https://hajj.karimkhalil.se";
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: pkg.title,
+    description:
+      pkg.description ??
+      pkg.summary ??
+      `${pkg.type}-paket arrangerat av Hadj Omra Resor.`,
+    brand: { "@type": "Brand", name: "Hadj Omra Resor" },
+    category: pkg.type,
+    url: `${baseUrl}/paket/${pkg.slug}`,
+    offers: {
+      "@type": "Offer",
+      price: lowestPrice,
+      priceCurrency: "SEK",
+      availability,
+      url: `${baseUrl}/paket/${pkg.slug}`,
+      ...(validFromIso ? { validFrom: validFromIso } : {}),
+    },
+  };
+
+  // BreadcrumbList: Hem → typkategori → paket
+  const categoryLabel =
+    pkg.type === "OMRA"
+      ? "Omra"
+      : pkg.type === "HAJJ"
+        ? "Hajj"
+        : pkg.type === "HADJ_BADAL"
+          ? "Hadj Badal"
+          : "Visum";
+  const categorySlug =
+    pkg.type === "OMRA"
+      ? "omra"
+      : pkg.type === "HAJJ"
+        ? "hajj-2027"
+        : pkg.type === "HADJ_BADAL"
+          ? "hadj-badal"
+          : "visum";
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Hem",
+        item: `${baseUrl}/`,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: categoryLabel,
+        item: `${baseUrl}/${categorySlug}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: pkg.title,
+        item: `${baseUrl}/paket/${pkg.slug}`,
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <section style={{ padding: "64px 0 32px", borderBottom: "1px solid var(--c-line)" }}>
         <div className="container">
           <div style={{ display: "flex", gap: 12, marginBottom: 24, alignItems: "center" }}>

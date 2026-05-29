@@ -6,9 +6,70 @@ export const metadata: Metadata = {
     "Förberedelsechecklista, packlista, ritualguide och vanliga frågor inför Hajj och Omra.",
 };
 
+// Källan för både UI-rendering och FAQPage JSON-LD så de aldrig kan glida isär.
+// Innehåller frågor/svar som direkt speglar resan: betalning, vaccin, barn,
+// avbokning, språk, transfer, dokument (pass-krav) och Swish.
+const FAQ_ITEMS: { q: string; a: string }[] = [
+  {
+    q: "Vad ingår i ett Omra-paket?",
+    a: "Visum, flyg, hotell i Mecka och Medina, busstransport mellan städerna, svensk reseledare på plats samt religiösa seminarier inför resan. Detaljerade inklusioner anges per paket.",
+  },
+  {
+    q: "Hur länge måste mitt pass vara giltigt?",
+    a: "Passet måste vara giltigt minst 7 månader från utresedatumet enligt Saudiarabiens regler. Saknar du tid — förnya passet i god tid innan resa.",
+  },
+  {
+    q: "Kan jag betala på avbetalning?",
+    a: "Ja, vi erbjuder Klarna och avbetalningsplan från anmälan till 30 dagar före avresa.",
+  },
+  {
+    q: "Kan jag betala med Swish?",
+    a: "Ja. Swish, Klarna, kort och bankgiro accepteras. Anmälningsavgiften (5 000 kr per person) bekräftar platsen, slutbetalning sker senast 30 dagar före avresa.",
+  },
+  {
+    q: "Vilka vaccin behöver jag?",
+    a: "Meningokock-vaccin (ACWY) är obligatoriskt enligt saudisk lag. Säsongsinfluensa rekommenderas. Vid pandemiska perioder kan ytterligare krav gälla.",
+  },
+  {
+    q: "Får barn följa med?",
+    a: "Ja, men barn under 18 år måste resa med förälder eller mahram. Pris för barn varierar med åldern.",
+  },
+  {
+    q: "Vad händer om jag måste avboka?",
+    a: "Anmälningsavgift (5 000 kr) återbetalas vid avbokning 30 dagar eller mer före avresa. Vid senare avbokning gäller resevillkoren — läs dem för fullständig info.",
+  },
+  {
+    q: "Vilket språk pratas på resan?",
+    a: "Svenska. Reseledaren pratar både svenska, arabiska och engelska. Religiös guide kommunicerar primärt på svenska.",
+  },
+  {
+    q: "Hur tar jag mig till flygplatsen?",
+    a: "Egen anslutning till Stockholm-Arlanda eller Göteborg-Landvetter. Vi hjälper med tips och kan koordinera med andra resenärer.",
+  },
+];
+
+// JSON-LD för FAQPage så Google kan visa rikt FAQ-resultat. Återanvänder samma
+// källa som UI-listan nedan — uppdateras alltid synkat.
+const FAQ_JSONLD = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQ_ITEMS.map((it) => ({
+    "@type": "Question",
+    name: it.q,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: it.a,
+    },
+  })),
+};
+
 export default function ForberedPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSONLD) }}
+      />
       <section style={{ padding: "80px 0 56px", borderBottom: "1px solid var(--c-line)" }}>
         <div className="container">
           <span className="eyebrow gold">Förbered dig</span>
@@ -118,14 +179,7 @@ export default function ForberedPage() {
           <h2 style={{ marginTop: 14, marginBottom: 24 }}>FAQ</h2>
 
           <div className="faq">
-            {[
-              { q: "Kan jag betala på avbetalning?", a: "Ja, vi erbjuder Klarna och avbetalningsplan från anmälan till 30 dagar före avresa." },
-              { q: "Vilka vaccin behöver jag?", a: "Meningokock-vaccin (ACWY) är obligatoriskt enligt saudisk lag. Säsongsinfluensa rekommenderas. Vid pandemiska perioder kan ytterligare krav gälla." },
-              { q: "Får barn följa med?", a: "Ja, men barn under 18 år måste resa med förälder eller mahram. Pris för barn varierar med åldern." },
-              { q: "Vad händer om jag måste avboka?", a: "Anmälningsavgift (5 000 kr) återbetalas vid avbokning 30 dagar eller mer före avresa. Vid senare avbokning gäller resevillkoren — läs dem för fullständig info." },
-              { q: "Vilket språk pratas på resan?", a: "Svenska. Reseledaren pratar både svenska, arabiska och engelska. Religiös guide kommunicerar primärt på svenska." },
-              { q: "Hur tar jag mig till flygplatsen?", a: "Egen anslutning till Stockholm-Arlanda eller Göteborg-Landvetter. Vi hjälper med tips och kan koordinera med andra resenärer." },
-            ].map((it, i) => (
+            {FAQ_ITEMS.map((it, i) => (
               <details key={i} className="faq-item">
                 <summary>{it.q}</summary>
                 <p className="dim">{it.a}</p>

@@ -48,6 +48,13 @@ export default async function HomePage() {
                 Kammarkollegiet, svensk service från start till hemkomst, och
                 den lokala kunskap som bara fyrtio års erfarenhet ger.
               </p>
+              <p className="hero-accred">
+                <span className="dot" aria-hidden="true">●</span> Medlem i SRF
+                <span className="sep" aria-hidden="true"> · </span>
+                IATA
+                <span className="sep" aria-hidden="true"> · </span>
+                Kammarkollegiet
+              </p>
               <div className="hero-cta-row">
                 <Link href="/omra" className="btn btn-primary">
                   Se Omra-paket →
@@ -81,7 +88,7 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <aside className="quote-card-wrap">
+            <aside id="offert" className="quote-card-wrap">
               <LeadQuoteForm />
             </aside>
           </div>
@@ -93,10 +100,16 @@ export default async function HomePage() {
               <div className="v">40+ år</div>
               <div className="l">Erfarenhet</div>
             </div>
-            <div className="ti">
+            <a
+              className="ti ti-link"
+              href="https://www.kammarkollegiet.se/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Resegaranti hos Kammarkollegiet — öppnas i ny flik"
+            >
               <div className="v">Kammarkollegiet</div>
-              <div className="l">Resegaranti</div>
-            </div>
+              <div className="l">Resegaranti ↗</div>
+            </a>
             <div className="ti">
               <div className="v">Stockholm · Göteborg</div>
               <div className="l">Svenska kontor</div>
@@ -104,6 +117,16 @@ export default async function HomePage() {
             <div className="ti">
               <div className="v">Swish · Klarna</div>
               <div className="l">Svensk betalkultur</div>
+            </div>
+            {/* TODO: ersätt statiska 4.8 med beräknat snitt från Review-tabellen
+                (prisma.review.aggregate({ _avg: { rating: true }, _count: true }))
+                så snart Review-modellen finns. Visa då även antal omdömen. */}
+            <div className="ti">
+              <div className="v">
+                <span aria-hidden="true" style={{ color: "var(--c-gold)" }}>★</span>{" "}
+                4.8 / 5
+              </div>
+              <div className="l">Omdömen</div>
             </div>
             <div className="ti">
               <div className="v">SV · EN · AR</div>
@@ -256,7 +279,21 @@ export default async function HomePage() {
         .hero-eyebrow .line { width: 56px; height: 1px; background: var(--c-gold); }
         .hero h1 { font-weight: 360; margin-bottom: 28px; }
         .hero h1 em { font-style: italic; font-weight: 380; color: var(--c-gold); }
-        .hero-lede { font-size: 20px; color: var(--c-text-muted); max-width: 540px; margin-bottom: 36px; line-height: 1.5; }
+        .hero-lede { font-size: 20px; color: var(--c-text-muted); max-width: 540px; margin-bottom: 24px; line-height: 1.5; }
+        .hero-accred {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          flex-wrap: wrap;
+          font-size: 12px;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: var(--c-text-muted);
+          font-weight: 600;
+          margin-bottom: 32px;
+        }
+        .hero-accred .dot { color: var(--c-gold); font-size: 10px; margin-right: 6px; }
+        .hero-accred .sep { color: var(--c-line); }
         .hero-cta-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 48px; }
         .hero-cta-row .btn { flex: 1 1 auto; min-width: 200px; justify-content: center; }
         .hero-jumpers {
@@ -276,6 +313,25 @@ export default async function HomePage() {
         .hero-jumpers .num { font-family: var(--f-mono); font-size: 11px; color: var(--c-gold); letter-spacing: 0.14em; display: block; margin-bottom: 6px; }
         .hero-jumpers .label { font-family: var(--f-serif); font-size: 18px; color: var(--c-ink); font-weight: 460; display: block; }
         .hero-jumpers .desc { font-size: 12px; color: var(--c-text-muted); margin-top: 4px; display: block; }
+
+        /* Override globalt 5-kol-grid: vi har lagt till en 6:e tile (Omdömen). */
+        .trust-bar { grid-template-columns: repeat(6, 1fr); }
+        .trust-bar .ti-link {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          padding: 22px 24px;
+          border-right: 1px solid var(--c-line);
+          transition: background 140ms ease;
+        }
+        .trust-bar .ti-link:hover { background: var(--c-cream); }
+        .trust-bar .ti-link:hover .l { color: var(--c-gold); }
+        @media (max-width: 1024px) {
+          .trust-bar { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 640px) {
+          .trust-bar { grid-template-columns: 1fr 1fr; }
+        }
 
         .featured-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
         .featured-empty {
