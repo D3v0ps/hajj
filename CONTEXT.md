@@ -40,7 +40,13 @@
 > 1. **Resenärsprofiler** (mig 0010): TravelerProfile-modell, `/min-sida/resenarer` CRUD, profilväljare i bokningssteg 3 (`addTravelerFromProfile`).
 > 2. **Digital resväska** (mig 0011): Package får JSON-fält flightOutbound/Return/hotels/transfers/itinerary + leader/emergency/gathering/whatsapp. `/min-sida/bokningar/[id]/resvaska` portal-vy. Admin redigerar JSON i PackageForm.
 > 3. **Fortnox-integration** (mig 0012): FortnoxConnection (singleton-token), Payment.fortnox*-spårning, OAuth2-callback, `/admin/fortnox` push-vy, voucher-push med VMB-kontoplan (3308/1930/1580/1510).
-> 4. **i18n-scaffold** (sv/en/ar): `lib/i18n.ts` cookie-baserat, messages/{sv,en,ar}.json med riktig arabisk översättning av header/hem/cookie-banner/lead-form, RTL-stöd via `html dir`, LocaleSwitcher i SiteHeader, middleware vidarebefordrar x-pathname. Bygger på next-intl. **Att göra senare:** översätt resterande publika sidor + bygg URL-prefixade routes `/sv /en /ar` för SEO.
+> 4. **i18n-scaffold** (sv/en/ar): `lib/i18n.ts` cookie-baserat, messages/{sv,en,ar}.json med riktig arabisk översättning av header/hem/cookie-banner/lead-form, RTL-stöd via `html dir`, LocaleSwitcher i SiteHeader, middleware vidarebefordrar x-pathname. Bygger på next-intl.
+>
+> ## "Kör alla tre följduppgifter" — 2026-05
+>
+> 1. **Fortnox auto-push** — `autoPushPayment()` i `lib/fortnox.ts` kallas från Stripe-webhook och admin `verifyPayment`. Idempotent + tysta fel (audit-loggas, admin kan retry:a från `/admin/fortnox`).
+> 2. **Travel-pack-formulär** — PackageForm har strukturerade fält istället för rå JSON: flygkort (inputs), hotell (4+ rader med stadsrullista/stjärnor), transfer (4+ rader), dagsprogram (12+ utfällbara kort). `collectArray()` + `collectFlight()` serializar tillbaka till JSON. Tomma rader sparas inte.
+> 3. **i18n URL-routing** — middleware känner av `/en/*` `/ar/*` och rewrite:ar internt till motsvarande publika route + sätter locale-cookie. SEO-vänligt (Google indexerar `/en/omra` och `/ar/omra` som distinkta URL:er). `localeHref()` helper för länkar, LocaleSwitcher blev `<Link>`-baserad med hreflang. Sitemap har alternates per locale.
 
 En komplett Hajj/Omra-bokningsplattform för den svenska resebyrån **Hadj Omra Resor**
 (ersätter gamla hajj.se). Publik sajt + kundportal + fullt backoffice/admin.
