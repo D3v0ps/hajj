@@ -5,8 +5,17 @@
 > **Branch:** `claude/hippo-memory-init-BxqGB` · **Live:** https://hajj.karimkhalil.se
 >
 > 📍 **Vad som återstår för helhetslösning:** se **`ROADMAP.md`** (prioriterad, faseindelad
-> gap-analys: enablers → Fas 1 MVP-blockers → Fas 2 helhet → Fas 3 tillväxt/härdning,
-> + beslutspunkter som kräver kundens svar).
+> gap-analys: enablers → Fas 1 MVP-blockers → Fas 2 helhet → Fas 3 tillväxt/härdning).
+> Beslut fattade (ROADMAP §6): BankID **nej**, flerspråk **ja**, Swish **avvaktar**,
+> Fortnox **ja**, WhatsApp **manuell länk**, bilder **senare**.
+> 📄 **`FUNKTIONSOVERSIKT.md`** = presentationsklar funktionslista för kunden.
+>
+> **Senaste tillägg (2026-05):** (1) Admin laddar upp & granskar **resedokument per
+> resenär** (`lib/storage.ts` → lokal volym `/app/uploads`, `app/actions/documents.ts`,
+> serve via `/api/documents/[id]` rollskyddad; UI i bokningsdetaljens resenärsflik).
+> (2) **Pass-OCR** stödjer nu utländska pass — komplett ISO-3→svensk mappning +
+> `iso3ToSwedish()` i `lib/countries.ts`, OCR-felkorrigering i `PassportScanner.tsx`.
+> (3) BankID borttaget ur publik copy (demo-flödet har kvar låtsas-BankID-steg — TODO).
 
 En komplett Hajj/Omra-bokningsplattform för den svenska resebyrån **Hadj Omra Resor**
 (ersätter gamla hajj.se). Publik sajt + kundportal + fullt backoffice/admin.
@@ -85,7 +94,8 @@ aktiverat, annars Swish/Klarna/bankgiro/faktura), (6) klar.
 - `/import` (Excel-import med auto-kolumnmappning)
 
 **API**: `/api/auth/[...nextauth]`, `/api/health` (DB-ping), `/api/setup-admin`,
-`/api/import/parse` + `/execute`, `/api/stripe/checkout` + `/webhook`.
+`/api/import/parse` + `/execute`, `/api/stripe/checkout` + `/webhook`,
+`/api/documents/[id]` (rollskyddad nedladdning av uppladdade resedokument).
 
 ---
 
@@ -145,7 +155,8 @@ aktiverat, annars Swish/Klarna/bankgiro/faktura), (6) klar.
 - **OG-bild** (`opengraph-image.tsx`) saknas.
 - **E-post skickas inte faktiskt** — EmailSend köas (QUEUED); koppla Resend/SMTP-worker.
 - **Segment-error-boundaries** (`app/(admin)/error.tsx` etc.) ej tillagda.
-- **Pass-OCR**: ISO-3→svensk nationalitetsmappning täcker bara ~9 länder.
+- ~~**Pass-OCR**: ISO-3→svensk nationalitetsmappning täcker bara ~9 länder.~~ ✅ Fixat
+  2026-05: full världsmappning + OCR-felkorrigering + utländska pass.
 - **Dashboard** medvetet enkel (per kundens önskemål "avvakta").
 
 ---
