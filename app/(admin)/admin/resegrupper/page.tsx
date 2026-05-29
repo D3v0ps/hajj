@@ -82,6 +82,24 @@ export default async function ResegrupperPage({ searchParams }: { searchParams: 
             Operativ översikt per resa — resenärer, rum, flyg och betalningar.
           </p>
         </div>
+        {selected && (
+          <div className="gr-exports">
+            <a
+              href={`/api/exports/visa/${selected.id}`}
+              className="btn btn-ghost gr-export-btn"
+              download
+            >
+              <span aria-hidden="true">↓</span> Visumlista (CSV)
+            </a>
+            <a
+              href={`/api/exports/rooming/${selected.id}`}
+              className="btn btn-ghost gr-export-btn"
+              download
+            >
+              <span aria-hidden="true">↓</span> Rooming (CSV)
+            </a>
+          </div>
+        )}
       </div>
 
       {/* Resväljare — vanligt GET-formulär (serverkomponent kan ej använda onChange) */}
@@ -325,6 +343,16 @@ export default async function ResegrupperPage({ searchParams }: { searchParams: 
       )}
 
       <style>{`
+        .gr-exports {
+          display: flex; gap: 8px; flex-wrap: wrap;
+          align-items: center;
+        }
+        .gr-export-btn {
+          padding: 8px 14px; font-size: 12px;
+          display: inline-flex; align-items: center; gap: 6px;
+          white-space: nowrap;
+        }
+
         .gr-selector {
           display: flex; align-items: flex-end; gap: 12px;
           padding: 16px 18px; background: #fff; border: 1px solid var(--c-line-soft);

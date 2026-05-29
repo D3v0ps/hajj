@@ -38,6 +38,15 @@ const NAV = [
       { href: "/admin/import", label: "Excel-import", icon: "↥" },
     ],
   },
+  // System placeras längst ner och får dämpad stil — sällan använt, men måste
+  // finnas tillgängligt för admin/staff (auditlogg för spårbarhet av åtgärder).
+  {
+    label: "System",
+    muted: true,
+    items: [
+      { href: "/admin/audit", label: "Auditlogg", icon: "◌" },
+    ],
+  },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -58,7 +67,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
         <nav className="adm-nav-wrap">
           {NAV.map((group) => (
-            <div key={group.label} className="adm-section">
+            <div
+              key={group.label}
+              className={`adm-section${"muted" in group && group.muted ? " adm-section-muted" : ""}`}
+            >
               <span className="adm-section-label">{group.label}</span>
               <div className="adm-nav-group">
                 {group.items.map((item) => (
@@ -125,8 +137,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         }
 
         /* Nav */
-        .adm-nav-wrap { flex: 1; padding: 12px 0; overflow-y: auto; }
+        .adm-nav-wrap {
+          flex: 1; padding: 12px 0; overflow-y: auto;
+          display: flex; flex-direction: column;
+        }
         .adm-section { padding: 0 0 8px; }
+        /* "System"-sektionen (auditlogg m.fl.) skjuts ner och dämpas — sällan
+           använt men måste finnas tillgängligt för spårbarhet. */
+        .adm-section-muted { margin-top: auto; opacity: 0.7; }
+        .adm-section-muted .adm-link { font-size: 12px; }
         .adm-section-label {
           display: block; padding: 12px 20px 6px;
           font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
