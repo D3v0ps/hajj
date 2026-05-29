@@ -3,6 +3,7 @@ import { Newsreader, Manrope, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 // Importera env-validering tidigt så appen kraschar snabbt vid felaktig config.
 import "@/lib/env";
+import { CookieBanner } from "@/components/site/CookieBanner";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -73,6 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_JSONLD) }}
         />
         {children}
+        <CookieBanner />
       </body>
     </html>
   );

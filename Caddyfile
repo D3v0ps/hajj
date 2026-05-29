@@ -8,12 +8,29 @@
 	encode zstd gzip
 
 	# Säkerhetsheaders
+	#
+	# CSP: tillåter Stripe (checkout + JS), Google Fonts, Resend-API, inga frame-
+	# ancestors. `unsafe-inline` på script/style krävs av Next.js hydrering och
+	# Tailwind injected styles — kan stramas åt senare med nonce om vi vill.
+	#
+	# Permissions-Policy: kameran lämnas `(self)` eftersom pass-OCR-sidan
+	# (`components/PassportScanner.tsx`) läser kamera via getUserMedia på vår egen
+	# origin. Mikrofon + geolocation behövs inte → blockerade.
+	#
+	# Rate-limit: Caddy 2:s `rate_limit`-direktiv ligger i en extern modul
+	# (mholt/caddy-ratelimit) som inte är med i standardbyggen. Vi gör därför
+	# rate-limit i applagret i `lib/rate-limit.ts` (in-memory token-bucket) som
+	# används av login/register/server-actions. När/om vi byter till en Caddy
+	# med modulen inbyggd kan vi lägga ett `rate_limit` här för auth-routes.
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
 		Referrer-Policy "strict-origin-when-cross-origin"
-		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Permissions-Policy "camera=(self), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; img-src 'self' data: blob: https://*.stripe.com; script-src 'self' 'unsafe-inline' https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://api.stripe.com https://api.resend.com; frame-src 'self' https://js.stripe.com https://checkout.stripe.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		Cross-Origin-Opener-Policy "same-origin"
+		X-DNS-Prefetch-Control "off"
 		-Server
 	}
 

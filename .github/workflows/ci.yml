@@ -1,0 +1,77 @@
+name: CI
+
+# Separat kvalitetsgrind: tsc + eslint på PRs och pushes till main.
+# Är **medvetet** isolerad från deploy.yml — den får inte blockera deployen,
+# den ska bara ge tidig signal om typfel / lintfel innan reviewen är klar.
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Type-check & Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Prisma generate kräver en URL som matchar zod-schemat i lib/env.ts.
+      # Värdet används aldrig (vi gör inga DB-anrop), men måste vara giltig URL-form.
+      DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci?schema=public"
+      AUTH_SECRET: "ci-placeholder-secret-must-be-at-least-32-chars-long"
+      APP_URL: "http://localhost:3000"
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable corepack + pin pnpm 10.33.0
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.33.0 --activate
+          pnpm --version
+
+      - name: Resolve pnpm store path
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Cache .next
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-next-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('**/*.ts', '**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-next-${{ hashFiles('pnpm-lock.yaml') }}-
+            ${{ runner.os }}-next-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Prisma generate
+        run: pnpm exec prisma generate
+
+      - name: TypeScript (tsc --noEmit)
+        run: pnpm exec tsc --noEmit
+
+      - name: ESLint
+        run: pnpm exec eslint .
