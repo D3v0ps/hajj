@@ -4,6 +4,7 @@ import { stripe, stripeEnabled } from "@/lib/stripe";
 import type Stripe from "stripe";
 import { queueEmail, EMAIL_KIND, renderTemplate } from "@/lib/email";
 import { logAudit } from "@/lib/audit";
+import { autoPushPayment } from "@/lib/fortnox";
 
 // Stripe webhook: markerar betalning som genomförd när checkout slutförs.
 // Konfigurera STRIPE_WEBHOOK_SECRET + peka Stripe-webhook till /api/stripe/webhook.
@@ -95,6 +96,13 @@ export async function POST(req: NextRequest) {
           targetId: booking.id,
           metadata: { amount: cs.amount_total, kind: paymentKind },
         });
+
+        // Autopush till Fortnox om koppling finns. Idempotent + tysta fel.
+        const paidPayment = await prisma.payment.findFirst({
+          where: { providerRef: cs.id, status: "COMPLETED", fortnoxPushedAt: null },
+          select: { id: true },
+        });
+        if (paidPayment) await autoPushPayment(paidPayment.id);
       }
     }
   } else if (event.type === "checkout.session.expired") {

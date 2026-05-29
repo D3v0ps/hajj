@@ -60,11 +60,16 @@ async function verifyPayment(paymentId: string) {
   await requireAdmin();
   const payment = await prisma.payment.findUnique({ where: { id: paymentId }, select: { bookingId: true } });
   // Idempotent: bara PENDING → COMPLETED (en redan betald post stämplas inte om).
-  await prisma.payment.updateMany({
+  const claimed = await prisma.payment.updateMany({
     where: { id: paymentId, status: "PENDING" },
     data: { status: "COMPLETED", paidAt: new Date() },
   });
   if (payment) revalidatePath(`/admin/bokningar/${payment.bookingId}`);
+  // Autopush till Fortnox om koppling finns.
+  if (claimed.count > 0) {
+    const { autoPushPayment } = await import("@/lib/fortnox");
+    await autoPushPayment(paymentId);
+  }
 }
 
 async function addTravelerAdmin(bookingId: string, formData: FormData) {

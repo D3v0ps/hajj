@@ -182,3 +182,64 @@ export function debetAccountFor(method: string): number {
 }
 
 export const FORTNOX_VMB_ACCOUNT = 3308; // Resebyrå-VMB (BAS-kontoplanen)
+
+/**
+ * Autopush:ar en COMPLETED-betalning till Fortnox om integration är ansluten.
+ * Idempotent (hoppar över redan pushad). Tysta fel — log:as till audit men
+ * blockerar aldrig business-flödet (admin kan retry:a manuellt från /admin/fortnox).
+ */
+export async function autoPushPayment(paymentId: string): Promise<void> {
+  if (!fortnoxEnabled()) return;
+  // Dynamisk import för att undvika cirkulär: prisma → audit drar bara denna fil vid behov.
+  const { prisma } = await import("@/lib/db");
+  const { logAudit } = await import("@/lib/audit");
+
+  const conn = await prisma.fortnoxConnection.findFirst({ select: { id: true } });
+  if (!conn) return; // ej ansluten
+
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    include: {
+      booking: { include: { user: { select: { name: true, email: true } }, package: { select: { title: true } } } },
+    },
+  });
+  if (!payment || payment.status !== "COMPLETED" || payment.fortnoxPushedAt) return;
+
+  const transactionDate = (payment.paidAt ?? payment.createdAt).toISOString().slice(0, 10);
+  const description = `${payment.booking.user.name ?? payment.booking.user.email ?? "Kund"} — ${payment.booking.package.title}`;
+  const debetAccount = debetAccountFor(payment.method);
+
+  try {
+    const v = await createVoucher({
+      description,
+      transactionDate,
+      voucherSeries: "A",
+      rows: [
+        { Account: debetAccount, Debit: payment.amount, TransactionInformation: `Ref ${payment.booking.reference.slice(0, 12)}` },
+        { Account: FORTNOX_VMB_ACCOUNT, Credit: payment.amount, TransactionInformation: "Resebyrå-VMB" },
+      ],
+    });
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        fortnoxVoucherSeries: v.series,
+        fortnoxVoucherNumber: v.number,
+        fortnoxPushedAt: new Date(),
+      },
+    });
+    await logAudit({
+      action: "fortnox.autoVoucherCreated",
+      targetType: "Payment",
+      targetId: payment.id,
+      metadata: { series: v.series, number: v.number },
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "okänt fel";
+    await logAudit({
+      action: "fortnox.autoVoucherFailed",
+      targetType: "Payment",
+      targetId: payment.id,
+      metadata: { error: msg.slice(0, 400) },
+    });
+  }
+}
