@@ -17,15 +17,33 @@ function isLocale(s: string | undefined | null): s is Locale {
   return !!s && (LOCALES as readonly string[]).includes(s);
 }
 
-/** Hämtar locale från cookie först, sedan Accept-Language. Default = sv. */
+/**
+ * URL är källan-på-sanning för aktivt locale:
+ *  - /en/* → en, /ar/* → ar, allt annat → sv (default).
+ * Cookie/Accept-Language används BARA som fallback om x-pathname-headern
+ * saknas (t.ex. utanför request-kontext). Detta löser buggen där en kvarvarande
+ * "en"-cookie låste användaren i engelska även efter klick på SV-länken.
+ */
 export async function getLocale(): Promise<Locale> {
+  try {
+    const h = await headers();
+    const path = h.get("x-pathname") ?? "";
+    if (path) {
+      for (const l of LOCALES) {
+        if (l === DEFAULT_LOCALE) continue;
+        if (path === `/${l}` || path.startsWith(`/${l}/`)) return l;
+      }
+      // Path fanns men hade inget locale-prefix → default (sv). URL trumfar cookie.
+      return DEFAULT_LOCALE;
+    }
+  } catch {
+    // utanför request-kontext (t.ex. unit-test) — fall genom till cookie/header
+  }
   try {
     const c = await cookies();
     const fromCookie = c.get(COOKIE_NAME)?.value;
     if (isLocale(fromCookie)) return fromCookie;
-  } catch {
-    // utanför request-kontext
-  }
+  } catch { /* ignore */ }
   try {
     const h = await headers();
     const accept = h.get("accept-language") ?? "";
