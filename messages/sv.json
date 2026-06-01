@@ -2,10 +2,13 @@
   "common": {
     "siteName": "Hadj Omra Resor",
     "tagline": "Hajj · Omra · Hadj Badal",
+    "vallfard": "Vallfärd sedan 1985",
     "menu": "Meny",
     "close": "Stäng",
     "loading": "Laddar…",
-    "language": "Språk"
+    "language": "Språk",
+    "phone": "Telefon",
+    "email": "E-post"
   },
   "nav": {
     "home": "Hem",
@@ -13,7 +16,7 @@
     "hajj": "Hajj 2027",
     "badal": "Hadj Badal",
     "visa": "Visum",
-    "prepare": "Förbered",
+    "prepare": "Förbered dig",
     "about": "Om oss",
     "contact": "Kontakt",
     "login": "Logga in",
@@ -41,11 +44,20 @@
     "trustRating": "4.8 / 5",
     "trustRatingLabel": "Omdömen",
     "trustLanguages": "SV · EN · AR",
-    "trustLanguagesLabel": "Språk"
+    "trustLanguagesLabel": "Språk",
+    "packagesEyebrow": "— 01 / Aktuella paket",
+    "packagesTitle": "Boka",
+    "packagesTitleEm": "direkt",
+    "packagesTitleEnd": ", eller fråga om offert.",
+    "packagesRhs": "Alla våra paket inkluderar visum, hotell, flyg, busstransport, guide och seminarier. Filtrera på datum, hotellstandard och rumstyp på respektive sida.",
+    "packagesEmpty": "Paket fylls i av kontoret. När de publiceras visas de här. Tills dess — kontakta oss för en personlig offert.",
+    "packagesCta": "Visa paket",
+    "packagesFrom": "Från",
+    "packagesPerPerson": "per person"
   },
   "lead": {
-    "title": "Begär offert",
-    "subtitle": "Vi återkommer inom 24 timmar.",
+    "ribbon": "Begär offert · svar inom 24 h",
+    "title": "Vad letar du efter?",
     "name": "Namn",
     "email": "E-post",
     "phone": "Telefon",
@@ -55,31 +67,53 @@
     "message": "Övrig information",
     "submit": "Skicka förfrågan",
     "submitting": "Skickar…",
-    "sent": "Tack — vi hör av oss inom 24 timmar.",
-    "error": "Något gick fel — försök igen eller ring oss."
+    "successTitle": "Förfrågan mottagen",
+    "successBody": "Vi återkommer inom 24 timmar med en personlig offert.",
+    "sendAnother": "Skicka en till",
+    "error": "Något gick fel — försök igen eller ring oss.",
+    "gdpr": "Genom att skicka godkänner du att vi behandlar dina uppgifter enligt vår integritetspolicy.",
+    "optionPlaceholder": "Välj…",
+    "optionOmra": "Omra",
+    "optionHajj": "Hajj",
+    "optionBadal": "Hadj Badal",
+    "optionVisa": "Visumservice"
   },
   "floating": {
-    "open": "Kontakta oss",
+    "ariaOpen": "Kontakta oss",
+    "ariaClose": "Stäng kontaktpanel",
+    "ariaDialog": "Kontaktalternativ",
+    "eyebrow": "Kontakt",
+    "hours": "Vardagar 09–17. Vi svarar normalt inom 4 timmar.",
     "call": "Ring",
+    "callSub": "Direkt till kontoret",
     "whatsapp": "WhatsApp",
-    "quote": "Begär offert"
+    "whatsappSub": "Skicka meddelande",
+    "quote": "Begär offert",
+    "quoteSub": "Svar inom 24 h"
   },
   "cookies": {
-    "title": "Cookies & integritet",
-    "body": "Vi använder nödvändiga cookies för att sajten ska fungera, samt valfria för analys och marknadsföring.",
+    "bannerTitle": "Vi värnar om din integritet",
+    "bannerBody": "Vi använder nödvändiga cookies för att sajten ska fungera, samt valfria för analys och marknadsföring. Läs mer i vår",
+    "cookiesLink": "cookiepolicy",
     "necessary": "Nödvändiga",
+    "necessaryDesc": "Behövs för inloggning, bokning och säkerhet. Kan inte stängas av.",
+    "alwaysOn": "Alltid på",
     "analytics": "Analys",
+    "analyticsDesc": "Hjälper oss förstå hur sajten används så vi kan förbättra den.",
     "marketing": "Marknadsföring",
+    "marketingDesc": "Används för att visa relevanta annonser på andra sajter.",
     "acceptAll": "Acceptera alla",
     "onlyNecessary": "Endast nödvändiga",
     "customize": "Anpassa",
+    "hideCustomize": "Dölj inställningar",
     "save": "Spara mina val",
-    "readMore": "Läs mer"
+    "ariaCategories": "Cookiekategorier",
+    "ariaDialog": "Cookieinställningar"
   },
   "footer": {
     "rights": "Alla rättigheter förbehållna.",
-    "terms": "Villkor",
-    "privacy": "Integritet",
+    "terms": "Resevillkor",
+    "privacy": "Integritetspolicy",
     "cookies": "Cookies",
     "accessibility": "Tillgänglighet"
   }

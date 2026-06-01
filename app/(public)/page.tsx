@@ -89,7 +89,26 @@ export default async function HomePage() {
             </div>
 
             <aside id="offert" className="quote-card-wrap">
-              <LeadQuoteForm />
+              <LeadQuoteForm strings={{
+                ribbon: t("lead.ribbon"),
+                title: t("lead.title"),
+                name: t("lead.name"),
+                email: t("lead.email"),
+                phone: t("lead.phone"),
+                travelType: t("lead.travelType"),
+                message: t("lead.message"),
+                submit: t("lead.submit"),
+                submitting: t("lead.submitting"),
+                successTitle: t("lead.successTitle"),
+                successBody: t("lead.successBody"),
+                sendAnother: t("lead.sendAnother"),
+                gdpr: t("lead.gdpr"),
+                optionPlaceholder: t("lead.optionPlaceholder"),
+                optionOmra: t("lead.optionOmra"),
+                optionHajj: t("lead.optionHajj"),
+                optionBadal: t("lead.optionBadal"),
+                optionVisa: t("lead.optionVisa"),
+              }} />
             </aside>
           </div>
         </div>
@@ -132,29 +151,23 @@ export default async function HomePage() {
         <div className="container">
           <div className="section-head">
             <div>
-              <span className="section-mark">— 01 / Aktuella paket</span>
+              <span className="section-mark">{t("home.packagesEyebrow")}</span>
               <h2 style={{ marginTop: 14, fontWeight: 380 }}>
-                Boka <em>direkt</em>, eller fråga om offert.
+                {t("home.packagesTitle")} <em>{t("home.packagesTitleEm")}</em>{t("home.packagesTitleEnd")}
               </h2>
             </div>
-            <p className="rhs">
-              Alla våra paket inkluderar visum, hotell, flyg, busstransport,
-              guide och seminarier. Filtrera på datum, hotellstandard och
-              rumstyp på respektive sida.
-            </p>
+            <p className="rhs">{t("home.packagesRhs")}</p>
           </div>
 
           <div className="featured-grid">
             {featured.length === 0 ? (
               <div className="featured-empty">
-                <p>
-                  Paket fylls i av kontoret via admin. När de publiceras visas
-                  de här. Tills dess — kontakta oss för en personlig offert.
-                </p>
+                <p>{t("home.packagesEmpty")}</p>
               </div>
             ) : (
               featured.map((pkg) => {
                 const fromPrice = pkg.tiers[0]?.pricePerPerson ?? 0;
+                const dateLocale = locale === "ar" ? "ar-SA" : locale === "en" ? "en-GB" : "sv-SE";
                 return (
                   <article key={pkg.id} className="pkg-card">
                     <div className="pkg-card-img" />
@@ -164,21 +177,19 @@ export default async function HomePage() {
                       {pkg.subtitle && <p className="dim" style={{ fontSize: 14 }}>{pkg.subtitle}</p>}
                       {pkg.startDate && (
                         <p className="meta">
-                          {new Date(pkg.startDate).toLocaleDateString("sv-SE")} —{" "}
-                          {pkg.endDate
-                            ? new Date(pkg.endDate).toLocaleDateString("sv-SE")
-                            : "ej fastställt"}
+                          {new Date(pkg.startDate).toLocaleDateString(dateLocale)}
+                          {pkg.endDate && <> — {new Date(pkg.endDate).toLocaleDateString(dateLocale)}</>}
                         </p>
                       )}
                       <div className="pkg-price">
-                        <span className="dim" style={{ fontSize: 12 }}>Från</span>
+                        <span className="dim" style={{ fontSize: 12 }}>{t("home.packagesFrom")}</span>
                         <span className="serif tnum" style={{ fontSize: 28, color: "var(--c-ink)" }}>
-                          {fromPrice.toLocaleString("sv-SE")} kr
+                          {fromPrice.toLocaleString(dateLocale)} kr
                         </span>
-                        <span className="dim" style={{ fontSize: 12 }}>per person</span>
+                        <span className="dim" style={{ fontSize: 12 }}>{t("home.packagesPerPerson")}</span>
                       </div>
-                      <Link href={`/paket/${pkg.slug}`} className="btn-link">
-                        Visa paket →
+                      <Link href={lh(`/paket/${pkg.slug}`)} className="btn-link">
+                        {t("home.packagesCta")} →
                       </Link>
                     </div>
                   </article>

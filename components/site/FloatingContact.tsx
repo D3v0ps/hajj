@@ -3,11 +3,42 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
+type FloatingStrings = {
+  ariaOpen: string;
+  ariaClose: string;
+  ariaDialog: string;
+  eyebrow: string;
+  hours: string;
+  call: string;
+  callSub: string;
+  whatsapp: string;
+  whatsappSub: string;
+  quote: string;
+  quoteSub: string;
+};
+
+const DEFAULT_STRINGS: FloatingStrings = {
+  ariaOpen: "Öppna kontaktpanel",
+  ariaClose: "Stäng kontaktpanel",
+  ariaDialog: "Kontakta oss",
+  eyebrow: "Kontakt",
+  hours: "Vardagar 09–17. Vi svarar normalt inom 4 timmar.",
+  call: "Ring",
+  callSub: "Direkt till kontoret",
+  whatsapp: "WhatsApp",
+  whatsappSub: "Skicka meddelande",
+  quote: "Begär offert",
+  quoteSub: "Svar inom 24 h",
+};
+
 type Props = {
   /** Internationellt format med plus och inga mellanslag, t.ex. "+46700000000". */
   phoneE164: string;
   /** Visningsformat för knappen, t.ex. "070-000 00 00". */
   phoneDisplay: string;
+  /** Locale-aware href till offertsektionen (default `/#offert`). */
+  offertHref?: string;
+  strings?: FloatingStrings;
 };
 
 /**
@@ -22,7 +53,8 @@ type Props = {
  * TODO: telefonnummer ska fyllas i av byrån via env (SITE_PHONE/SITE_PHONE_DISPLAY).
  * Placeholdervärden i `app/(public)/layout.tsx` används tills riktigt nummer satts.
  */
-export function FloatingContact({ phoneE164, phoneDisplay }: Props) {
+export function FloatingContact({ phoneE164, phoneDisplay, offertHref = "/#offert", strings = DEFAULT_STRINGS }: Props) {
+  const t = strings;
   const [open, setOpen] = useState(false);
 
   // Stäng med Escape
@@ -42,62 +74,34 @@ export function FloatingContact({ phoneE164, phoneDisplay }: Props) {
   return (
     <div className={`fc ${open ? "fc-open" : ""}`}>
       {open && (
-        <div
-          className="fc-panel"
-          role="dialog"
-          aria-modal="false"
-          aria-label="Kontakta oss"
-        >
+        <div className="fc-panel" role="dialog" aria-modal="false" aria-label={t.ariaDialog}>
           <div className="fc-panel-head">
-            <span className="fc-eyebrow">Kontakt</span>
-            <button
-              type="button"
-              className="fc-close"
-              aria-label="Stäng kontaktpanel"
-              onClick={() => setOpen(false)}
-            >
-              ✕
-            </button>
+            <span className="fc-eyebrow">{t.eyebrow}</span>
+            <button type="button" className="fc-close" aria-label={t.ariaClose} onClick={() => setOpen(false)}>✕</button>
           </div>
-          <p className="fc-lede">
-            Vardagar 09–17. Vi svarar normalt inom 4 timmar.
-          </p>
+          <p className="fc-lede">{t.hours}</p>
 
-          <a
-            href={telHref}
-            className="fc-action"
-            onClick={() => setOpen(false)}
-          >
+          <a href={telHref} className="fc-action" onClick={() => setOpen(false)}>
             <span className="fc-icon" aria-hidden="true">☎</span>
             <span className="fc-action-body">
-              <strong>Ring</strong>
+              <strong>{t.call}</strong>
               <span>{phoneDisplay}</span>
             </span>
           </a>
 
-          <a
-            href={waHref}
-            className="fc-action"
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => setOpen(false)}
-          >
+          <a href={waHref} className="fc-action" target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>
             <span className="fc-icon" aria-hidden="true">✆</span>
             <span className="fc-action-body">
-              <strong>WhatsApp</strong>
-              <span>Skicka meddelande</span>
+              <strong>{t.whatsapp}</strong>
+              <span>{t.whatsappSub}</span>
             </span>
           </a>
 
-          <Link
-            href="/#offert"
-            className="fc-action"
-            onClick={() => setOpen(false)}
-          >
+          <Link href={offertHref} className="fc-action" onClick={() => setOpen(false)}>
             <span className="fc-icon" aria-hidden="true">✎</span>
             <span className="fc-action-body">
-              <strong>Begär offert</strong>
-              <span>Svar inom 24 h</span>
+              <strong>{t.quote}</strong>
+              <span>{t.quoteSub}</span>
             </span>
           </Link>
         </div>
@@ -106,7 +110,7 @@ export function FloatingContact({ phoneE164, phoneDisplay }: Props) {
       <button
         type="button"
         className="fc-fab"
-        aria-label={open ? "Stäng kontaktpanel" : "Öppna kontaktpanel"}
+        aria-label={open ? t.ariaClose : t.ariaOpen}
         aria-expanded={open}
         aria-haspopup="dialog"
         onClick={() => setOpen((o) => !o)}
@@ -116,7 +120,7 @@ export function FloatingContact({ phoneE164, phoneDisplay }: Props) {
         ) : (
           <>
             <span className="fc-fab-icon" aria-hidden="true">☎</span>
-            <span className="fc-fab-label">Kontakt</span>
+            <span className="fc-fab-label">{t.eyebrow}</span>
           </>
         )}
       </button>
