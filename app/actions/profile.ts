@@ -154,6 +154,12 @@ export async function requestEmailChange(formData: FormData): Promise<never> {
   const session = await auth();
   if (!session?.user?.id) redirect("/logga-in");
 
+  // Rate-limit: max 3 byten / 10 min / user — hindrar att inloggad användare
+  // missbrukar avsändar-domänen för phishing-relay genom att mejla godtyckliga
+  // bekräftelser till tredje part.
+  const limit = rateLimit(`profile.email-change:${session.user.id}`, 3, 10 * 60_000);
+  if (!limit.ok) flash("error", "rate_limited");
+
   const raw = { newEmail: String(formData.get("newEmail") ?? "").trim().toLowerCase() };
   const parsed = emailChangeSchema.safeParse(raw);
   if (!parsed.success) flash("error", parsed.error.issues[0]?.message ?? "invalid_email");
@@ -280,4 +286,18 @@ export async function confirmEmailChange(token: string, emailParam: string): Pro
   });
 
   return { ok: true, newEmail };
+}
+
+/**
+ * POST-wrapper kring confirmEmailChange. Anropas från bekräftelseknappen på
+ * /verifiera-epost-byte/[token]-sidan — förhindrar att Gmail/Outlook prefetch
+ * av URL:en konsumerar engångstoken före användarens klick.
+ */
+export async function confirmEmailChangeViaForm(formData: FormData): Promise<void> {
+  const token = String(formData.get("token") ?? "");
+  const email = String(formData.get("email") ?? "");
+  const result = await confirmEmailChange(token, email);
+  const base = `/min-sida/profil/verifiera-epost-byte/${token}`;
+  if (result.ok) redirect(`${base}?status=ok&email=${encodeURIComponent(result.newEmail)}`);
+  redirect(`${base}?status=${encodeURIComponent(result.reason)}&email=${encodeURIComponent(email)}`);
 }

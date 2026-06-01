@@ -16,7 +16,7 @@ export default async function PortalLayout({ children }: { children: React.React
       <header className="portal-top">
         <div className="container">
           <Link href="/" className="brand">
-            <span className="brand-mark">ح</span>
+            <span className="brand-mark" lang="ar" aria-hidden="true">ح</span>
             <span className="brand-name">
               Hadj Omra Resor
               <small>Min sida</small>

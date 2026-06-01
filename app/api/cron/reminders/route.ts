@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { queueEmail, EMAIL_KIND, renderTemplate } from "@/lib/email";
 import { env } from "@/lib/env";
+import { safeEqual } from "@/lib/timing";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ async function handle(req: NextRequest) {
   if (!token) return new Response("WORKER_TOKEN ej konfigurerad", { status: 503 });
   const auth = req.headers.get("authorization") ?? "";
   const provided = auth.startsWith("Bearer ") ? auth.slice(7) : req.nextUrl.searchParams.get("token") ?? "";
-  if (provided !== token) return new Response("Ej behörig", { status: 401 });
+  if (!safeEqual(provided, token)) return new Response("Ej behörig", { status: 401 });
 
   const now = new Date();
   const result = { finalReminders: 0, preDeparture: 0 };

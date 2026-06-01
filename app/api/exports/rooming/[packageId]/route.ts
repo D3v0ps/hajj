@@ -4,9 +4,12 @@ import { logAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
+// Skydd mot CSV-formula-injection: prefixa fält som börjar med =, +, -, @, tab eller CR
+// med apostrof så Excel/LibreOffice inte tolkar dem som formler.
 function csvField(value: unknown): string {
   if (value === null || value === undefined) return "";
-  const s = String(value);
+  let s = String(value);
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
   if (/[;"\n\r]/.test(s)) {
     return `"${s.replace(/"/g, '""')}"`;
   }

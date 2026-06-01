@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { queueEmail, EMAIL_KIND } from "@/lib/email";
 import { SITE } from "@/lib/config";
+import { env } from "@/lib/env";
 import { logAudit } from "@/lib/audit";
 import type { RefundStatus, BookingStatus } from "@prisma/client";
 
@@ -125,7 +126,7 @@ export async function requestRefund(formData: FormData): Promise<void> {
       `Kund: ${booking.user.name ?? "—"} (${booking.user.email})\n` +
       `Mottagen: ${now.toLocaleString("sv-SE")}\n\n` +
       `Anledning från kunden:\n${reason}\n\n` +
-      `Hantera ärendet i admin: /admin/bokningar/${booking.id}`;
+      `Hantera ärendet i admin: ${env.APP_URL}/admin/bokningar/${booking.id}`;
     await queueEmail({
       to: officeEmail,
       recipientName: SITE.legalName,

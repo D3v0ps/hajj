@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { logAudit } from "@/lib/audit";
 
 async function requireUser() {
   const session = await auth();
@@ -91,16 +92,27 @@ export async function submitReview(formData: FormData): Promise<void> {
  * olämpliga omdömen eller publicera bra.
  */
 export async function setReviewPublic(reviewId: string, formData: FormData): Promise<void> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   if (!reviewId) redirect("/admin/recensioner");
 
   // Vi tar checkbox-värdet från formuläret. Om bocken är på får vi "on";
   // annars är fältet helt borta.
   const isPublic = formData.get("isPublic") === "on";
 
+  const before = await prisma.review.findUnique({ where: { id: reviewId }, select: { isPublic: true, rating: true, bookingId: true } });
   await prisma.review.update({
     where: { id: reviewId },
     data: { isPublic },
+  });
+
+  // Audit-logg: viktigt eftersom staff annars kan tysta negativa omdömen utan spår.
+  await logAudit({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: "review.publicityChanged",
+    targetType: "Review",
+    targetId: reviewId,
+    metadata: { from: before?.isPublic ?? null, to: isPublic, rating: before?.rating ?? null, bookingId: before?.bookingId ?? null },
   });
 
   revalidatePath("/admin/recensioner");

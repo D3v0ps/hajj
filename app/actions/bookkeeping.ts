@@ -178,9 +178,11 @@ export async function summarizePeriod(from: Date, to: Date): Promise<ExportSumma
 // ---------- CSV ----------
 
 function csvEscape(value: string | number): string {
-  const s = String(value ?? "");
+  let s = String(value ?? "");
+  // Skydd mot CSV-formula-injection: prefixa fält som börjar med =, +, -, @, tab,
+  // CR med apostrof så Excel/LibreOffice inte tolkar dem som formler.
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
   // RFC 4180: dubbla citationstecken, kvota om innehåller ; , " eller radbrytning.
-  // Vi använder semikolon som avgränsare (svensk Excel-konvention).
   if (/[";\n\r]/.test(s)) {
     return `"${s.replace(/"/g, '""')}"`;
   }

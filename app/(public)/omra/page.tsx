@@ -64,7 +64,7 @@ export default async function OmraPage() {
                 administrationen — de visas här så snart de är klara.
               </p>
               <p className="dim" style={{ marginTop: 12 }}>
-                Vill du ändå höra om kommande resor? <Link href="/#kontakt" className="btn-link">Skicka en förfrågan</Link>
+                Vill du ändå höra om kommande resor? <Link href="/#offert" className="btn-link">Skicka en förfrågan</Link>
               </p>
             </div>
           ) : (

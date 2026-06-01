@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import { rateLimit, ipKey } from "@/lib/rate-limit";
 import { logAudit } from "@/lib/audit";
-import { sendVerificationEmail } from "@/app/actions/email-verification";
+import { dispatchVerificationEmail } from "@/lib/email-verification";
 
 const registerSchema = z
   .object({
@@ -63,9 +63,9 @@ export async function registerUser(formData: FormData): Promise<never> {
 
   // Köa bekräftelsemejl. Får inte krascha registreringen om mejlmotorn strular.
   try {
-    await sendVerificationEmail(newUser.id);
+    await dispatchVerificationEmail(newUser.id);
   } catch (err) {
-    console.error("[registerUser] sendVerificationEmail failed:", err);
+    console.error("[registerUser] dispatchVerificationEmail failed:", err);
   }
 
   try {

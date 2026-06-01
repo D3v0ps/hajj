@@ -5,10 +5,12 @@ import { logAudit } from "@/lib/audit";
 export const dynamic = "force-dynamic";
 
 // Escapa ett enskilt CSV-fält enligt RFC 4180 (semikolonseparator för svenska Excel).
+// Skydd mot CSV-formula-injection: fält som börjar med =, +, -, @ prefixas med
+// apostrof så Excel/LibreOffice INTE tolkar dem som formler (=HYPERLINK/CMD).
 function csvField(value: unknown): string {
   if (value === null || value === undefined) return "";
-  const s = String(value);
-  // Citera om innehållet har semikolon, citattecken, ny rad eller bindestreck i början.
+  let s = String(value);
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
   if (/[;"\n\r]/.test(s)) {
     return `"${s.replace(/"/g, '""')}"`;
   }

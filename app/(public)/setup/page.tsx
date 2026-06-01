@@ -1,4 +1,5 @@
 import { SetupForm } from "./SetupForm";
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -7,6 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function SetupPage() {
+  // Returnera 404 om setup-mode inte är aktivt — en angripare ska inte ens
+  // se formuläret. /api/setup-admin är redan skyddad, men sidan var öppen.
+  if (process.env.SETUP_MODE !== "1") notFound();
   return (
     <section style={{ padding: "80px 0" }}>
       <div className="container narrow" style={{ maxWidth: 520 }}>

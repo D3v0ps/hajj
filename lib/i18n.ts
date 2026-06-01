@@ -61,18 +61,20 @@ export function isRtl(locale: Locale): boolean {
  * Bygger en intern URL med rätt locale-prefix.
  *  - `sv` (default): ingen prefix → `/omra`
  *  - `en`/`ar`: prefix → `/en/omra`, `/ar/omra`
- * Idempotent: dubbel-prefix undviks.
+ * Idempotent — strippar ALLTID ev. befintligt prefix först (oavsett mållocale)
+ * så `localeHref("/en/omra", "sv")` korrekt blir `/omra` och inte `/en/omra`.
  */
 export function localeHref(path: string, locale: Locale): string {
+  if (!path) path = "/";
   if (!path.startsWith("/")) path = `/${path}`;
-  if (locale === DEFAULT_LOCALE) return path;
-  // Trimma ev. befintligt locale-prefix
+  // Strippa ev. befintligt locale-prefix FÖRE default-checken.
   for (const l of LOCALES) {
     if (path === `/${l}` || path.startsWith(`/${l}/`)) {
       path = path.slice(l.length + 1) || "/";
       break;
     }
   }
+  if (locale === DEFAULT_LOCALE) return path;
   return path === "/" ? `/${locale}` : `/${locale}${path}`;
 }
 
