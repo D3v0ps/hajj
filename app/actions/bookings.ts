@@ -346,8 +346,12 @@ export async function acceptAndAdvance(bookingId: string, formData: FormData): P
   if (formData.get("acceptTerms") !== "on") flashError(bookingId, "Du måste godkänna resevillkoren");
   if (formData.get("acceptPrivacy") !== "on") flashError(bookingId, "Du måste godkänna integritetspolicyn");
 
-  const updated = await prisma.booking.update({
-    where: { id: booking.id },
+  // Race-skydd mot dubbel-klick: bara DRAFT-bokningar får gå till SUBMITTED.
+  // Andra anropet får claim.count === 0 → hoppar över mejl + audit nedan
+  // (vi förlitar oss på `await prisma.booking.findUnique` efteråt för att
+  // återhämta bokningen, så funktionen är idempotent).
+  const claim = await prisma.booking.updateMany({
+    where: { id: booking.id, status: "DRAFT" },
     data: {
       step: Math.max(booking.step, 5),
       status: "SUBMITTED",
@@ -355,6 +359,13 @@ export async function acceptAndAdvance(bookingId: string, formData: FormData): P
       termsAcceptedAt: new Date(),
       termsVersion: TERMS_VERSION,
     },
+  });
+  if (claim.count !== 1) {
+    // Idempotent: andra POST:en hoppar tyst — kunden ser samma framgångssida.
+    redirect(`/boka/${booking.id}`);
+  }
+  const updated = await prisma.booking.findUniqueOrThrow({
+    where: { id: booking.id },
     include: { user: { select: { email: true, name: true } }, package: { select: { title: true, startDate: true } } },
   });
 

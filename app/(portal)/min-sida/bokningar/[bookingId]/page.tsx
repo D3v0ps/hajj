@@ -67,7 +67,9 @@ export default async function BokningDetailPage({
   const remaining = booking.totalAmount - paidSum;
   const canPayFinal =
     (booking.status === "PAID_DEPOSIT" || booking.status === "CONFIRMED") &&
-    remaining > 0;
+    remaining > 0 &&
+    // Inga slutbetalningar medan en avbokningsbegäran är öppen.
+    booking.refundStatus === "NONE";
   const isFullyPaid = booking.status === "PAID_FULL" || booking.status === "COMPLETED";
 
   return (

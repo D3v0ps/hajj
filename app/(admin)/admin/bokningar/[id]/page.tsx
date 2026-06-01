@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { COUNTRY_OPTIONS, CIVIL_STATUS_OPTIONS } from "@/lib/countries";
 import { uploadTravelerDocument, setDocumentStatus, deleteTravelerDocument } from "@/app/actions/documents";
 import { updateRefundStatus } from "@/app/actions/refunds";
+import { logAudit } from "@/lib/audit";
 
 type Params = Promise<{ id: string }>;
 type SearchParams = Promise<{ tab?: string; docError?: string; docOk?: string; refundError?: string; refundOk?: string }>;
@@ -48,25 +49,42 @@ async function requireAdmin() {
 
 async function updateStatus(bookingId: string, formData: FormData) {
   "use server";
-  await requireAdmin();
+  const admin = await requireAdmin();
   const status = String(formData.get("status") ?? "");
   if (!STATUSES.includes(status as typeof STATUSES[number])) return;
+  const before = await prisma.booking.findUnique({ where: { id: bookingId }, select: { status: true } });
   await prisma.booking.update({ where: { id: bookingId }, data: { status: status as typeof STATUSES[number] } });
+  await logAudit({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: "booking.statusChanged",
+    targetType: "Booking",
+    targetId: bookingId,
+    metadata: { from: before?.status, to: status },
+  });
   revalidatePath(`/admin/bokningar/${bookingId}`);
 }
 
 async function verifyPayment(paymentId: string) {
   "use server";
-  await requireAdmin();
-  const payment = await prisma.payment.findUnique({ where: { id: paymentId }, select: { bookingId: true } });
+  const admin = await requireAdmin();
+  const payment = await prisma.payment.findUnique({ where: { id: paymentId }, select: { bookingId: true, amount: true, method: true } });
   // Idempotent: bara PENDING → COMPLETED (en redan betald post stämplas inte om).
   const claimed = await prisma.payment.updateMany({
     where: { id: paymentId, status: "PENDING" },
     data: { status: "COMPLETED", paidAt: new Date() },
   });
   if (payment) revalidatePath(`/admin/bokningar/${payment.bookingId}`);
-  // Autopush till Fortnox om koppling finns.
-  if (claimed.count > 0) {
+  // Autopush till Fortnox + audit-logg endast om CAS-claim faktiskt vann.
+  if (claimed.count > 0 && payment) {
+    await logAudit({
+      actorId: admin.id,
+      actorEmail: admin.email,
+      action: "payment.verifiedManually",
+      targetType: "Payment",
+      targetId: paymentId,
+      metadata: { bookingId: payment.bookingId, amount: payment.amount, method: payment.method },
+    });
     const { autoPushPayment } = await import("@/lib/fortnox");
     await autoPushPayment(paymentId);
   }
@@ -108,8 +126,18 @@ async function addTravelerAdmin(bookingId: string, formData: FormData) {
 
 async function removeTravelerAdmin(bookingId: string, travelerId: string) {
   "use server";
-  await requireAdmin();
-  await prisma.traveler.deleteMany({ where: { id: travelerId, bookingId } });
+  const admin = await requireAdmin();
+  const result = await prisma.traveler.deleteMany({ where: { id: travelerId, bookingId } });
+  if (result.count > 0) {
+    await logAudit({
+      actorId: admin.id,
+      actorEmail: admin.email,
+      action: "traveler.removedByAdmin",
+      targetType: "Traveler",
+      targetId: travelerId,
+      metadata: { bookingId },
+    });
+  }
   revalidatePath(`/admin/bokningar/${bookingId}`);
 }
 
@@ -126,12 +154,23 @@ async function sendMessage(bookingId: string, formData: FormData) {
     data: {
       userId: booking.userId,
       bookingId,
-      direction: isInternal ? "INBOUND" : "OUTBOUND",
+      // Admin är alltid OUTBOUND. isInternal-flaggan styr om kunden ser meddelandet
+      // (intern anteckning vs synligt svar) — direction:INBOUND skulle felaktigt
+      // klassa interna anteckningar som kundkommunikation i rapporter.
+      direction: "OUTBOUND",
       isInternal,
       authorName: user.name ?? user.email ?? "Admin",
       subject: subject || null,
       body,
     },
+  });
+  await logAudit({
+    actorId: user.id,
+    actorEmail: user.email,
+    action: isInternal ? "booking.internalNote" : "booking.replyToCustomer",
+    targetType: "Booking",
+    targetId: bookingId,
+    metadata: { isInternal },
   });
   revalidatePath(`/admin/bokningar/${bookingId}`);
 }
