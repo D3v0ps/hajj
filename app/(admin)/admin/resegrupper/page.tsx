@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import { computeRoomCount, roomBreakdown, detectRoomType } from "@/lib/rooms";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +64,11 @@ export default async function ResegrupperPage({ searchParams }: { searchParams: 
     list.push(t);
     roomGroups.set(room, list);
   }
-  const assignedRooms = [...roomGroups.keys()].filter((r) => r !== "__none__");
+  // Fysiska rum: räknat via central mappning (Fyrbäddsrum × 4 pers = 1 rum,
+  // 8 pers = 2 rum, osv.). Tidigare räknades distinkta strängar vilket gav
+  // fel siffra ("3 rum" för en grupp där det egentligen är 15 fysiska rum).
+  const physicalRoomCount = computeRoomCount(allTravelers);
+  const breakdown = roomBreakdown(allTravelers);
   const roomEntries = [
     ...[...roomGroups.entries()].filter(([r]) => r !== "__none__").sort((a, b) => a[0].localeCompare(b[0], "sv")),
     ...[...roomGroups.entries()].filter(([r]) => r === "__none__"),
@@ -168,7 +173,7 @@ export default async function ResegrupperPage({ searchParams }: { searchParams: 
               <div className="gr-l">Vuxna / Barn / Spädbarn</div>
             </div>
             <div className="gr-sum-item">
-              <div className="gr-v">{assignedRooms.length}</div>
+              <div className="gr-v">{physicalRoomCount}</div>
               <div className="gr-l">Rum</div>
             </div>
             <div className="gr-sum-item">
@@ -319,7 +324,16 @@ export default async function ResegrupperPage({ searchParams }: { searchParams: 
             <div className="h">
               Rumsindelning
               <span className="dim" style={{ fontSize: 12, fontFamily: "var(--f-sans)" }}>
-                {assignedRooms.length} rum
+                {physicalRoomCount} rum totalt
+                {breakdown.length > 0 && (
+                  <>
+                    {" — "}
+                    {breakdown
+                      .filter((b) => b.rooms > 0)
+                      .map((b) => `${b.rooms}× ${b.label}`)
+                      .join(", ")}
+                  </>
+                )}
               </span>
             </div>
             <div className="b">
@@ -329,22 +343,35 @@ export default async function ResegrupperPage({ searchParams }: { searchParams: 
                 <div className="gr-rooming">
                   {roomEntries.map(([room, travelers]) => {
                     const isNone = room === "__none__";
+                    // Detektera rumstyp via central mappning för att räkna antal
+                    // fysiska rum + bäddar. Okänd fritext räknas som 1 rum.
+                    const sample = travelers[0]?.roomAssignment ?? null;
+                    const detected = isNone ? null : detectRoomType(sample);
+                    const physical = isNone ? 0 : detected ? Math.ceil(travelers.length / detected.beds) : 1;
                     return (
                       <div key={room} className={`gr-room${isNone ? " is-none" : ""}`}>
                         <div className="gr-room-head">
                           <strong>{isNone ? "Ej tilldelat rum" : room}</strong>
-                          <span className="dim">{travelers.length} pers</span>
+                          <span className="dim">
+                            {travelers.length} pers
+                            {!isNone && detected && <> · {physical} rum ({detected.beds} bäddar/rum)</>}
+                          </span>
                         </div>
                         <div className="gr-room-body">
                           {travelers.map((t) => (
-                            <div key={t.id} className="gr-room-person">
+                            <Link
+                              key={t.id}
+                              href={`/admin/resenarer/${t.id}/redigera?from=${encodeURIComponent(`/admin/resegrupper?trip=${selected.id}`)}`}
+                              className="gr-room-person gr-room-person-link"
+                              title="Klicka för att flytta till annat rum"
+                            >
                               <span className="gr-av" aria-hidden="true">
                                 {t.gender === "M" ? "♂" : t.gender === "F" ? "♀" : "·"}
                               </span>
                               <span className="gr-room-pname">{t.firstName} {t.lastName}</span>
                               {t.ageCategory === "CHILD" && <span className="adm-pill info" style={{ fontSize: 8 }}>Barn</span>}
                               {t.ageCategory === "INFANT" && <span className="adm-pill warn" style={{ fontSize: 8 }}>Spädbarn</span>}
-                            </div>
+                            </Link>
                           ))}
                         </div>
                       </div>
@@ -438,6 +465,11 @@ export default async function ResegrupperPage({ searchParams }: { searchParams: 
         .gr-room-head strong { font-family: var(--f-serif); font-size: 15px; color: var(--c-ink); }
         .gr-room-body { padding: 8px 14px; display: flex; flex-direction: column; gap: 6px; }
         .gr-room-person { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .gr-room-person-link {
+          color: var(--c-ink); padding: 4px 6px; margin: -4px -6px;
+          border-radius: 2px; transition: background 100ms;
+        }
+        .gr-room-person-link:hover { background: var(--c-cream); color: var(--c-gold); }
         .gr-room-pname { flex: 1; min-width: 0; }
         .gr-av {
           width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;

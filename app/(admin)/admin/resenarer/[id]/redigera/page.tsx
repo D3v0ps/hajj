@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { COUNTRY_OPTIONS, CIVIL_STATUS_OPTIONS } from "@/lib/countries";
 import { editTravelerAdmin, deleteTravelerAdmin } from "@/app/actions/admin-travelers";
+import { ROOM_TYPES } from "@/lib/rooms";
 
 // Synkat med PAYMENT_METHODS i app/actions/admin-travelers.ts (kan ej importeras
 // därifrån eftersom 'use server'-filer bara får exportera async-funktioner).
@@ -197,7 +198,17 @@ export default async function EditTravelerPage({
             </div>
             <div className="field">
               <label htmlFor="roomAssignment">Rum</label>
-              <input id="roomAssignment" name="roomAssignment" defaultValue={t.roomAssignment ?? ""} />
+              <select id="roomAssignment" name="roomAssignment" defaultValue={t.roomAssignment ?? ""}>
+                <option value="">— Ej tilldelat —</option>
+                {ROOM_TYPES.map((r) => (
+                  <option key={r.key} value={r.label}>{r.label} ({r.beds} bäddar)</option>
+                ))}
+                {/* Behåll ev. fritext-värde (t.ex. specifikt rumsnummer från Excel-import)
+                    som ett separat alternativ så det inte tappas vid spar. */}
+                {t.roomAssignment && !ROOM_TYPES.some((r) => r.label === t.roomAssignment) && (
+                  <option value={t.roomAssignment}>{t.roomAssignment} (befintlig fritext)</option>
+                )}
+              </select>
             </div>
             <div className="field">
               <label htmlFor="flightOut">Flyg ut</label>

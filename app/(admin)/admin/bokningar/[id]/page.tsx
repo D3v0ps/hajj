@@ -8,6 +8,7 @@ import { COUNTRY_OPTIONS, CIVIL_STATUS_OPTIONS } from "@/lib/countries";
 import { uploadTravelerDocument, setDocumentStatus, deleteTravelerDocument } from "@/app/actions/documents";
 import { updateRefundStatus } from "@/app/actions/refunds";
 import { logAudit } from "@/lib/audit";
+import { ROOM_TYPES } from "@/lib/rooms";
 
 type Params = Promise<{ id: string }>;
 type SearchParams = Promise<{ tab?: string; docError?: string; docOk?: string; refundError?: string; refundOk?: string }>;
@@ -595,7 +596,15 @@ export default async function BokningDetailPage({ params, searchParams }: { para
                   <div className="field"><label>Pass utfärdat (datum)</label><input name="passIssueDate" type="date" /></div>
                   <div className="field"><label>Pass giltigt t.o.m.</label><input name="passportExp" type="date" /></div>
                   <div className="field"><label>Pass utfärdandeort</label><input name="passIssuePlace" /></div>
-                  <div className="field"><label>Rum</label><input name="roomAssignment" /></div>
+                  <div className="field">
+                    <label>Rum</label>
+                    <select name="roomAssignment" defaultValue="">
+                      <option value="">— Ej tilldelat —</option>
+                      {ROOM_TYPES.map((r) => (
+                        <option key={r.key} value={r.label}>{r.label} ({r.beds} bäddar)</option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="field" style={{ gridColumn: "1 / -1" }}><label>Övrig viktig information</label><input name="notes" placeholder="Speciella behov, allergier, etc." /></div>
                 </div>
                 <div style={{ display: "flex", gap: 16, alignItems: "center", marginTop: 16 }}>
