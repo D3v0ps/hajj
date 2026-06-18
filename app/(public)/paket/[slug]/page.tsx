@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { createBooking } from "@/app/actions/bookings";
+import { primaryDisplayPrice } from "@/lib/pricing";
 import type { Metadata } from "next";
 
 type Params = Promise<{ slug: string }>;
@@ -33,12 +34,8 @@ export default async function PackageDetailPage({ params }: { params: Params }) 
   const adultQuad = pkg.tiers
     .filter((t) => t.ageCategory === "ADULT" && t.roomType === "QUAD")
     .sort((a, b) => a.pricePerPerson - b.pricePerPerson)[0];
-  const adultCheapest = pkg.tiers
-    .filter((t) => t.ageCategory === "ADULT")
-    .sort((a, b) => a.pricePerPerson - b.pricePerPerson)[0];
-  const fromTier = adultQuad ?? adultCheapest ?? pkg.tiers[0];
-  const fromPrice = fromTier?.pricePerPerson ?? 0;
-  const fromLabel = adultQuad ? "Fyrbädd, pris från" : "Pris från";
+  const fromPrice = primaryDisplayPrice(pkg.tiers);
+  const fromLabel = adultQuad ? "Fyrbäddsrum, vuxen — pris från" : "Pris från";
   const departCities = pkg.departCities.length > 0 ? pkg.departCities : pkg.departCity ? [pkg.departCity] : [];
   const fmtDate = (d: Date | null) => (d ? new Date(d).toLocaleDateString("sv-SE") : "—");
 

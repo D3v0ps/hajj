@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { createBooking } from "@/app/actions/bookings";
+import { primaryDisplayPrice } from "@/lib/pricing";
 
 type Params = Promise<{ packageId: string }>;
 
@@ -22,7 +23,7 @@ export default async function StartBookingPage({ params }: { params: Params }) {
   });
   if (!pkg) redirect("/");
 
-  const fromPrice = pkg.tiers[0]?.pricePerPerson ?? 0;
+  const fromPrice = primaryDisplayPrice(pkg.tiers);
 
   return (
     <div className="container narrow" style={{ maxWidth: 640 }}>

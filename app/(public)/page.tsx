@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { LeadQuoteForm } from "@/components/site/LeadQuoteForm";
 import { getTranslator, localeHref } from "@/lib/i18n";
+import { primaryDisplayPrice } from "@/lib/pricing";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -166,7 +167,7 @@ export default async function HomePage() {
               </div>
             ) : (
               featured.map((pkg) => {
-                const fromPrice = pkg.tiers[0]?.pricePerPerson ?? 0;
+                const fromPrice = primaryDisplayPrice(pkg.tiers);
                 const dateLocale = locale === "ar" ? "ar-SA" : locale === "en" ? "en-GB" : "sv-SE";
                 return (
                   <article key={pkg.id} className="pkg-card">

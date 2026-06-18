@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import { primaryDisplayPrice } from "@/lib/pricing";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -70,7 +71,7 @@ export default async function OmraPage() {
           ) : (
             <div className="pkg-list">
               {packages.map((pkg) => {
-                const fromPrice = pkg.tiers[0]?.pricePerPerson ?? 0;
+                const fromPrice = primaryDisplayPrice(pkg.tiers);
                 return (
                   <Link key={pkg.id} href={`/paket/${pkg.slug}`} className="pkg-row">
                     <div className="pkg-row-img" />
