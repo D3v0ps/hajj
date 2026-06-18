@@ -37,20 +37,6 @@ export default async function BokningDetailPage({
   });
   if (!booking || booking.userId !== session.user.id) notFound();
 
-  // Hämta ev. omdöme för att visa rätt CTA/kvittens vid avslutad resa.
-  const existingReview =
-    booking.status === "COMPLETED"
-      ? await prisma.review.findUnique({
-          where: {
-            bookingId_userId: {
-              bookingId: booking.id,
-              userId: session.user.id,
-            },
-          },
-          select: { id: true },
-        })
-      : null;
-
   const fmtDate = (d: Date | null) => (d ? new Date(d).toLocaleDateString("sv-SE") : "—");
   const refundAllowed =
     booking.refundStatus === "NONE" &&
@@ -163,39 +149,6 @@ export default async function BokningDetailPage({
           <span className="dim" style={{ fontSize: 12 }}>
             Avgifter följer <Link href="/villkor" className="btn-link">resevillkoren</Link>.
           </span>
-        </div>
-      )}
-
-      {booking.status === "COMPLETED" && (
-        <div className="review-cta">
-          {existingReview ? (
-            <>
-              <p className="serif" style={{ fontSize: 17, marginBottom: 8 }}>
-                Du har lämnat ett omdöme — tack!
-              </p>
-              <Link
-                href={`/min-sida/bokningar/${booking.id}/recension`}
-                className="btn-link"
-              >
-                Se ditt omdöme →
-              </Link>
-            </>
-          ) : (
-            <>
-              <p className="serif" style={{ fontSize: 17, marginBottom: 4 }}>
-                Hur var din resa?
-              </p>
-              <p className="dim" style={{ fontSize: 13, marginBottom: 14 }}>
-                Berätta om upplevelsen — det tar bara en minut.
-              </p>
-              <Link
-                href={`/min-sida/bokningar/${booking.id}/recension`}
-                className="btn btn-gold"
-              >
-                Lämna omdöme
-              </Link>
-            </>
-          )}
         </div>
       )}
 

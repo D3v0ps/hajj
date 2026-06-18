@@ -53,7 +53,6 @@ export async function wipeBusinessData(formData: FormData): Promise<void> {
     prisma.emailSend.count(),
     prisma.emailTemplate.count(),
     prisma.lead.count(),
-    prisma.review.count(),
     prisma.user.count({ where: { role: "CUSTOMER" } }),
     prisma.auditLog.count(),
     prisma.passwordResetToken.count(),
@@ -61,7 +60,7 @@ export async function wipeBusinessData(formData: FormData): Promise<void> {
   ]);
   const [
     nBookings, nPackages, nTravelers, nProfiles, nPayments, nDocs, nMessages,
-    nEmailSends, nTemplates, nLeads, nReviews, nCustomers, nAudit,
+    nEmailSends, nTemplates, nLeads, nCustomers, nAudit,
     nPwReset, nEmailVerify,
   ] = before;
 
@@ -73,7 +72,6 @@ export async function wipeBusinessData(formData: FormData): Promise<void> {
     prisma.message.deleteMany({}),
     prisma.document.deleteMany({}),
     prisma.payment.deleteMany({}),
-    prisma.review.deleteMany({}),
     prisma.passwordResetToken.deleteMany({}),
     prisma.emailVerificationToken.deleteMany({}),
     // Resenärer
@@ -111,7 +109,6 @@ export async function wipeBusinessData(formData: FormData): Promise<void> {
       emailSends: nEmailSends,
       emailTemplates: nTemplates,
       leads: nLeads,
-      reviews: nReviews,
       customers: nCustomers,
       auditLogsCleared: nAudit,
       passwordResetTokens: nPwReset,

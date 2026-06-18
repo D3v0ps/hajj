@@ -19,7 +19,7 @@ export default async function DangerZonePage({ searchParams }: { searchParams: S
   // Räkna nuvarande tillstånd så admin ser exakt vad som försvinner.
   const [
     nBookings, nPackages, nTravelers, nProfiles, nPayments, nDocs,
-    nMessages, nEmailSends, nTemplates, nLeads, nReviews, nCustomers,
+    nMessages, nEmailSends, nTemplates, nLeads, nCustomers,
     nAudit,
   ] = await Promise.all([
     prisma.booking.count(),
@@ -32,7 +32,6 @@ export default async function DangerZonePage({ searchParams }: { searchParams: S
     prisma.emailSend.count(),
     prisma.emailTemplate.count(),
     prisma.lead.count(),
-    prisma.review.count(),
     prisma.user.count({ where: { role: "CUSTOMER" } }),
     prisma.auditLog.count(),
   ]);
@@ -50,7 +49,6 @@ export default async function DangerZonePage({ searchParams }: { searchParams: S
     { label: "Köade/skickade mejl", count: nEmailSends, fate: "wipe" },
     { label: "E-postmallar", count: nTemplates, fate: "wipe" },
     { label: "Leads", count: nLeads, fate: "wipe" },
-    { label: "Omdömen", count: nReviews, fate: "wipe" },
     { label: "Kundkonton (CUSTOMER)", count: nCustomers, fate: "wipe" },
     { label: "Auditlogg-rader", count: nAudit, fate: "wipe" },
     { label: "Admin-/STAFF-konton", count: nStaff, fate: "keep" },

@@ -33,7 +33,6 @@ model User {
   messages  Message[]
   passwordResetTokens     PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
-  reviews                 Review[]
   auditLogs               AuditLog[]
   travelerProfiles        TravelerProfile[]
 }
@@ -211,7 +210,6 @@ model Booking {
   payments   Payment[]
   messages   Message[]
   emailSends EmailSend[]
-  reviews    Review[]
 
   @@index([userId])
   @@index([packageId])
@@ -251,23 +249,6 @@ model EmailVerificationToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-}
-
-model Review {
-  id        String   @id @default(cuid())
-  userId    String
-  bookingId String
-  rating    Int
-  body      String?
-  isPublic  Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-
-  @@unique([bookingId, userId])
-  @@index([userId])
-  @@index([isPublic])
 }
 
 model AuditLog {
