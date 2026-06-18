@@ -37,10 +37,13 @@ export default async function ResegrupperPage({ searchParams }: { searchParams: 
   const allTravelers = bookings.flatMap((b) => b.travelers);
   const allPayments = bookings.flatMap((b) => b.payments);
 
-  // Ekonomi (belopp lagras i hela kronor).
-  const paidTotal = allPayments
+  // Ekonomi: räkna både per-resenär amountPaid (manuellt registrerat kontant/swish
+  // etc.) OCH genomförda Payment-rader (Stripe-flödet). Två kanaler, en summa.
+  const paidPerTraveler = allTravelers.reduce((s, t) => s + (t.amountPaid ?? 0), 0);
+  const paidPerPayment = allPayments
     .filter((p) => p.status === "COMPLETED")
     .reduce((s, p) => s + p.amount, 0);
+  const paidTotal = paidPerTraveler + paidPerPayment;
   const bookedTotal = bookings.reduce((s, b) => s + b.totalAmount, 0);
   const outstandingTotal = Math.max(bookedTotal - paidTotal, 0);
 
@@ -180,11 +183,9 @@ export default async function ResegrupperPage({ searchParams }: { searchParams: 
             </div>
           </div>
 
-          <div className="adm-tabs" style={{ marginTop: 20 }}>
-            <span className="adm-tab active">Resenärer <span className="count">{allTravelers.length}</span></span>
-            <span className="adm-tab">Rumsindelning <span className="count">{assignedRooms.length}</span></span>
-            <span className="adm-tab">Betalningar <span className="count">{allPayments.length}</span></span>
-          </div>
+          {/* Sektionerna renderas staplade nedanför — Resenärer, Rumsindelning,
+              Övrig viktig information. Tidigare hade vi 'flikar' som var rena
+              <span> utan onClick, vilket vilseledde användaren (looked clickable). */}
 
           {/* Resenärstabell — alla relevanta formuläruppgifter */}
           <div className="adm-card">
@@ -217,7 +218,9 @@ export default async function ResegrupperPage({ searchParams }: { searchParams: 
                         <th scope="col">Rum</th>
                         <th scope="col">Flyg ut</th>
                         <th scope="col">Flyg hem</th>
-                        <th scope="col">Betalning</th>
+                        <th scope="col">Betalt</th>
+                        <th scope="col">Sätt</th>
+                        <th scope="col" style={{ width: 80 }}></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -263,7 +266,19 @@ export default async function ResegrupperPage({ searchParams }: { searchParams: 
                               <td>{t.roomAssignment ?? <span className="dim">Ej tilldelat</span>}</td>
                               <td>{t.flightOut ?? "—"}</td>
                               <td>{t.flightReturn ?? "—"}</td>
-                              <td>{t.paymentNote ?? "—"}</td>
+                              <td className="tnum" style={{ color: t.amountPaid > 0 ? "var(--c-green)" : "var(--c-text-faint)" }}>
+                                {t.amountPaid > 0 ? `${t.amountPaid.toLocaleString("sv-SE")} kr` : "—"}
+                              </td>
+                              <td className="dim" style={{ fontSize: 11 }}>{t.paymentMethod ?? "—"}</td>
+                              <td>
+                                <Link
+                                  href={`/admin/resenarer/${t.id}/redigera?from=${encodeURIComponent(`/admin/resegrupper?trip=${selected.id}`)}`}
+                                  className="gr-edit-btn"
+                                  aria-label={`Redigera ${t.firstName} ${t.lastName}`}
+                                >
+                                  Redigera →
+                                </Link>
+                              </td>
                             </tr>
                           );
                         });
@@ -388,13 +403,19 @@ export default async function ResegrupperPage({ searchParams }: { searchParams: 
         }
 
         /* Resenärstabell */
-        .table-wrap .gr-table { min-width: 1100px; }
+        .table-wrap .gr-table { min-width: 1300px; }
         .gr-table { font-size: 12.5px; }
         .gr-table th, .gr-table td { padding: 10px 12px; vertical-align: top; }
         .gr-table .mono { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.02em; white-space: nowrap; }
         .gr-table .tnum { font-variant-numeric: tabular-nums; white-space: nowrap; }
         .gr-link { color: var(--c-ink); border-bottom: 1px solid var(--c-line); }
         .gr-link:hover { color: var(--c-gold); border-bottom-color: var(--c-gold); }
+        .gr-edit-btn {
+          display: inline-block; padding: 4px 10px; font-size: 11px;
+          color: var(--c-ink); border: 1px solid var(--c-line);
+          background: #fff; white-space: nowrap;
+        }
+        .gr-edit-btn:hover { border-color: var(--c-gold); color: var(--c-gold); }
 
         /* Övrig viktig information */
         .gr-notes { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }

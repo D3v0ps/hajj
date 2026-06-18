@@ -33,8 +33,11 @@ const HEADER_MAP: Record<string, string> = {
   "STAD": "residenceCity",
   "BOR": "residenceCity",
   "RUM": "roomAssignment",
-  "BETALAT": "paymentNote",
-  "BETALNING": "paymentNote",
+  // BETALAT/BETALNING tolkas som siffra → amountPaid. Om värdet inte är
+  // numeriskt (t.ex. "Faktura skickad") faller det tillbaka till paymentNote.
+  "BETALAT": "_paymentRaw",
+  "BETALNING": "_paymentRaw",
+  "BETALT": "_paymentRaw",
   "TURRESA": "flightOut",
   "HEMRESA": "flightReturn",
   "NR": "_nr",
@@ -225,6 +228,22 @@ export async function POST(req: NextRequest) {
       }
 
       const birthDate = parseBirthDate(data.birthDate || data.personnummer || "");
+
+      // BETALT-kolumnen: tolka som siffra → amountPaid. Tillåt mellanslag och
+      // komma som tusentalsavgränsare ("20 900" eller "20,900"). Om värdet
+      // inte är numeriskt (t.ex. "Faktura skickad") behåll som paymentNote.
+      let amountPaid = 0;
+      let paymentNote: string | null = null;
+      const raw = String(data._paymentRaw ?? data.paymentNote ?? "").trim();
+      if (raw) {
+        const cleaned = raw.replace(/[\s,]/g, "").replace(/\.\d+$/, "");
+        if (/^\d+$/.test(cleaned)) {
+          amountPaid = parseInt(cleaned, 10);
+        } else {
+          paymentNote = raw;
+        }
+      }
+
       try {
         await prisma.traveler.create({
           data: {
@@ -247,7 +266,8 @@ export async function POST(req: NextRequest) {
             roomAssignment: data.roomAssignment || null,
             flightOut: data.flightOut || null,
             flightReturn: data.flightReturn || null,
-            paymentNote: data.paymentNote || null,
+            amountPaid,
+            paymentNote,
             notes: data.notes || null,
           },
         });

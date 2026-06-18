@@ -105,7 +105,7 @@ export default async function ResenarerPage({ searchParams }: { searchParams: Se
         {travelers.map((t) => (
           <Link
             key={t.id}
-            href={t.booking ? `/admin/bokningar/${t.booking.id}?tab=resenarer` : "#"}
+            href={`/admin/resenarer/${t.id}/redigera?from=${encodeURIComponent("/admin/resenarer")}`}
             className="rs-card"
           >
             <div className="rs-card-avatar">
@@ -148,6 +148,12 @@ export default async function ResenarerPage({ searchParams }: { searchParams: Se
                 <div className="rs-detail">
                   <span className="rs-label">Rum</span>
                   <span className="rs-value">{t.roomAssignment ?? "—"}</span>
+                </div>
+                <div className="rs-detail">
+                  <span className="rs-label">Betalt</span>
+                  <span className="rs-value tnum" style={{ color: t.amountPaid > 0 ? "var(--c-green)" : "var(--c-text-muted)" }}>
+                    {t.amountPaid > 0 ? `${t.amountPaid.toLocaleString("sv-SE")} kr` : "—"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -235,7 +241,7 @@ export default async function ResenarerPage({ searchParams }: { searchParams: Se
         .rs-card-badges { display: flex; gap: 4px; }
 
         .rs-card-details {
-          display: grid; grid-template-columns: repeat(6, 1fr);
+          display: grid; grid-template-columns: repeat(7, 1fr);
           gap: 4px 14px;
         }
         .rs-detail { }

@@ -309,6 +309,11 @@ model Traveler {
   flightReturn    String?
   isMahram        Boolean  @default(false)
   needsAssist     Boolean  @default(false)
+  // Per-resenär betalning: admin registrerar kontant/swish/faktura här direkt.
+  // paymentNote är fritext för anteckning ("betalt vid info-möte 2026-03-15").
+  amountPaid      Int      @default(0)
+  paymentMethod   String?
+  paymentDate     DateTime?
   paymentNote     String?
   notes           String?
   profileId       String?
@@ -323,6 +328,7 @@ model Traveler {
   @@index([bookingId])
   @@index([ageCategory])
   @@index([profileId])
+  @@index([amountPaid])
 }
 
 model TravelerProfile {
