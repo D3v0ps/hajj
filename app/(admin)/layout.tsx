@@ -7,7 +7,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const NAV = [
+type NavItem = { href: string; label: string; icon: string; danger?: boolean; adminOnly?: boolean };
+type NavGroup = { label: string; muted?: boolean; items: NavItem[] };
+
+const NAV: NavGroup[] = [
   {
     label: "Översikt",
     items: [
@@ -48,6 +51,9 @@ const NAV = [
     muted: true,
     items: [
       { href: "/admin/audit", label: "Auditlogg", icon: "◌" },
+      // Endast synligt för ADMIN (sidan redirectar STAFF). Markeras visuellt
+      // som varning så ingen klickar av misstag.
+      { href: "/admin/danger-zone", label: "Danger zone", icon: "⚠", danger: true, adminOnly: true },
     ],
   },
 ];
@@ -76,12 +82,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             >
               <span className="adm-section-label">{group.label}</span>
               <div className="adm-nav-group">
-                {group.items.map((item) => (
-                  <Link key={item.href} href={item.href} className="adm-link">
-                    <span className="adm-link-icon">{item.icon}</span>
-                    {item.label}
-                  </Link>
-                ))}
+                {group.items
+                  .filter((item) => !item.adminOnly || session.user.role === "ADMIN")
+                  .map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={item.danger ? "adm-link adm-link-danger" : "adm-link"}
+                    >
+                      <span className="adm-link-icon">{item.icon}</span>
+                      {item.label}
+                    </Link>
+                  ))}
               </div>
             </div>
           ))}
@@ -167,6 +179,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           color: #fff;
           background: rgba(181,137,75,0.08);
           border-left-color: var(--c-gold);
+        }
+        .adm-link-danger { color: var(--c-warn); }
+        .adm-link-danger:hover {
+          color: #fff;
+          background: rgba(161,75,47,0.18);
+          border-left-color: var(--c-warn);
         }
         .adm-link-icon {
           width: 18px; text-align: center;
