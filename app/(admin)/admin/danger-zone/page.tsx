@@ -20,7 +20,7 @@ export default async function DangerZonePage({ searchParams }: { searchParams: S
   const [
     nBookings, nPackages, nTravelers, nProfiles, nPayments, nDocs,
     nMessages, nEmailSends, nTemplates, nLeads, nReviews, nCustomers,
-    nFortnox, nAudit,
+    nAudit,
   ] = await Promise.all([
     prisma.booking.count(),
     prisma.package.count(),
@@ -34,7 +34,6 @@ export default async function DangerZonePage({ searchParams }: { searchParams: S
     prisma.lead.count(),
     prisma.review.count(),
     prisma.user.count({ where: { role: "CUSTOMER" } }),
-    prisma.fortnoxConnection.count(),
     prisma.auditLog.count(),
   ]);
 
@@ -53,7 +52,6 @@ export default async function DangerZonePage({ searchParams }: { searchParams: S
     { label: "Leads", count: nLeads, fate: "wipe" },
     { label: "Omdömen", count: nReviews, fate: "wipe" },
     { label: "Kundkonton (CUSTOMER)", count: nCustomers, fate: "wipe" },
-    { label: "Fortnox-koppling", count: nFortnox, fate: "wipe" },
     { label: "Auditlogg-rader", count: nAudit, fate: "wipe" },
     { label: "Admin-/STAFF-konton", count: nStaff, fate: "keep" },
   ];

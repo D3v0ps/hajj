@@ -27,8 +27,6 @@ const NAV: NavGroup[] = [
       { href: "/admin/resenarer", label: "Resenärer", icon: "◎" },
       { href: "/admin/betalningar", label: "Betalningar", icon: "₪" },
       { href: "/admin/recensioner", label: "Omdömen", icon: "★" },
-      { href: "/admin/bokforing", label: "Bokföring", icon: "Σ" },
-      { href: "/admin/fortnox", label: "Fortnox", icon: "Ƒ" },
     ],
   },
   {

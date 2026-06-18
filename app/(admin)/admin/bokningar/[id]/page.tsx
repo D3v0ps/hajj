@@ -75,7 +75,7 @@ async function verifyPayment(paymentId: string) {
     data: { status: "COMPLETED", paidAt: new Date() },
   });
   if (payment) revalidatePath(`/admin/bokningar/${payment.bookingId}`);
-  // Autopush till Fortnox + audit-logg endast om CAS-claim faktiskt vann.
+  // Audit-logg endast om CAS-claim faktiskt vann (idempotent vid dubbel-klick).
   if (claimed.count > 0 && payment) {
     await logAudit({
       actorId: admin.id,
@@ -85,8 +85,6 @@ async function verifyPayment(paymentId: string) {
       targetId: paymentId,
       metadata: { bookingId: payment.bookingId, amount: payment.amount, method: payment.method },
     });
-    const { autoPushPayment } = await import("@/lib/fortnox");
-    await autoPushPayment(paymentId);
   }
 }
 

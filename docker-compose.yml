@@ -42,8 +42,6 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       SITE_EMAIL_FROM: ${SITE_EMAIL_FROM:-Hadj Omra Resor <no-reply@hajj.karimkhalil.se>}
       WORKER_TOKEN: ${WORKER_TOKEN:-}
-      FORTNOX_CLIENT_ID: ${FORTNOX_CLIENT_ID:-}
-      FORTNOX_CLIENT_SECRET: ${FORTNOX_CLIENT_SECRET:-}
       NODE_ENV: production
     depends_on:
       postgres:

@@ -19,11 +19,6 @@ const schema = z.object({
   SITE_EMAIL_FROM: z.string().optional(),
   WORKER_TOKEN: z.string().optional(),
   UPLOADS_DIR: z.string().optional(),
-  // Fortnox: skapa app i Fortnox developer-portal, ange redirect URI
-  // till {APP_URL}/api/fortnox/callback. Saknas värdena → integrationen
-  // är inaktiv (admin-vyn visar instruktioner istället).
-  FORTNOX_CLIENT_ID: z.string().optional(),
-  FORTNOX_CLIENT_SECRET: z.string().optional(),
 });
 
 type Env = z.infer<typeof schema>;
@@ -57,8 +52,6 @@ function load(): Env {
     SITE_EMAIL_FROM: process.env.SITE_EMAIL_FROM,
     WORKER_TOKEN: process.env.WORKER_TOKEN,
     UPLOADS_DIR: process.env.UPLOADS_DIR,
-    FORTNOX_CLIENT_ID: process.env.FORTNOX_CLIENT_ID,
-    FORTNOX_CLIENT_SECRET: process.env.FORTNOX_CLIENT_SECRET,
   });
   return cached;
 }

@@ -8,7 +8,7 @@ import { logAudit } from "@/lib/audit";
 
 /**
  * DESTRUKTIV ÅTGÄRD — raderar alla bokningar, paket, resegrupper, kund-konton,
- * mejlmallar, Fortnox-koppling, leads, dokument-rader, auditlogg.
+ * mejlmallar, leads, dokument-rader, auditlogg.
  *
  * Behåller endast: ADMIN- och STAFF-konton (med associerade Account/Session-rader).
  *
@@ -55,14 +55,13 @@ export async function wipeBusinessData(formData: FormData): Promise<void> {
     prisma.lead.count(),
     prisma.review.count(),
     prisma.user.count({ where: { role: "CUSTOMER" } }),
-    prisma.fortnoxConnection.count(),
     prisma.auditLog.count(),
     prisma.passwordResetToken.count(),
     prisma.emailVerificationToken.count(),
   ]);
   const [
     nBookings, nPackages, nTravelers, nProfiles, nPayments, nDocs, nMessages,
-    nEmailSends, nTemplates, nLeads, nReviews, nCustomers, nFortnox, nAudit,
+    nEmailSends, nTemplates, nLeads, nReviews, nCustomers, nAudit,
     nPwReset, nEmailVerify,
   ] = before;
 
@@ -89,7 +88,6 @@ export async function wipeBusinessData(formData: FormData): Promise<void> {
     prisma.lead.deleteMany({}),
     // Konfiguration som ska rensas enligt admins val
     prisma.emailTemplate.deleteMany({}),
-    prisma.fortnoxConnection.deleteMany({}),
     // Kund-konton (Account + Session kaskaderas via onDelete:Cascade)
     prisma.user.deleteMany({ where: { role: "CUSTOMER" } }),
     // Auditlogg — rensas sist så att start-loggen ovan tas bort också
@@ -115,7 +113,6 @@ export async function wipeBusinessData(formData: FormData): Promise<void> {
       leads: nLeads,
       reviews: nReviews,
       customers: nCustomers,
-      fortnoxConnections: nFortnox,
       auditLogsCleared: nAudit,
       passwordResetTokens: nPwReset,
       emailVerificationTokens: nEmailVerify,
