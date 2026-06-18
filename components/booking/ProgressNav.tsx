@@ -5,7 +5,7 @@ type Step = {
 };
 
 const STEPS: Step[] = [
-  { num: 1, name: "Logga in", meta: "Konto" },
+  { num: 1, name: "Dina uppgifter", meta: "Kontakt" },
   { num: 2, name: "Välj rumstyp" },
   { num: 3, name: "Resenärer & dokument" },
   { num: 4, name: "Granska & godkänn" },

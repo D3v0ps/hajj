@@ -8,33 +8,48 @@ import { revalidatePath } from "next/cache";
 import { queueEmail, EMAIL_KIND, renderTemplate } from "@/lib/email";
 import { logAudit } from "@/lib/audit";
 import { env } from "@/lib/env";
+import { guestOwnsBooking, rememberGuestBooking } from "@/lib/guest";
 
 const TERMS_VERSION = "2026-05-01";
 
 const DEPOSIT_PER_PERSON = 5000;
-
-async function requireUser() {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/logga-in");
-  return session.user;
-}
-
-async function loadOwnedBooking(bookingId: string, userId: string) {
-  const booking = await prisma.booking.findUnique({
-    where: { id: bookingId },
-    include: { package: { include: { tiers: true } }, travelers: true, tier: true },
-  });
-  if (!booking || booking.userId !== userId) redirect("/min-sida");
-  return booking;
-}
 
 function flashError(bookingId: string, message: string): never {
   const u = new URLSearchParams({ error: message });
   redirect(`/boka/${bookingId}?${u.toString()}`);
 }
 
+/**
+ * Laddar en bokning och säkerställer att den som anropar äger den — antingen som
+ * inloggad kund (booking.userId === session.user.id) eller som gäst (boknings-id
+ * finns i den signerade gäst-cookien). Annars redirect.
+ * Returnerar bokningen + ägarens userId (gästens auto-skapade konto eller kontot).
+ */
+async function loadActorBooking(bookingId: string) {
+  const session = await auth();
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: { package: { include: { tiers: true } }, travelers: true, tier: true },
+  });
+  if (!booking) redirect("/");
+
+  const isOwner = !!session?.user?.id && booking.userId === session.user.id;
+  const isGuest = !isOwner && (await guestOwnsBooking(bookingId));
+  if (!isOwner && !isGuest) {
+    redirect(session?.user?.id ? "/min-sida" : `/boka/start/${booking.packageId}`);
+  }
+  return { booking, userId: booking.userId };
+}
+
 export async function createBooking(packageId: string, _formData?: FormData): Promise<void> {
-  const user = await requireUser();
+  const session = await auth();
+  // Gäst: skicka till kontaktsteget först. Där fångar vi e-posten (lead) och
+  // skapar bokningen — kunden behöver inte skapa ett konto.
+  if (!session?.user?.id) {
+    redirect(`/boka/start/${packageId}`);
+  }
+  const user = session.user;
+
   const pkg = await prisma.package.findUnique({
     where: { id: packageId },
     include: { tiers: { orderBy: { pricePerPerson: "asc" } } },
@@ -64,13 +79,107 @@ export async function createBooking(packageId: string, _formData?: FormData): Pr
   redirect(`/boka/${booking.id}`);
 }
 
+const guestContactSchema = z.object({
+  name: z.string().min(1, "Ange ditt namn").max(120),
+  email: z.string().email("Ange en giltig e-postadress").max(200),
+  phone: z.string().max(40).optional().or(z.literal("")),
+});
+
+/**
+ * Gäst-start: kunden anger namn + e-post + telefon (inget konto/lösenord).
+ * Vi hittar-eller-skapar en kundpost på e-posten och skapar bokningsutkastet
+ * direkt — så e-posten är fångad även om kunden aldrig slutför. Gäst-cookien
+ * sätts så att kunden kan fortsätta/återuppta sin bokning.
+ */
+export async function createGuestBooking(packageId: string, formData: FormData): Promise<void> {
+  const session = await auth();
+  if (session?.user?.id) {
+    // Redan inloggad → använd kontoflödet.
+    return createBooking(packageId);
+  }
+
+  const parsed = guestContactSchema.safeParse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    phone: formData.get("phone"),
+  });
+  if (!parsed.success) {
+    const msg = parsed.error.issues[0]?.message ?? "Fyll i namn och e-post";
+    redirect(`/boka/start/${packageId}?error=${encodeURIComponent(msg)}`);
+  }
+  const { name, phone } = parsed.data;
+  const email = parsed.data.email.trim().toLowerCase();
+
+  const pkg = await prisma.package.findUnique({ where: { id: packageId } });
+  if (!pkg) redirect("/");
+
+  // Hitta-eller-skapa kund (gäst = utan lösenord). Befintlig e-post återanvänds
+  // så samma kund inte dupliceras.
+  let user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    user = await prisma.user.create({
+      data: { email, name, phone: phone || null, role: "CUSTOMER" },
+    });
+  }
+
+  // Återuppta befintligt utkast på samma paket om det finns.
+  const existing = await prisma.booking.findFirst({
+    where: { userId: user.id, packageId, status: "DRAFT" },
+  });
+  if (existing) {
+    await rememberGuestBooking(existing.id, email);
+    redirect(`/boka/${existing.id}`);
+  }
+
+  const booking = await prisma.booking.create({
+    data: {
+      userId: user.id,
+      packageId: pkg.id,
+      step: 2,
+      travelerCount: 0,
+      adultCount: 0,
+      childCount: 0,
+      infantCount: 0,
+      depositAmount: DEPOSIT_PER_PERSON,
+      totalAmount: 0,
+      contactEmail: email,
+      contactPhone: phone || null,
+    },
+  });
+
+  await rememberGuestBooking(booking.id, email);
+  await logAudit({
+    actorId: user.id,
+    actorEmail: email,
+    action: "booking.startedGuest",
+    targetType: "Booking",
+    targetId: booking.id,
+  });
+
+  redirect(`/boka/${booking.id}`);
+}
+
+/**
+ * Gå tillbaka till ett tidigare steg. Bara bakåt och bara medan bokningen är ett
+ * utkast (ej inskickad). Steget kan alltid gå framåt igen via stegens egna actions.
+ */
+export async function goToBookingStep(bookingId: string, target: number): Promise<void> {
+  const { booking } = await loadActorBooking(bookingId);
+  if (booking.status !== "DRAFT") flashError(bookingId, "Bokningen är redan inskickad och kan inte ändras här.");
+  const t = Math.max(2, Math.min(Math.floor(target), booking.step));
+  if (t !== booking.step) {
+    await prisma.booking.update({ where: { id: booking.id }, data: { step: t } });
+  }
+  revalidatePath(`/boka/${booking.id}`);
+  redirect(`/boka/${booking.id}`);
+}
+
 /**
  * Steg 2: spara antal per priskombination (rumstyp × ålderskategori) + avreseort.
  * Räknar ut totalt antal resenärer, ålderskategorifördelning och totalpris.
  */
 export async function saveTierQuantities(bookingId: string, formData: FormData): Promise<void> {
-  const user = await requireUser();
-  const booking = await loadOwnedBooking(bookingId, user.id);
+  const { booking } = await loadActorBooking(bookingId);
 
   const quantities: Record<string, number> = {};
   let total = 0;
@@ -144,8 +253,7 @@ const travelerSchema = z.object({
 });
 
 export async function addTraveler(bookingId: string, formData: FormData): Promise<void> {
-  const user = await requireUser();
-  const booking = await loadOwnedBooking(bookingId, user.id);
+  const { booking, userId } = await loadActorBooking(bookingId);
 
   // Får ej registrera resenärer förrän rum/antal valts, eller efter granskning.
   if (booking.step < 3) flashError(bookingId, "Välj antal resenärer först.");
@@ -205,7 +313,7 @@ export async function addTraveler(bookingId: string, formData: FormData): Promis
   try {
     await prisma.traveler.create({
       data: {
-        userId: user.id,
+        userId,
         bookingId: booking.id,
         firstName: d.firstName,
         lastName: d.lastName,
@@ -238,10 +346,10 @@ export async function addTraveler(bookingId: string, formData: FormData): Promis
 /**
  * Skapar en Traveler-rad i en bokning genom att kopiera fält från en sparad
  * TravelerProfile. Kunden slipper fylla i samma uppgifter varje gång.
+ * (Profiler finns bara för inloggade konton; för gäster är listan tom.)
  */
 export async function addTravelerFromProfile(bookingId: string, formData: FormData): Promise<void> {
-  const user = await requireUser();
-  const booking = await loadOwnedBooking(bookingId, user.id);
+  const { booking, userId } = await loadActorBooking(bookingId);
   if (booking.step < 3) flashError(bookingId, "Välj antal resenärer först.");
   if (booking.step >= 4) flashError(bookingId, "Bokningen är låst för ändringar.");
   if (booking.travelers.length >= booking.travelerCount) {
@@ -249,7 +357,7 @@ export async function addTravelerFromProfile(bookingId: string, formData: FormDa
   }
 
   const profileId = String(formData.get("profileId") ?? "");
-  const profile = await prisma.travelerProfile.findFirst({ where: { id: profileId, userId: user.id } });
+  const profile = await prisma.travelerProfile.findFirst({ where: { id: profileId, userId } });
   if (!profile) flashError(bookingId, "Profilen hittades inte.");
 
   // Säkerställ att profilen inte redan är knuten till en resenär i denna bokning.
@@ -279,7 +387,7 @@ export async function addTravelerFromProfile(bookingId: string, formData: FormDa
 
   await prisma.traveler.create({
     data: {
-      userId: user.id,
+      userId,
       bookingId: booking.id,
       profileId: profile!.id,
       firstName: profile!.firstName,
@@ -309,18 +417,16 @@ export async function addTravelerFromProfile(bookingId: string, formData: FormDa
 }
 
 export async function removeTraveler(bookingId: string, travelerId: string): Promise<void> {
-  const user = await requireUser();
-  const booking = await loadOwnedBooking(bookingId, user.id);
+  const { booking, userId } = await loadActorBooking(bookingId);
   // Resenärer får inte tas bort efter att bokningen granskats/skickats in.
   if (booking.step >= 4) flashError(bookingId, "Bokningen är låst för ändringar.");
-  await prisma.traveler.deleteMany({ where: { id: travelerId, userId: user.id, bookingId } });
+  await prisma.traveler.deleteMany({ where: { id: travelerId, userId, bookingId } });
   revalidatePath(`/boka/${bookingId}`);
   redirect(`/boka/${bookingId}`);
 }
 
 export async function advanceToReview(bookingId: string): Promise<void> {
-  const user = await requireUser();
-  const booking = await loadOwnedBooking(bookingId, user.id);
+  const { booking } = await loadActorBooking(bookingId);
   if (booking.travelers.length < booking.travelerCount) {
     flashError(
       bookingId,
@@ -335,8 +441,7 @@ export async function advanceToReview(bookingId: string): Promise<void> {
 }
 
 export async function acceptAndAdvance(bookingId: string, formData: FormData): Promise<void> {
-  const user = await requireUser();
-  const booking = await loadOwnedBooking(bookingId, user.id);
+  const { booking, userId } = await loadActorBooking(bookingId);
 
   // Måste ha registrerat alla resenärer (nått granskningssteget) först.
   if (booking.step < 4) flashError(bookingId, "Registrera alla resenärer och granska bokningen först.");
@@ -402,7 +507,7 @@ export async function acceptAndAdvance(bookingId: string, formData: FormData): P
       kind: EMAIL_KIND.BOOKING_SUBMITTED,
     });
   }
-  await logAudit({ actorId: user.id, actorEmail: user.email, action: "booking.submitted", targetType: "Booking", targetId: updated.id });
+  await logAudit({ actorId: userId, actorEmail: updated.user.email, action: "booking.submitted", targetType: "Booking", targetId: updated.id });
 
   redirect(`/boka/${booking.id}`);
 }
@@ -413,8 +518,7 @@ export async function recordDepositIntent(
   bookingId: string,
   method: "SWISH" | "KLARNA" | "CARD" | "BANKGIRO" | "INVOICE",
 ): Promise<void> {
-  const user = await requireUser();
-  const booking = await loadOwnedBooking(bookingId, user.id);
+  const { booking } = await loadActorBooking(bookingId);
 
   // Validera betalsätt + steg.
   if (!PAYMENT_METHODS.includes(method)) flashError(bookingId, "Ogiltigt betalsätt.");

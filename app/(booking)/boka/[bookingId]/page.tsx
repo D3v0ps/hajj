@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { guestOwnsBooking } from "@/lib/guest";
+import { goToBookingStep } from "@/app/actions/bookings";
 import { ProgressNav } from "@/components/booking/ProgressNav";
 import { StepRoom } from "./StepRoom";
 import { StepTravelers } from "./StepTravelers";
@@ -21,7 +23,6 @@ export default async function BookingPage({
   const { bookingId } = await params;
   const { error, paid, cancelled } = await searchParams;
   const session = await auth();
-  if (!session?.user?.id) redirect(`/logga-in?next=${encodeURIComponent(`/boka/${bookingId}`)}`);
 
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
@@ -32,13 +33,20 @@ export default async function BookingPage({
       payments: true,
     },
   });
+  if (!booking) notFound();
 
-  if (!booking || booking.userId !== session.user.id) notFound();
+  // Ägarskap: inloggad kund ELLER gäst (signerad cookie). Inget konto krävs.
+  const isOwner = !!session?.user?.id && booking.userId === session.user.id;
+  const isGuest = !isOwner && (await guestOwnsBooking(booking.id));
+  if (!isOwner && !isGuest) {
+    if (session?.user?.id) notFound();
+    redirect(`/boka/start/${booking.packageId}`);
+  }
 
-  // Hämta sparade profiler för snabb-tillägg (bara relevant i steg 3).
-  const profiles = booking.step === 3
+  // Sparade profiler för snabb-tillägg finns bara för inloggade konton (gäster har inga).
+  const profiles = isOwner && booking.step === 3
     ? await prisma.travelerProfile.findMany({
-        where: { userId: session.user.id },
+        where: { userId: session!.user.id },
         orderBy: [{ isSelf: "desc" }, { firstName: "asc" }],
       })
     : [];
@@ -70,12 +78,20 @@ export default async function BookingPage({
           {booking.step === 4 && <StepReview booking={booking} />}
           {booking.step === 5 && <StepPay booking={booking} />}
           {booking.step >= 6 && <StepDone booking={booking} />}
+
+          {/* Gå tillbaka ett steg — bara medan bokningen är ett utkast (ej inskickad). */}
+          {booking.status === "DRAFT" && booking.step > 2 && booking.step <= 4 && (
+            <form action={goToBookingStep.bind(null, booking.id, booking.step - 1)} className="bo-back">
+              <button type="submit" className="btn btn-ghost">← Gå tillbaka till föregående steg</button>
+            </form>
+          )}
         </section>
       </div>
 
       <style>{`
         .bo-grid { display: grid; grid-template-columns: 320px 1fr; gap: 48px; }
         .bo-content { background: #fff; border: 1px solid var(--c-line); padding: 48px 56px; min-height: 600px; }
+        .bo-back { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--c-line-soft); }
         .bo-error {
           background: #FBE9E2;
           border: 1px solid var(--c-warn);
