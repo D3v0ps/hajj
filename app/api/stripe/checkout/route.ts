@@ -1,15 +1,13 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { guestOwnsBooking } from "@/lib/guest";
 import { stripe, stripeEnabled, getAppUrl } from "@/lib/stripe";
 
 // Skapar en Stripe Checkout-session för anmälningsavgiften på en bokning.
 // POST body: { bookingId: string }
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) {
-    return Response.json({ error: "Ej inloggad" }, { status: 401 });
-  }
 
   if (!stripeEnabled || !stripe) {
     return Response.json(
@@ -26,8 +24,13 @@ export async function POST(req: NextRequest) {
     where: { id: bookingId },
     include: { package: true, user: { select: { email: true } } },
   });
-  if (!booking || booking.userId !== session.user.id) {
-    return Response.json({ error: "Bokning hittades ej" }, { status: 404 });
+  if (!booking) return Response.json({ error: "Bokning hittades ej" }, { status: 404 });
+
+  // Ägarskap: inloggad kund ELLER gäst (signerad cookie) — inget konto krävs för att betala.
+  const isOwner = !!session?.user?.id && booking.userId === session.user.id;
+  const isGuest = !isOwner && (await guestOwnsBooking(booking.id));
+  if (!isOwner && !isGuest) {
+    return Response.json({ error: "Ej behörig" }, { status: 401 });
   }
 
   const payable = booking.adultCount + booking.childCount;
