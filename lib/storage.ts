@@ -23,11 +23,13 @@ function resolveKey(key: string): string {
   return full;
 }
 
-/** Sparar en fil och returnerar dess lagrings-key (att lägga i Document.filepath). */
-export async function saveFile(data: Buffer, ext: string): Promise<string> {
+/** Sparar en fil och returnerar dess lagrings-key (att lägga i Document.filepath
+ *  eller Package.imageUrl). `subdir` styr undermappen (t.ex. "documents", "packages"). */
+export async function saveFile(data: Buffer, ext: string, subdir = "documents"): Promise<string> {
   const id = randomBytes(16).toString("hex");
   const safeExt = ext.replace(/[^a-z0-9]/gi, "").slice(0, 8).toLowerCase();
-  const key = path.posix.join("documents", safeExt ? `${id}.${safeExt}` : id);
+  const safeDir = subdir.replace(/[^a-z0-9]/gi, "").slice(0, 20).toLowerCase() || "documents";
+  const key = path.posix.join(safeDir, safeExt ? `${id}.${safeExt}` : id);
   const full = resolveKey(key);
   await fs.mkdir(path.dirname(full), { recursive: true });
   await fs.writeFile(full, data, { mode: 0o600 });

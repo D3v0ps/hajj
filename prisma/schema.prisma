@@ -101,6 +101,7 @@ model Package {
   status       PackageStatus @default(DRAFT)
   inclusions   String[]
   excludeNotes String[]
+  notes        String?
   hotelMakkah  String?
   hotelMadinah String?
   distHaramM   Int?

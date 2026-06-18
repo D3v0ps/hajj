@@ -2,10 +2,10 @@
 
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { saveFile, deleteStoredFile } from "@/lib/storage";
 
 async function requireAdmin() {
   const session = await auth();
@@ -16,11 +16,14 @@ async function requireAdmin() {
 
 const packageSchema = z.object({
   slug: z.string().min(2).max(120).regex(/^[a-z0-9-]+$/, "Endast a–z, 0–9 och bindestreck"),
+  // VISUM behålls i enum för bakåtkompatibilitet med ev. importerade visum-paket,
+  // men erbjuds inte längre som val i formuläret.
   type: z.enum(["HAJJ", "OMRA", "HADJ_BADAL", "VISUM"]),
   title: z.string().min(2).max(200),
   subtitle: z.string().max(280).optional().or(z.literal("")),
   summary: z.string().max(500).optional().or(z.literal("")),
   description: z.string().max(5000).optional().or(z.literal("")),
+  notes: z.string().max(5000).optional().or(z.literal("")),
   city: z.string().max(80).optional().or(z.literal("")),
   departCities: z.string().optional().or(z.literal("")),
   startDate: z.string().optional().or(z.literal("")),
@@ -35,54 +38,7 @@ const packageSchema = z.object({
   distNabawiM: z.coerce.number().int().min(0).max(50000).optional().or(z.literal(0)),
   inclusions: z.string().optional().or(z.literal("")),
   excludeNotes: z.string().optional().or(z.literal("")),
-  // Travel pack (alla optional, valideras vidare i parseJsonField)
-  leaderName: z.string().max(120).optional().or(z.literal("")),
-  leaderPhone: z.string().max(40).optional().or(z.literal("")),
-  emergencyContact: z.string().max(200).optional().or(z.literal("")),
-  gatheringPoint: z.string().max(200).optional().or(z.literal("")),
-  gatheringTime: z.string().max(120).optional().or(z.literal("")),
-  whatsappLink: z.string().max(500).optional().or(z.literal("")),
 });
-
-// Samlar flight-fält "flightOutbound.airline" osv från FormData → objekt. Tomma fält → null.
-function collectFlight(fd: FormData, prefix: "flightOutbound" | "flightReturn"): object | null {
-  const fields = ["airline", "flightNo", "from", "to", "departTime", "arriveTime", "terminal", "notes"];
-  const obj: Record<string, string> = {};
-  let hasAny = false;
-  for (const f of fields) {
-    const v = String(fd.get(`${prefix}.${f}`) ?? "").trim();
-    if (v) { obj[f] = v; hasAny = true; }
-  }
-  return hasAny ? obj : null;
-}
-
-// Samlar array-rader: "hotels.0.name", "hotels.0.city", … "hotels.4.name". Tomma rader sluts.
-function collectArray(fd: FormData, prefix: string, fields: string[], indexCap = 30): object[] | null {
-  const rows: Record<string, string | number>[] = [];
-  for (let i = 0; i < indexCap; i++) {
-    const row: Record<string, string | number> = {};
-    let hasAny = false;
-    for (const f of fields) {
-      const v = String(fd.get(`${prefix}.${i}.${f}`) ?? "").trim();
-      if (v) {
-        // rating → number
-        if (f === "rating") {
-          const n = parseInt(v);
-          if (!Number.isNaN(n)) { row[f] = n; hasAny = true; }
-        } else if (f === "highlights") {
-          // kommaseparerad → array (lagras direkt här som array sen vid spar-tid)
-          row[f] = v;
-          hasAny = true;
-        } else {
-          row[f] = v;
-          hasAny = true;
-        }
-      }
-    }
-    if (hasAny) rows.push(row);
-  }
-  return rows.length > 0 ? rows : null;
-}
 
 function fromForm(formData: FormData) {
   return {
@@ -92,8 +48,10 @@ function fromForm(formData: FormData) {
     subtitle: String(formData.get("subtitle") ?? ""),
     summary: String(formData.get("summary") ?? ""),
     description: String(formData.get("description") ?? ""),
+    notes: String(formData.get("notes") ?? ""),
     city: String(formData.get("city") ?? ""),
-    departCities: String(formData.get("departCities") ?? ""),
+    // Avreseorter skickas som flera dolda fält med samma namn → slå ihop till rader.
+    departCities: (formData.getAll("departCities") as string[]).map((s) => String(s)).join("\n"),
     startDate: String(formData.get("startDate") ?? ""),
     endDate: String(formData.get("endDate") ?? ""),
     durationDays: String(formData.get("durationDays") ?? ""),
@@ -106,29 +64,11 @@ function fromForm(formData: FormData) {
     distNabawiM: String(formData.get("distNabawiM") ?? ""),
     inclusions: String(formData.get("inclusions") ?? ""),
     excludeNotes: String(formData.get("excludeNotes") ?? ""),
-    leaderName: String(formData.get("leaderName") ?? ""),
-    leaderPhone: String(formData.get("leaderPhone") ?? ""),
-    emergencyContact: String(formData.get("emergencyContact") ?? ""),
-    gatheringPoint: String(formData.get("gatheringPoint") ?? ""),
-    gatheringTime: String(formData.get("gatheringTime") ?? ""),
-    whatsappLink: String(formData.get("whatsappLink") ?? ""),
   };
 }
 
-function dataFromParsed(p: z.infer<typeof packageSchema>, formData: FormData) {
-  const flightOutbound = collectFlight(formData, "flightOutbound");
-  const flightReturn = collectFlight(formData, "flightReturn");
-  const hotels = collectArray(formData, "hotels", ["city", "name", "rating", "address", "distHaram", "checkIn", "checkOut", "phone", "notes"]);
-  const transfers = collectArray(formData, "transfers", ["type", "from", "to", "notes"]);
-  const itineraryRaw = collectArray(formData, "itinerary", ["date", "title", "description", "highlights"]);
-  // Splittra highlights "a, b, c" → array.
-  const itinerary = itineraryRaw?.map((row) => {
-    const r = row as Record<string, unknown>;
-    if (typeof r.highlights === "string") {
-      r.highlights = (r.highlights as string).split(",").map((s) => s.trim()).filter(Boolean);
-    }
-    return r;
-  }) ?? null;
+function dataFromParsed(p: z.infer<typeof packageSchema>) {
+  const departCities = (p.departCities || "").split("\n").map((s) => s.trim()).filter(Boolean);
   return {
     slug: p.slug,
     type: p.type,
@@ -136,9 +76,10 @@ function dataFromParsed(p: z.infer<typeof packageSchema>, formData: FormData) {
     subtitle: p.subtitle || null,
     summary: p.summary || null,
     description: p.description || null,
+    notes: p.notes || null,
     city: p.city || null,
-    departCities: (p.departCities || "").split("\n").map((s) => s.trim()).filter(Boolean),
-    departCity: (p.departCities || "").split("\n").map((s) => s.trim()).filter(Boolean)[0] || null,
+    departCities,
+    departCity: departCities[0] || null,
     startDate: p.startDate ? new Date(p.startDate) : null,
     endDate: p.endDate ? new Date(p.endDate) : null,
     durationDays: p.durationDays || null,
@@ -151,18 +92,32 @@ function dataFromParsed(p: z.infer<typeof packageSchema>, formData: FormData) {
     distNabawiM: p.distNabawiM || null,
     inclusions: (p.inclusions || "").split("\n").map((s) => s.trim()).filter(Boolean),
     excludeNotes: (p.excludeNotes || "").split("\n").map((s) => s.trim()).filter(Boolean),
-    leaderName: p.leaderName || null,
-    leaderPhone: p.leaderPhone || null,
-    emergencyContact: p.emergencyContact || null,
-    gatheringPoint: p.gatheringPoint || null,
-    gatheringTime: p.gatheringTime || null,
-    whatsappLink: p.whatsappLink || null,
-    flightOutbound: (flightOutbound ?? Prisma.DbNull) as Prisma.InputJsonValue | typeof Prisma.DbNull,
-    flightReturn: (flightReturn ?? Prisma.DbNull) as Prisma.InputJsonValue | typeof Prisma.DbNull,
-    hotels: (hotels ?? Prisma.DbNull) as Prisma.InputJsonValue | typeof Prisma.DbNull,
-    transfers: (transfers ?? Prisma.DbNull) as Prisma.InputJsonValue | typeof Prisma.DbNull,
-    itinerary: (itinerary ?? Prisma.DbNull) as Prisma.InputJsonValue | typeof Prisma.DbNull,
   };
+}
+
+const IMAGE_EXT_BY_TYPE: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+/**
+ * Hanterar bilduppladdning från formuläret.
+ *  - returnerar `string`  → ny lagrings-key att spara i imageUrl
+ *  - returnerar `null`    → admin bockade i "ta bort bild" → nollställ imageUrl
+ *  - returnerar `undefined` → ingen ändring (behåll befintlig bild)
+ *  Kastar Error vid ogiltig fil (fångas av anroparen → inline-fel).
+ */
+async function handleImageUpload(formData: FormData): Promise<string | null | undefined> {
+  if (String(formData.get("removeImage") ?? "") === "1") return null;
+  const file = formData.get("image");
+  if (!(file instanceof File) || file.size === 0) return undefined;
+  if (file.size > 6 * 1024 * 1024) throw new Error("Bilden är för stor (max 6 MB).");
+  const ext = IMAGE_EXT_BY_TYPE[file.type];
+  if (!ext) throw new Error("Bildformat stöds ej — använd JPG, PNG, WebP eller GIF.");
+  const buf = Buffer.from(await file.arrayBuffer());
+  return saveFile(buf, ext, "packages");
 }
 
 export async function createPackage(formData: FormData) {
@@ -173,9 +128,19 @@ export async function createPackage(formData: FormData) {
   const exists = await prisma.package.findUnique({ where: { slug: parsed.data.slug } });
   if (exists) return { ok: false, error: "Slug är redan upptagen" };
 
-  const created = await prisma.package.create({ data: dataFromParsed(parsed.data, formData) });
+  let imageKey: string | null | undefined;
+  try {
+    imageKey = await handleImageUpload(formData);
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Kunde inte spara bilden" };
+  }
+
+  const created = await prisma.package.create({
+    data: { ...dataFromParsed(parsed.data), ...(imageKey !== undefined ? { imageUrl: imageKey } : {}) },
+  });
   revalidatePath("/admin/paket");
-  redirect(`/admin/paket/${created.id}`);
+  revalidatePath("/");
+  redirect(`/admin/paket/${created.id}?created=1`);
 }
 
 export async function updatePackage(id: string, formData: FormData) {
@@ -183,11 +148,29 @@ export async function updatePackage(id: string, formData: FormData) {
   const parsed = packageSchema.safeParse(fromForm(formData));
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Ogiltiga fält" };
 
-  await prisma.package.update({ where: { id }, data: dataFromParsed(parsed.data, formData) });
+  let imageKey: string | null | undefined;
+  try {
+    imageKey = await handleImageUpload(formData);
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Kunde inte spara bilden" };
+  }
+
+  // Vid byte/borttagning: städa bort den gamla lagrade filen (ej externa URL:er).
+  if (imageKey !== undefined) {
+    const prev = await prisma.package.findUnique({ where: { id }, select: { imageUrl: true } });
+    if (prev?.imageUrl && !/^https?:\/\//i.test(prev.imageUrl)) {
+      await deleteStoredFile(prev.imageUrl).catch(() => {});
+    }
+  }
+
+  await prisma.package.update({
+    where: { id },
+    data: { ...dataFromParsed(parsed.data), ...(imageKey !== undefined ? { imageUrl: imageKey } : {}) },
+  });
   revalidatePath("/admin/paket");
   revalidatePath(`/admin/paket/${id}`);
   revalidatePath("/");
-  return { ok: true };
+  redirect(`/admin/paket/${id}?saved=1`);
 }
 
 export async function deletePackage(id: string) {

@@ -5,11 +5,17 @@ import { PackageForm } from "@/components/admin/PackageForm";
 import { updatePackage, deletePackage, addTier, deleteTier } from "@/app/actions/admin-packages";
 
 type Params = Promise<{ id: string }>;
+type SearchParams = Promise<{ created?: string; saved?: string }>;
 
 export const dynamic = "force-dynamic";
 
-export default async function EditPackagePage({ params }: { params: Params }) {
+const STATUS_LABELS: Record<string, string> = {
+  DRAFT: "Utkast", PUBLISHED: "Publicerad", SOLD_OUT: "Slutsåld", ARCHIVED: "Arkiverad",
+};
+
+export default async function EditPackagePage({ params, searchParams }: { params: Params; searchParams: SearchParams }) {
   const { id } = await params;
+  const { created, saved } = await searchParams;
   const pkg = await prisma.package.findUnique({ where: { id }, include: { tiers: { orderBy: { pricePerPerson: "asc" } } } });
   if (!pkg) notFound();
 
@@ -31,6 +37,17 @@ export default async function EditPackagePage({ params }: { params: Params }) {
           </form>
         </div>
       </div>
+
+      {(created || saved) && (
+        <div style={{ background: "#e9f7ef", border: "1px solid var(--c-green)", padding: "12px 16px", marginBottom: 20, fontSize: 14, lineHeight: 1.6 }}>
+          <strong>{created ? "✓ Resan är skapad." : "✓ Ändringarna är sparade."}</strong>{" "}
+          {pkg.status === "PUBLISHED" ? (
+            <>Den är <strong>publicerad</strong> och syns på sajten — på startsidan, i listorna och på <code>/paket/{pkg.slug}</code>. <Link href={`/paket/${pkg.slug}`} target="_blank">Visa publikt →</Link></>
+          ) : (
+            <>Den ligger som <strong>{STATUS_LABELS[pkg.status] ?? pkg.status}</strong> och syns <strong>inte publikt</strong> än (bara här i admin och via direktlänk). Sätt status till “Publicerat” nedan och spara för att visa den för kunder. <Link href={`/paket/${pkg.slug}`} target="_blank">Förhandsvisa →</Link></>
+          )}
+        </div>
+      )}
 
       <PackageForm pkg={pkg} action={updatePackage.bind(null, pkg.id)} submitLabel="Spara ändringar" />
 

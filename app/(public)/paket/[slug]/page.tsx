@@ -129,6 +129,15 @@ export default async function PackageDetailPage({ params }: { params: Params }) 
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
+      {pkg.status !== "PUBLISHED" && (
+        <div style={{ background: "#fff8e1", borderBottom: "1px solid var(--c-gold)", padding: "10px 0", fontSize: 13 }}>
+          <div className="container">
+            🔒 <strong>Förhandsvisning</strong> — den här resan är{" "}
+            {pkg.status === "DRAFT" ? "ett utkast" : pkg.status === "SOLD_OUT" ? "markerad som slutsåld" : "arkiverad"} och
+            syns inte publikt än. Sätt status till “Publicerat” i admin för att visa den för kunder.
+          </div>
+        </div>
+      )}
       <section style={{ padding: "64px 0 32px", borderBottom: "1px solid var(--c-line)" }}>
         <div className="container">
           <div style={{ display: "flex", gap: 12, marginBottom: 24, alignItems: "center" }}>
@@ -146,12 +155,21 @@ export default async function PackageDetailPage({ params }: { params: Params }) 
       <section style={{ padding: "48px 0" }}>
         <div className="container paket-grid">
           <div>
-            <div className="pkg-hero-img" />
+            {pkg.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="pkg-hero-img" src={`/api/paket-bild/${pkg.id}`} alt={pkg.title} />
+            ) : (
+              <div className="pkg-hero-img" />
+            )}
 
-            <h2 style={{ fontSize: 28, marginTop: 40, marginBottom: 16 }}>Beskrivning</h2>
-            <p style={{ fontSize: 16, lineHeight: 1.7, color: "var(--c-text)" }}>
-              {pkg.description ?? pkg.summary ?? "Beskrivning fylls i av kontoret via admin."}
-            </p>
+            {(pkg.description || pkg.summary) && (
+              <>
+                <h2 style={{ fontSize: 28, marginTop: 40, marginBottom: 16 }}>Beskrivning</h2>
+                <p style={{ fontSize: 16, lineHeight: 1.7, color: "var(--c-text)", whiteSpace: "pre-line" }}>
+                  {pkg.description ?? pkg.summary}
+                </p>
+              </>
+            )}
 
             {pkg.inclusions.length > 0 && (
               <>
@@ -175,23 +193,36 @@ export default async function PackageDetailPage({ params }: { params: Params }) 
               </>
             )}
 
-            <h2 style={{ fontSize: 28, marginTop: 48, marginBottom: 16 }}>Hotell &amp; logi</h2>
-            <div className="hotels">
-              {pkg.hotelMakkah && (
-                <div>
-                  <span className="eyebrow">Mecka</span>
-                  <p className="serif" style={{ fontSize: 18, margin: "4px 0" }}>{pkg.hotelMakkah}</p>
-                  {pkg.distHaramM && <p className="dim" style={{ fontSize: 13 }}>{pkg.distHaramM} m till Haram</p>}
+            {(pkg.hotelMakkah || pkg.hotelMadinah) && (
+              <>
+                <h2 style={{ fontSize: 28, marginTop: 48, marginBottom: 16 }}>Hotell &amp; logi</h2>
+                <div className="hotels">
+                  {pkg.hotelMakkah && (
+                    <div>
+                      <span className="eyebrow">Mecka</span>
+                      <p className="serif" style={{ fontSize: 18, margin: "4px 0" }}>{pkg.hotelMakkah}</p>
+                      {pkg.distHaramM && <p className="dim" style={{ fontSize: 13 }}>{pkg.distHaramM} m till Haram</p>}
+                    </div>
+                  )}
+                  {pkg.hotelMadinah && (
+                    <div>
+                      <span className="eyebrow">Medina</span>
+                      <p className="serif" style={{ fontSize: 18, margin: "4px 0" }}>{pkg.hotelMadinah}</p>
+                      {pkg.distNabawiM && <p className="dim" style={{ fontSize: 13 }}>{pkg.distNabawiM} m till Nabawi</p>}
+                    </div>
+                  )}
                 </div>
-              )}
-              {pkg.hotelMadinah && (
-                <div>
-                  <span className="eyebrow">Medina</span>
-                  <p className="serif" style={{ fontSize: 18, margin: "4px 0" }}>{pkg.hotelMadinah}</p>
-                  {pkg.distNabawiM && <p className="dim" style={{ fontSize: 13 }}>{pkg.distNabawiM} m till Nabawi</p>}
-                </div>
-              )}
-            </div>
+              </>
+            )}
+
+            {pkg.notes && (
+              <>
+                <h2 style={{ fontSize: 28, marginTop: 48, marginBottom: 16 }}>Bra att veta</h2>
+                <p style={{ fontSize: 16, lineHeight: 1.7, color: "var(--c-text)", whiteSpace: "pre-line" }}>
+                  {pkg.notes}
+                </p>
+              </>
+            )}
           </div>
 
           <aside>
@@ -312,7 +343,7 @@ export default async function PackageDetailPage({ params }: { params: Params }) 
       </section>
 
       <style>{`
-        .pkg-hero-img { height: 360px; background: var(--c-cream); border: 1px solid var(--c-line); }
+        .pkg-hero-img { display: block; width: 100%; height: 360px; object-fit: cover; background: var(--c-cream); border: 1px solid var(--c-line); }
         .checklist { list-style: none; padding: 0; display: grid; gap: 10px; }
         .checklist li { padding-left: 24px; position: relative; line-height: 1.6; }
         .checklist li:before { content: "✓"; position: absolute; left: 0; color: var(--c-gold); font-weight: 700; }
