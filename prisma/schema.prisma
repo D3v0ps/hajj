@@ -35,6 +35,7 @@ model User {
   emailVerificationTokens EmailVerificationToken[]
   auditLogs               AuditLog[]
   travelerProfiles        TravelerProfile[]
+  recordedPayments        TravelerPayment[]
 }
 
 enum UserRole {
@@ -309,26 +310,41 @@ model Traveler {
   flightReturn    String?
   isMahram        Boolean  @default(false)
   needsAssist     Boolean  @default(false)
-  // Per-resenär betalning: admin registrerar kontant/swish/faktura här direkt.
-  // paymentNote är fritext för anteckning ("betalt vid info-möte 2026-03-15").
+  // Denormaliserad cache = SUM(payments.amount). Uppdateras transaktionellt
+  // när admin lägger till/tar bort betalningar. Lista-/summa-vyer läser denna.
   amountPaid      Int      @default(0)
-  paymentMethod   String?
-  paymentDate     DateTime?
-  paymentNote     String?
   notes           String?
   profileId       String?
   createdAt       DateTime @default(now())
 
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  booking   Booking?         @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  profile   TravelerProfile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking   Booking?          @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  profile   TravelerProfile?  @relation(fields: [profileId], references: [id], onDelete: SetNull)
   documents Document[]
+  payments  TravelerPayment[]
 
   @@index([userId])
   @@index([bookingId])
   @@index([ageCategory])
   @@index([profileId])
   @@index([amountPaid])
+}
+
+model TravelerPayment {
+  id           String   @id @default(cuid())
+  travelerId   String
+  amount       Int
+  method       String?   // "Kontant", "Swish", "Bankgiro", "Klarna", "Kort", "Faktura", "Annat"
+  paidAt       DateTime  @default(now())
+  note         String?
+  recordedById String?   // admin som registrerade betalningen
+  createdAt    DateTime  @default(now())
+
+  traveler   Traveler @relation(fields: [travelerId], references: [id], onDelete: Cascade)
+  recordedBy User?    @relation(fields: [recordedById], references: [id], onDelete: SetNull)
+
+  @@index([travelerId])
+  @@index([paidAt])
 }
 
 model TravelerProfile {

@@ -224,7 +224,6 @@ export default async function ResegrupperPage({ searchParams }: { searchParams: 
                         <th scope="col">Flyg ut</th>
                         <th scope="col">Flyg hem</th>
                         <th scope="col">Betalt</th>
-                        <th scope="col">Sätt</th>
                         <th scope="col" style={{ width: 80 }}></th>
                       </tr>
                     </thead>
@@ -274,7 +273,6 @@ export default async function ResegrupperPage({ searchParams }: { searchParams: 
                               <td className="tnum" style={{ color: t.amountPaid > 0 ? "var(--c-green)" : "var(--c-text-faint)" }}>
                                 {t.amountPaid > 0 ? `${t.amountPaid.toLocaleString("sv-SE")} kr` : "—"}
                               </td>
-                              <td className="dim" style={{ fontSize: 11 }}>{t.paymentMethod ?? "—"}</td>
                               <td>
                                 <Link
                                   href={`/admin/resenarer/${t.id}/redigera?from=${encodeURIComponent(`/admin/resegrupper?trip=${selected.id}`)}`}

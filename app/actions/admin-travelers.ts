@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -43,10 +44,6 @@ const travelerEditSchema = z.object({
   roomAssignment: optStr(80),
   flightOut: optStr(120),
   flightReturn: optStr(120),
-  amountPaid: z.coerce.number().int().min(0).max(10_000_000).default(0),
-  paymentMethod: optStr(40),
-  paymentDate: optDate,
-  paymentNote: optStr(500),
   notes: optStr(2000),
 });
 
@@ -81,10 +78,6 @@ function pickFormData(fd: FormData) {
     roomAssignment: String(fd.get("roomAssignment") ?? ""),
     flightOut: String(fd.get("flightOut") ?? ""),
     flightReturn: String(fd.get("flightReturn") ?? ""),
-    amountPaid: String(fd.get("amountPaid") ?? "0"),
-    paymentMethod: String(fd.get("paymentMethod") ?? ""),
-    paymentDate: String(fd.get("paymentDate") ?? ""),
-    paymentNote: String(fd.get("paymentNote") ?? ""),
     notes: String(fd.get("notes") ?? ""),
   };
 }
@@ -131,10 +124,6 @@ export async function editTravelerAdmin(travelerId: string, formData: FormData):
       roomAssignment: d.roomAssignment || null,
       flightOut: d.flightOut || null,
       flightReturn: d.flightReturn || null,
-      amountPaid: d.amountPaid,
-      paymentMethod: d.paymentMethod || null,
-      paymentDate: toDate(d.paymentDate),
-      paymentNote: d.paymentNote || null,
       notes: d.notes || null,
     },
   });
@@ -145,11 +134,7 @@ export async function editTravelerAdmin(travelerId: string, formData: FormData):
     action: "traveler.edited",
     targetType: "Traveler",
     targetId: travelerId,
-    metadata: {
-      bookingId: existing.bookingId,
-      amountPaidBefore: existing.amountPaid,
-      amountPaidAfter: d.amountPaid,
-    },
+    metadata: { bookingId: existing.bookingId },
   });
 
   revalidatePath("/admin/resenarer");
@@ -158,56 +143,101 @@ export async function editTravelerAdmin(travelerId: string, formData: FormData):
   redirect(`/admin/resenarer/${travelerId}/redigera?ok=sparat`);
 }
 
-/** Snabb-uppdaterar bara betalningsbeloppet — för registrering av t.ex.
- *  en kontantbetalning utan att öppna hela formuläret. Skickar in summerat
- *  belopp (inte delbetalning) — admin lägger ihop själv. */
-export async function recordTravelerPayment(travelerId: string, formData: FormData): Promise<void> {
+/** Räknar om Traveler.amountPaid-cachen = SUM av alla betalnings-rader. */
+async function recomputeAmountPaid(tx: Prisma.TransactionClient, travelerId: string): Promise<number> {
+  const agg = await tx.travelerPayment.aggregate({ where: { travelerId }, _sum: { amount: true } });
+  const total = agg._sum.amount ?? 0;
+  await tx.traveler.update({ where: { id: travelerId }, data: { amountPaid: total } });
+  return total;
+}
+
+/** Lägger till EN betalning i resenärens historik (t.ex. en kontant delbetalning).
+ *  Uppdaterar amountPaid-cachen transaktionellt. */
+export async function addTravelerPayment(travelerId: string, formData: FormData): Promise<void> {
   const admin = await requireAdmin();
   if (!travelerId) redirect("/admin/resenarer");
 
-  const amountRaw = String(formData.get("amountPaid") ?? "");
-  const method = String(formData.get("paymentMethod") ?? "").trim();
-  const dateRaw = String(formData.get("paymentDate") ?? "").trim();
-  const note = String(formData.get("paymentNote") ?? "").trim();
-  const returnTo = String(formData.get("returnTo") ?? "/admin/resenarer");
+  const amountRaw = String(formData.get("amount") ?? "");
+  const method = String(formData.get("method") ?? "").trim();
+  const dateRaw = String(formData.get("paidAt") ?? "").trim();
+  const note = String(formData.get("note") ?? "").trim().slice(0, 500);
+  const returnTo = String(formData.get("returnTo") ?? `/admin/resenarer/${travelerId}/redigera`);
 
+  // Belopp får vara negativt (för korrigering/återbetalning) men inom rimliga gränser.
   const amount = parseInt(amountRaw.replace(/[\s,]/g, ""), 10);
-  if (Number.isNaN(amount) || amount < 0 || amount > 10_000_000) {
-    redirect(`${returnTo}?error=${encodeURIComponent("Ogiltigt belopp")}`);
+  if (Number.isNaN(amount) || Math.abs(amount) > 10_000_000 || amount === 0) {
+    redirect(`${returnTo}?error=${encodeURIComponent("Ange ett belopp (≠ 0)")}`);
   }
   if (method && !PAYMENT_METHODS.includes(method as (typeof PAYMENT_METHODS)[number])) {
     redirect(`${returnTo}?error=${encodeURIComponent("Okänt betalsätt")}`);
   }
 
-  const existing = await prisma.traveler.findUnique({
+  const traveler = await prisma.traveler.findUnique({
     where: { id: travelerId },
-    select: { bookingId: true, amountPaid: true },
+    select: { bookingId: true },
   });
-  if (!existing) redirect(`${returnTo}?error=${encodeURIComponent("Resenären hittades inte")}`);
+  if (!traveler) redirect(`${returnTo}?error=${encodeURIComponent("Resenären hittades inte")}`);
 
-  await prisma.traveler.update({
-    where: { id: travelerId },
-    data: {
-      amountPaid: amount,
-      paymentMethod: method || null,
-      paymentDate: toDate(dateRaw),
-      paymentNote: note || null,
-    },
+  const total = await prisma.$transaction(async (tx) => {
+    await tx.travelerPayment.create({
+      data: {
+        travelerId,
+        amount,
+        method: method || null,
+        paidAt: toDate(dateRaw) ?? new Date(),
+        note: note || null,
+        recordedById: admin.id,
+      },
+    });
+    return recomputeAmountPaid(tx, travelerId);
   });
 
   await logAudit({
     actorId: admin.id,
     actorEmail: admin.email,
-    action: "traveler.paymentRecorded",
+    action: "traveler.paymentAdded",
     targetType: "Traveler",
     targetId: travelerId,
-    metadata: { bookingId: existing!.bookingId, before: existing!.amountPaid, after: amount, method },
+    metadata: { bookingId: traveler!.bookingId, amount, method, newTotal: total },
   });
 
   revalidatePath("/admin/resenarer");
   revalidatePath("/admin/resegrupper");
-  if (existing!.bookingId) revalidatePath(`/admin/bokningar/${existing!.bookingId}`);
-  redirect(`${returnTo}?ok=betalning-sparad`);
+  if (traveler!.bookingId) revalidatePath(`/admin/bokningar/${traveler!.bookingId}`);
+  redirect(`${returnTo}?ok=betalning-tillagd`);
+}
+
+/** Tar bort en enskild betalnings-rad ur historiken + räknar om cachen. */
+export async function deleteTravelerPayment(paymentId: string, formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+  if (!paymentId) redirect("/admin/resenarer");
+
+  const payment = await prisma.travelerPayment.findUnique({
+    where: { id: paymentId },
+    select: { travelerId: true, amount: true, traveler: { select: { bookingId: true } } },
+  });
+  if (!payment) redirect("/admin/resenarer");
+
+  const returnTo = String(formData.get("returnTo") ?? `/admin/resenarer/${payment.travelerId}/redigera`);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.travelerPayment.delete({ where: { id: paymentId } });
+    await recomputeAmountPaid(tx, payment.travelerId);
+  });
+
+  await logAudit({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: "traveler.paymentDeleted",
+    targetType: "Traveler",
+    targetId: payment.travelerId,
+    metadata: { amount: payment.amount },
+  });
+
+  revalidatePath("/admin/resenarer");
+  revalidatePath("/admin/resegrupper");
+  if (payment.traveler.bookingId) revalidatePath(`/admin/bokningar/${payment.traveler.bookingId}`);
+  redirect(`${returnTo}?ok=betalning-borttagen`);
 }
 
 /** Radera resenär. Booking.travelerCount uppdateras inte automatiskt — admin

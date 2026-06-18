@@ -33,8 +33,8 @@ const HEADER_MAP: Record<string, string> = {
   "STAD": "residenceCity",
   "BOR": "residenceCity",
   "RUM": "roomAssignment",
-  // BETALAT/BETALNING tolkas som siffra → amountPaid. Om värdet inte är
-  // numeriskt (t.ex. "Faktura skickad") faller det tillbaka till paymentNote.
+  // BETALAT/BETALNING tolkas som siffra → en initial betalnings-rad. Om värdet
+  // inte är numeriskt (t.ex. "Faktura skickad") sparas det i notes-fältet.
   "BETALAT": "_paymentRaw",
   "BETALNING": "_paymentRaw",
   "BETALT": "_paymentRaw",
@@ -229,20 +229,22 @@ export async function POST(req: NextRequest) {
 
       const birthDate = parseBirthDate(data.birthDate || data.personnummer || "");
 
-      // BETALT-kolumnen: tolka som siffra → amountPaid. Tillåt mellanslag och
-      // komma som tusentalsavgränsare ("20 900" eller "20,900"). Om värdet
-      // inte är numeriskt (t.ex. "Faktura skickad") behåll som paymentNote.
+      // BETALT-kolumnen: tolka som siffra → en initial betalnings-rad. Tillåt
+      // mellanslag och komma som tusentalsavgränsare ("20 900" eller "20,900").
+      // Om värdet inte är numeriskt (t.ex. "Faktura skickad") → spara som
+      // anteckning i notes-fältet i stället.
       let amountPaid = 0;
-      let paymentNote: string | null = null;
-      const raw = String(data._paymentRaw ?? data.paymentNote ?? "").trim();
-      if (raw) {
-        const cleaned = raw.replace(/[\s,]/g, "").replace(/\.\d+$/, "");
+      let extraNote = "";
+      const rawPay = String(data._paymentRaw ?? "").trim();
+      if (rawPay) {
+        const cleaned = rawPay.replace(/[\s,]/g, "").replace(/\.\d+$/, "");
         if (/^\d+$/.test(cleaned)) {
           amountPaid = parseInt(cleaned, 10);
         } else {
-          paymentNote = raw;
+          extraNote = `Betalning: ${rawPay}`;
         }
       }
+      const combinedNotes = [data.notes, extraNote].filter(Boolean).join(" · ") || null;
 
       try {
         await prisma.traveler.create({
@@ -267,8 +269,11 @@ export async function POST(req: NextRequest) {
             flightOut: data.flightOut || null,
             flightReturn: data.flightReturn || null,
             amountPaid,
-            paymentNote,
-            notes: data.notes || null,
+            notes: combinedNotes,
+            // Skapa en initial betalnings-rad så historiken är konsekvent med cachen.
+            ...(amountPaid > 0
+              ? { payments: { create: [{ amount: amountPaid, note: "Ingående saldo (importerat)" }] } }
+              : {}),
           },
         });
         travelersCreated++;
