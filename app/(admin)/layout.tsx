@@ -210,7 +210,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
         /* Main */
         .adm-main-wrap { background: var(--c-paper); min-height: 100vh; }
-        .adm-main { padding: 28px 32px; max-width: 1440px; }
+        /* Ingen max-width längre — admin-sidor (särskilt resegrupper-tabellen
+           med 16 kolumner) ska få använda hela skärmbredden så användaren
+           slipper horisontell scroll på en bred skärm. */
+        .adm-main { padding: 28px 32px; }
 
         /* Shared admin components */
         .adm-pageframe { }
