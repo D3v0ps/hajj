@@ -82,7 +82,7 @@ async function sendBulk(formData: FormData) {
 }
 
 export default async function SkickaMejlPage({ searchParams }: { searchParams: SearchParams }) {
-  const { packageId, bookingId } = await searchParams;
+  const { packageId } = await searchParams;
 
   const [templates, packages] = await Promise.all([
     prisma.emailTemplate.findMany({ orderBy: { name: "asc" } }),

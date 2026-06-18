@@ -92,7 +92,7 @@ async function verifyPayment(paymentId: string) {
 
 async function addTravelerAdmin(bookingId: string, formData: FormData) {
   "use server";
-  const user = await requireAdmin();
+  await requireAdmin();
   const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
   if (!booking) return;
   await prisma.traveler.create({

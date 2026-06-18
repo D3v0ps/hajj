@@ -6,7 +6,6 @@ const { auth } = NextAuth(authConfig);
 
 // Stödda locales — synkat med lib/i18n.ts (kan ej importeras pga Edge-runtime begränsningar).
 const LOCALES = ["sv", "en", "ar"] as const;
-const DEFAULT_LOCALE = "sv";
 
 // Vilka path-prefix som hoppar över locale-routing (auth, inloggat, API, statiska resurser).
 const NON_PUBLIC_PREFIXES = [
