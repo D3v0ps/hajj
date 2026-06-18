@@ -156,8 +156,10 @@ export default async function PackageDetailPage({ params }: { params: Params }) 
         <div className="container paket-grid">
           <div>
             {pkg.imageUrl ? (
+              // Visa hela uppladdade bilden i dess naturliga proportioner (poster/
+              // infografik beskärs inte) — containern anpassar sig efter bilden.
               // eslint-disable-next-line @next/next/no-img-element
-              <img className="pkg-hero-img" src={`/api/paket-bild/${pkg.id}`} alt={pkg.title} />
+              <img className="pkg-hero-photo" src={`/api/paket-bild/${pkg.id}`} alt={pkg.title} />
             ) : (
               <div className="pkg-hero-img" />
             )}
@@ -343,7 +345,8 @@ export default async function PackageDetailPage({ params }: { params: Params }) 
       </section>
 
       <style>{`
-        .pkg-hero-img { display: block; width: 100%; height: 360px; object-fit: cover; background: var(--c-cream); border: 1px solid var(--c-line); }
+        .pkg-hero-photo { display: block; width: 100%; height: auto; border: 1px solid var(--c-line); }
+        .pkg-hero-img { display: block; width: 100%; height: 360px; background: var(--c-cream); border: 1px solid var(--c-line); }
         .checklist { list-style: none; padding: 0; display: grid; gap: 10px; }
         .checklist li { padding-left: 24px; position: relative; line-height: 1.6; }
         .checklist li:before { content: "✓"; position: absolute; left: 0; color: var(--c-gold); font-weight: 700; }
