@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { rateLimit, ipKey } from "@/lib/rate-limit";
 
 const schema = z.object({
   name: z.string().min(2, "Ange ditt namn").max(120),
@@ -12,6 +13,12 @@ const schema = z.object({
 });
 
 export async function submitLead(formData: FormData): Promise<{ ok: true } | { ok: false; error: string }> {
+  // Publikt formulär → IP-baserad spärr mot spam-floder (5 förfrågningar/10 min).
+  const rl = rateLimit(await ipKey("lead"), 5, 10 * 60_000);
+  if (!rl.ok) {
+    return { ok: false, error: "För många förfrågningar — vänta en stund och försök igen." };
+  }
+
   const raw = {
     name: String(formData.get("name") ?? ""),
     email: String(formData.get("email") ?? ""),
