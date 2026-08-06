@@ -90,7 +90,7 @@ export function PackageForm({ pkg, action, submitLabel = "Spara" }: { pkg?: Pack
             <select id="pk-status" name="status" defaultValue={pkg?.status ?? "DRAFT"}>
               <option value="DRAFT">Utkast (syns inte publikt)</option>
               <option value="PUBLISHED">Publicerat (syns på sajten)</option>
-              <option value="SOLD_OUT">Slutsåld</option>
+              <option value="SOLD_OUT">Slutsåld</option>
               <option value="ARCHIVED">Arkiverat</option>
             </select>
             <span className="hint">Sätt &quot;Publicerat&quot; när paketet ska synas för kunder. Förhandsgranska först.</span>
@@ -109,6 +109,12 @@ export function PackageForm({ pkg, action, submitLabel = "Spara" }: { pkg?: Pack
             <datalist id="dest-options">
               {DESTINATION_OPTIONS.map((o) => <option key={o} value={o} />)}
             </datalist>
+          </div>
+          <div className="field">
+            <label htmlFor="pk-deposit">Anmälnings-/administrationsavgift (kr/person)</label>
+            <input id="pk-deposit" name="depositPerPerson" type="number" min="0" max="100000"
+              defaultValue={pkg?.depositPerPerson ?? ""} placeholder="standard" />
+            <span className="hint">Lämna tomt för standard: 2 500 kr för Hajj (administrationsavgift), 5 000 kr för övriga resor.</span>
           </div>
         </div>
 
