@@ -12,7 +12,15 @@ import { guestOwnsBooking, rememberGuestBooking } from "@/lib/guest";
 
 const TERMS_VERSION = "2026-05-01";
 
+// Standard-anmälningsavgift kr/person. Hajj har administrationsavgift 2500 kr
+// (branschstandard); övriga resor 5000 kr. Kan överridas per paket i admin.
 const DEPOSIT_PER_PERSON = 5000;
+const HAJJ_ADMIN_FEE = 2500;
+
+function depositFor(pkg: { type: string; depositPerPerson: number | null }): number {
+  if (pkg.depositPerPerson != null && pkg.depositPerPerson >= 0) return pkg.depositPerPerson;
+  return pkg.type === "HAJJ" ? HAJJ_ADMIN_FEE : DEPOSIT_PER_PERSON;
+}
 
 function flashError(bookingId: string, message: string): never {
   const u = new URLSearchParams({ error: message });
@@ -70,7 +78,7 @@ export async function createBooking(packageId: string, _formData?: FormData): Pr
       adultCount: 0,
       childCount: 0,
       infantCount: 0,
-      depositAmount: DEPOSIT_PER_PERSON,
+      depositAmount: depositFor(pkg),
       totalAmount: 0,
       contactEmail: user.email ?? undefined,
     },
@@ -140,7 +148,7 @@ export async function createGuestBooking(packageId: string, formData: FormData):
       adultCount: 0,
       childCount: 0,
       infantCount: 0,
-      depositAmount: DEPOSIT_PER_PERSON,
+      depositAmount: depositFor(pkg),
       totalAmount: 0,
       contactEmail: email,
       contactPhone: phone || null,
@@ -233,8 +241,8 @@ export async function saveTierQuantities(bookingId: string, formData: FormData):
       adultCount: adults,
       childCount: children,
       infantCount: infants,
-      // Spädbarn betalar oftast ingen anmälningsavgift — räkna depositen på vuxna + barn.
-      depositAmount: DEPOSIT_PER_PERSON,
+      // depositAmount sätts vid bokningsskapandet utifrån paketet (Hajj 2500 /
+      // övriga 5000 / per-paket-override) och skrivs inte över här.
       totalAmount,
       step: Math.max(booking.step, 3),
     },
@@ -484,7 +492,7 @@ export async function acceptAndAdvance(bookingId: string, formData: FormData): P
   }
   const updated = await prisma.booking.findUniqueOrThrow({
     where: { id: booking.id },
-    include: { user: { select: { email: true, name: true } }, package: { select: { title: true, startDate: true } } },
+    include: { user: { select: { email: true, name: true } }, package: { select: { title: true, startDate: true, type: true } } },
   });
 
   // Bekräftelsemejl till kunden (köas — skickas av worker var 60:e sek).
@@ -501,10 +509,14 @@ export async function acceptAndAdvance(bookingId: string, formData: FormData): P
         "Hej {{namn}},\n\n" +
         "Tack för din bokning på {{paket}} (referens {{ref}}).\n\n" +
         "Avresedatum: {{datum}}.\n" +
-        "Anmälningsavgift: {{deposit}} kr — vi reserverar din plats i 7 dagar i väntan på betalning.\n\n" +
+        "{{avgiftLabel}}: {{deposit}} kr — vi reserverar din plats i 7 dagar i väntan på betalning.\n\n" +
         "Vi hör av oss inom 24 timmar med nästa steg.\n\n" +
         "Med vänliga hälsningar,\nHadj Omra Resor",
-        { namn, paket, ref, datum, deposit: (updated.depositAmount * Math.max(1, updated.adultCount + updated.childCount)).toLocaleString("sv-SE") }
+        {
+          namn, paket, ref, datum,
+          avgiftLabel: updated.package.type === "HAJJ" ? "Administrationsavgift" : "Anmälningsavgift",
+          deposit: (updated.depositAmount * Math.max(1, updated.adultCount + updated.childCount)).toLocaleString("sv-SE"),
+        }
       ),
       bookingId: updated.id,
       kind: EMAIL_KIND.BOOKING_SUBMITTED,
