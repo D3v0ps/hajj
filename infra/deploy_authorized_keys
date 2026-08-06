@@ -1,0 +1,3 @@
+# Publika delen av deploy-nyckeln (hajj-deploy.pub) — EN rad som börjar med ssh-ed25519.
+# Publika nycklar är ofarliga att ha i repot; den privata delen ska ALDRIG hit.
+# infra/setup-server.sh hämtar denna fil när inget nyckel-argument anges.
