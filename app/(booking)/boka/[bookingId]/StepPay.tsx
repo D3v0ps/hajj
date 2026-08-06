@@ -22,25 +22,32 @@ const METHODS = [
 export function StepPay({ booking }: Props) {
   const payable = booking.adultCount + booking.childCount;
   const totalDeposit = booking.depositAmount * Math.max(1, payable);
+  // Hajj tar en administrationsavgift (2 500 kr standard); övriga resor anmälningsavgift.
+  const isHajj = booking.package.type === "HAJJ";
+  const feeLabel = isHajj ? "administrationsavgift" : "anmälningsavgift";
+  const feeLabelCap = isHajj ? "Administrationsavgift" : "Anmälningsavgift";
 
   return (
     <div>
       <span className="section-mark">— Steg 5 av 5</span>
-      <h2 style={{ fontSize: 32, marginTop: 12, marginBottom: 16 }}>Betala anmälningsavgift</h2>
+      <h2 style={{ fontSize: 32, marginTop: 12, marginBottom: 16 }}>Betala {feeLabel}</h2>
       <p className="dim" style={{ marginBottom: 32 }}>
-        Anmälningsavgift {booking.depositAmount.toLocaleString("sv-SE")} kr per resenär (spädbarn undantagna), totalt <strong className="tnum" style={{ color: "var(--c-ink)" }}>{totalDeposit.toLocaleString("sv-SE")} kr</strong>. Slutbetalning sker 30 dagar före avresa.
+        {feeLabelCap} {booking.depositAmount.toLocaleString("sv-SE")} kr per resenär (spädbarn undantagna), totalt <strong className="tnum" style={{ color: "var(--c-ink)" }}>{totalDeposit.toLocaleString("sv-SE")} kr</strong>.
+        {isHajj
+          ? " Avgiften bekräftar din registrering; slutpriset meddelas när Saudiarabiens kvotpriser är satta och slutbetalning sker enligt betalplan före avresa."
+          : " Slutbetalning sker 30 dagar före avresa."}
       </p>
 
       <div className="dep-summary">
         <div>
-          <span className="eyebrow">Anmälningsavgift</span>
+          <span className="eyebrow">{feeLabelCap}</span>
           <p className="serif tnum" style={{ fontSize: 28, margin: "4px 0 0" }}>{totalDeposit.toLocaleString("sv-SE")} kr</p>
           <span className="dim" style={{ fontSize: 12 }}>{payable} resenärer × {booking.depositAmount.toLocaleString("sv-SE")} kr</span>
         </div>
         <div>
           <span className="eyebrow">Slutpris</span>
           <p className="serif tnum" style={{ fontSize: 28, margin: "4px 0 0" }}>{booking.totalAmount.toLocaleString("sv-SE")} kr</p>
-          <span className="dim" style={{ fontSize: 12 }}>betalas senast 30 dagar före avresa</span>
+          <span className="dim" style={{ fontSize: 12 }}>{isHajj ? "slutbetalning enligt betalplan före avresa" : "betalas senast 30 dagar före avresa"}</span>
         </div>
       </div>
 
