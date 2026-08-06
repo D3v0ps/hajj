@@ -102,6 +102,8 @@ model Package {
   inclusions   String[]
   excludeNotes String[]
   notes        String?
+  // Anmälnings-/administrationsavgift kr/person. NULL = standard (HAJJ 2500, övriga 5000).
+  depositPerPerson Int?
   hotelMakkah  String?
   hotelMadinah String?
   distHaramM   Int?
