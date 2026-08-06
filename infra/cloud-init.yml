@@ -1,0 +1,41 @@
+#cloud-config
+# Hadj Omra Resor — serverprovisionering (Hetzner Cloud, Ubuntu 24.04)
+#
+# ANVÄNDNING: Klistra in HELA denna fil i rutan "Cloud config" när servern
+# skapas i Hetzner Console — och byt först ut raden under ssh_authorized_keys
+# mot innehållet i DIN publika deploy-nyckel (hajj-deploy.pub).
+#
+# Servern blir vid första boot helt deploy-redo för GitHub Actions-flödet
+# (.github/workflows/deploy.yml). Full återuppbyggnadsordning: infra/README.md
+
+groups:
+  - docker
+
+users:
+  - name: deploy
+    gecos: Deploy (GitHub Actions)
+    groups: docker
+    shell: /bin/bash
+    lock_passwd: true
+    ssh_authorized_keys:
+      - "BYT-UT-DENNA-RAD-MOT-INNEHÅLLET-I-hajj-deploy.pub"
+
+package_update: true
+package_upgrade: true
+packages:
+  - docker.io
+  - docker-compose-v2
+  - ufw
+  - ca-certificates
+  - curl
+
+runcmd:
+  # Docker igång + deployanvändarens app-katalog (deploy.yml scp:ar hit)
+  - systemctl enable --now docker
+  - mkdir -p /home/deploy/app
+  - chown -R deploy:deploy /home/deploy/app
+  # Brandvägg: endast SSH + HTTP/HTTPS
+  - ufw allow OpenSSH
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw --force enable

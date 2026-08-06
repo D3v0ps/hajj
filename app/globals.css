@@ -1,0 +1,473 @@
+@import "tailwindcss";
+
+/* Designsystem för Hadj Omra Resor.
+   Editorial · svensk · varm · andlig. */
+
+:root {
+  --c-ink: #0C1E3E;
+  --c-ink-soft: #1F324F;
+  --c-gold: #B5894B;
+  --c-gold-soft: #C9A36B;
+  --c-cream: #EFE9DD;
+  --c-paper: #FBFAF6;
+  --c-text: #1A1A1A;
+  --c-text-muted: #5C5C5C;
+  --c-text-faint: #8A857B;
+  --c-line: #D7D2C7;
+  --c-line-soft: #E7E1D4;
+  --c-green: #2D4A3E;
+  --c-green-soft: #3D6A4E;
+  --c-warn: #A14B2F;
+
+  --f-serif: "Newsreader", "Source Serif 4", Georgia, serif;
+  --f-sans: "Manrope", "Public Sans", system-ui, -apple-system, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --w-container: 1280px;
+  --w-narrow: 920px;
+}
+
+@theme inline {
+  --color-ink: var(--c-ink);
+  --color-ink-soft: var(--c-ink-soft);
+  --color-gold: var(--c-gold);
+  --color-gold-soft: var(--c-gold-soft);
+  --color-cream: var(--c-cream);
+  --color-paper: var(--c-paper);
+  --color-text: var(--c-text);
+  --color-text-muted: var(--c-text-muted);
+  --color-text-faint: var(--c-text-faint);
+  --color-line: var(--c-line);
+  --color-line-soft: var(--c-line-soft);
+  --color-green: var(--c-green);
+  --color-green-soft: var(--c-green-soft);
+  --color-warn: var(--c-warn);
+
+  --font-serif: var(--f-serif);
+  --font-sans: var(--f-sans);
+  --font-mono: var(--f-mono);
+
+  --container-narrow: var(--w-narrow);
+  --container-wide: var(--w-container);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--c-paper);
+  color: var(--c-text);
+  font-family: var(--f-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01", "cv01", "tnum";
+  /* Mobil: hindra horisontell scroll från enstaka breda element + lås textstorlek
+     så iOS inte zoomar om sidan i liggande läge. */
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+img, svg { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+
+/* A11y: synlig focus-ring för tangentbordsanvändare */
+*:focus-visible {
+  outline: 2px solid var(--c-gold);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Skip-link — visas bara vid focus */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  background: var(--c-ink);
+  color: #fff;
+  padding: 12px 18px;
+  font-weight: 600;
+  font-size: 14px;
+  z-index: 200;
+  transition: top 160ms;
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 16px;
+}
+
+/* Reducerat rörelse */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--f-serif);
+  font-weight: 460;
+  letter-spacing: -0.012em;
+  margin: 0;
+  color: var(--c-ink);
+  text-wrap: balance;
+}
+
+h1 { font-size: clamp(40px, 5.4vw, 72px); line-height: 1.04; letter-spacing: -0.022em; font-weight: 380; }
+h2 { font-size: clamp(28px, 3.6vw, 48px); line-height: 1.1; font-weight: 400; }
+h3 { font-size: 24px; line-height: 1.2; }
+
+p { margin: 0 0 1em; text-wrap: pretty; }
+
+/* ---------- Återanvändbara klasser ---------- */
+
+.container {
+  max-width: var(--w-container);
+  margin: 0 auto;
+  padding: 0 32px;
+}
+.container.narrow { max-width: var(--w-narrow); }
+
+@media (max-width: 720px) {
+  .container { padding: 0 20px; }
+}
+@media (max-width: 480px) {
+  .container { padding: 0 16px; }
+}
+
+/* Standardiserade brytpunkter — mobile-first hjälpklasser */
+.hide-mobile { }
+.show-mobile { display: none !important; }
+@media (max-width: 720px) {
+  .hide-mobile { display: none !important; }
+  .show-mobile { display: revert !important; }
+}
+
+/* Stack-grid utility: 2 kolumner desktop, 1 mobil */
+.stack-md {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+@media (max-width: 900px) {
+  .stack-md { grid-template-columns: 1fr; gap: 24px; }
+}
+
+/* Table-wrap — horisontell scroll på smala skärmar */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -16px;
+  padding: 0 16px;
+}
+.table-wrap .table { min-width: 720px; }
+@media (min-width: 901px) {
+  .table-wrap { margin: 0; padding: 0; }
+  .table-wrap .table { min-width: auto; }
+}
+
+.eyebrow {
+  font-family: var(--f-sans);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  font-weight: 600;
+}
+.eyebrow.gold { color: var(--c-gold); }
+
+.meta {
+  font-size: 13px;
+  color: var(--c-text-muted);
+  letter-spacing: 0.02em;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px;
+  font-family: var(--f-sans);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+  line-height: 1;
+  min-height: 44px;
+}
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.btn-primary { background: var(--c-ink); color: #fff; }
+.btn-primary:hover { background: #08152e; }
+
+.btn-ghost { background: transparent; color: var(--c-ink); border-color: var(--c-line); }
+.btn-ghost:hover { border-color: var(--c-ink); }
+
+.btn-gold { background: transparent; color: var(--c-ink); border-color: var(--c-gold); position: relative; }
+.btn-gold:hover { background: var(--c-gold); color: #fff; }
+
+.btn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--c-ink);
+  font-weight: 600;
+  font-size: 14px;
+  border-bottom: 1px solid var(--c-gold);
+  padding-bottom: 2px;
+}
+.btn-link:hover { color: var(--c-gold); }
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  border: 1px solid var(--c-line);
+  color: var(--c-text-muted);
+  background: var(--c-paper);
+}
+.tag.gold { color: var(--c-gold); border-color: var(--c-gold); }
+.tag.green { color: var(--c-green-soft); border-color: var(--c-green-soft); }
+.tag.dark { color: #fff; background: var(--c-ink); border-color: var(--c-ink); }
+.tag.warn { color: var(--c-warn); border-color: var(--c-warn); }
+
+.serif { font-family: var(--f-serif); }
+.tnum { font-variant-numeric: tabular-nums; }
+.dim { color: var(--c-text-muted); }
+.center { text-align: center; }
+
+/* Screen-reader-only innehåll */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.rule { height: 1px; background: var(--c-line-soft); border: 0; }
+
+.section-mark {
+  font-family: var(--f-mono);
+  font-size: 12px;
+  color: var(--c-gold);
+  letter-spacing: 0.16em;
+}
+
+/* Sektion-padding standardiserat (kollapsar på mobil) */
+.section-pad { padding: 80px 0; }
+.section-pad-lg { padding: 96px 0; }
+@media (max-width: 900px) {
+  .section-pad { padding: 56px 0; }
+  .section-pad-lg { padding: 64px 0; }
+}
+@media (max-width: 640px) {
+  .section-pad { padding: 40px 0; }
+  .section-pad-lg { padding: 48px 0; }
+}
+
+/* 2-kolumns "main + sidebar"-mönster som flera publika sidor använder */
+.split-main-aside {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 64px;
+}
+@media (max-width: 980px) {
+  .split-main-aside {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+}
+@media (max-width: 640px) {
+  .split-main-aside { gap: 32px; }
+}
+
+/* Section-head (eyebrow + h2 + rhs-paragraph) */
+.section-head {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 56px;
+  margin-bottom: 48px;
+  align-items: end;
+}
+@media (max-width: 900px) {
+  .section-head { grid-template-columns: 1fr; gap: 16px; margin-bottom: 32px; }
+}
+
+/* Heading-skala på mobil */
+@media (max-width: 640px) {
+  h1 { font-size: clamp(32px, 9vw, 48px); }
+  h2 { font-size: clamp(24px, 6vw, 36px); }
+  h3 { font-size: 20px; }
+}
+
+/* Trust-bar (nyckelvärden under hjälten) */
+.trust-bar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border-top: 1px solid var(--c-line);
+  border-bottom: 1px solid var(--c-line);
+}
+.trust-bar .ti {
+  padding: 22px 24px;
+  border-right: 1px solid var(--c-line);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.trust-bar .ti:last-child { border-right: 0; }
+.trust-bar .ti .v {
+  font-family: var(--f-serif);
+  font-size: 24px;
+  color: var(--c-ink);
+  font-weight: 460;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.trust-bar .ti .l {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  font-weight: 600;
+}
+
+@media (max-width: 1024px) {
+  .trust-bar { grid-template-columns: repeat(3, 1fr); }
+  .trust-bar .ti:nth-child(n) { border-right: 1px solid var(--c-line); }
+  .trust-bar .ti:nth-child(3n) { border-right: 0; }
+  .trust-bar .ti:nth-last-child(-n+2) { border-bottom: 1px solid var(--c-line); border-top: 0; }
+}
+@media (max-width: 640px) {
+  .trust-bar { grid-template-columns: 1fr 1fr; }
+  .trust-bar .ti { padding: 16px 14px; }
+  .trust-bar .ti:nth-child(2n) { border-right: 0; }
+  .trust-bar .ti:nth-child(2n+1) { border-right: 1px solid var(--c-line); }
+  .trust-bar .ti:not(:nth-last-child(-n+2)) { border-bottom: 1px solid var(--c-line); }
+  .trust-bar .ti .v { font-size: 18px; }
+  .trust-bar .ti .l { font-size: 10px; }
+}
+
+/* Form-fält */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; color: var(--c-text-muted); }
+.field input, .field select, .field textarea {
+  font-family: var(--f-sans);
+  font-size: 15px;
+  padding: 12px 14px;
+  border: 1px solid var(--c-line);
+  background: #fff;
+  color: var(--c-text);
+  border-radius: 2px;
+  width: 100%;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: none;
+  border-color: var(--c-ink);
+  box-shadow: 0 0 0 3px rgba(12,30,62,0.06);
+}
+.field .hint { font-size: 12px; color: var(--c-text-muted); }
+.field .err { font-size: 12px; color: var(--c-warn); font-weight: 600; }
+
+/* Tabell-grund för admin/portal */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.table th, .table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--c-line-soft);
+}
+.table th {
+  font-family: var(--f-sans);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  font-weight: 700;
+  background: var(--c-cream);
+}
+.table tr:hover td { background: var(--c-cream); }
+
+/* Statusbubblor */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  border-radius: 2px;
+}
+.badge-draft { background: var(--c-cream); color: var(--c-text-muted); }
+.badge-submitted { background: #FFF7E6; color: var(--c-gold); }
+.badge-confirmed { background: #E6F1EA; color: var(--c-green); }
+.badge-paid { background: #DCEAE0; color: var(--c-green); }
+.badge-cancelled { background: #F5E1DC; color: var(--c-warn); }
+
+/* ============ RTL-stöd (arabiska) ============ */
+[dir="rtl"] .container { direction: rtl; }
+[dir="rtl"] .nav, [dir="rtl"] .header-right { flex-direction: row-reverse; }
+[dir="rtl"] .hero-jumpers a { padding-left: 18px; padding-right: 0; border-left: 1px solid var(--c-line); border-right: 0; }
+[dir="rtl"] .hero-jumpers a:hover { padding-right: 12px; padding-left: 8px; }
+[dir="rtl"] .section-mark { letter-spacing: 0.1em; }
+[dir="rtl"] .btn-link { padding-right: 0; }
+[dir="rtl"] .fc { left: 20px; right: auto; }
+[dir="rtl"] .fc-panel { left: 0; right: auto; }
+[dir="rtl"] body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, sans-serif; }
+
+/* ============ Mobil-finslipning (telefoner) ============ */
+
+/* iOS zoomar in automatiskt när man fokuserar ett fält med font-size < 16px,
+   och zoomar inte ut igen. Bumpa formulärkontroller till 16px på små skärmar
+   så fält-fokus inte rycker layouten. (Desktop behåller den täta designen.) */
+@media (max-width: 640px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+  /* Knappar och fält ska vara bekväma att träffa med tummen. */
+  button, .btn, a.btn, input[type="submit"] {
+    min-height: 44px;
+  }
+}
+
+/* Långa kod-/JSON-exempel (t.ex. admin) ska inte spränga sidbredden. */
+code, pre {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+pre { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* Generella tabeller utan .table-wrap får ändå horisontell scroll på mobil
+   istället för att tvinga ut sidbredden. Tabeller redan inuti .table-wrap
+   behåller sin layout (wrappen sköter scrollen). */
+@media (max-width: 640px) {
+  table.table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .table-wrap table.table { display: table; white-space: normal; }
+}
+
+/* Mindre tryck-vänligt avstånd i listor/knapprader på mobil. */
+@media (max-width: 480px) {
+  .btn { padding: 12px 18px; }
+}
+
+/* (Flytande kontaktknappen .fc hanterar redan sin egen safe-area i komponenten.) */

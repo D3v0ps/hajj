@@ -1,0 +1,207 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
+// Seed för Hadj Omra Resor — körs som ren Node-modul i container,
+// inga TypeScript-beroenden eller tsx behövs runtime.
+
+import { PrismaClient } from "@prisma/client";
+import { scrypt, randomBytes } from "node:crypto";
+
+const prisma = new PrismaClient();
+
+// MÅSTE matcha lib/auth.ts SCRYPT_OPTS — annars verifierar inte login.
+const SCRYPT_OPTS = { N: 1 << 17, r: 8, p: 1, maxmem: 256 * 1024 * 1024 };
+
+function scryptAsync(password, salt, keylen, options) {
+  return new Promise((resolve, reject) => {
+    scrypt(password, salt, keylen, options, (err, key) => {
+      if (err) reject(err);
+      else resolve(key);
+    });
+  });
+}
+
+async function hashPassword(password) {
+  const salt = randomBytes(16).toString("hex");
+  const derived = await scryptAsync(password, salt, 64, SCRYPT_OPTS);
+  return `${salt}:${derived.toString("hex")}`;
+}
+
+async function main() {
+  console.log("Seeding...");
+
+  const adminEmail = process.env.SEED_ADMIN_EMAIL?.toLowerCase();
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+
+  if (adminEmail && adminPassword) {
+    // Upsert: alltid skriv över passwordHash från env-secreten. Gör seed:en
+    // idempotent och säkerställer att en password-reset i secrets propageras
+    // vid nästa deploy. När admin-användaren är skapad och du satt eget
+    // lösenord via UI bör SEED_ADMIN_PASSWORD secret rensas så seed inte
+    // skriver över.
+    const passwordHash = await hashPassword(adminPassword);
+    const user = await prisma.user.upsert({
+      where: { email: adminEmail },
+      update: { passwordHash, role: "ADMIN" },
+      create: {
+        email: adminEmail,
+        name: "Admin",
+        role: "ADMIN",
+        passwordHash,
+      },
+    });
+    console.log(`  Admin user ${user.email} ensured (role=${user.role}, password updated from secret).`);
+  } else {
+    console.log("  Skipping admin (set SEED_ADMIN_EMAIL + SEED_ADMIN_PASSWORD to create one).");
+  }
+
+  const packages = [
+    {
+      slug: "omra-pasklov-2026",
+      type: "OMRA",
+      title: "Omra Påsklov 2026",
+      subtitle: "Familjevänlig vårresa under påsklovet",
+      summary: "Tio dagar i Mecka och Medina med svensk reseledare. Perfekt för familjer som vill resa under skollovet.",
+      description:
+        "Vår klassiska Omra-resa under påsklovet. Direktflyg från Stockholm-Arlanda, hotell inom 500 m från Haram i Mecka och 200 m från Nabawi i Medina. Resan har varit fullbokad varje år sedan 2018.",
+      departCity: "Stockholm",
+      departCities: ["Stockholm", "Göteborg"],
+      city: "Mecka + Medina",
+      startDate: new Date("2026-04-02"),
+      endDate: new Date("2026-04-12"),
+      durationDays: 11,
+      nightsMakkah: 5,
+      nightsMadinah: 4,
+      status: "PUBLISHED",
+      hotelMakkah: "Anjum Hotel Makkah",
+      hotelMadinah: "Dar Al Eiman Royal",
+      distHaramM: 350,
+      distNabawiM: 180,
+      inclusions: [
+        "Omra-visum",
+        "Direktflyg Stockholm-Jeddah-Stockholm",
+        "9 nätters hotellboende (Mecka + Medina)",
+        "Buss-transfers mellan hotell, flygplats och städer",
+        "Frukost och middag dagligen",
+        "Svensk reseledare på plats",
+        "Religiös vägledning",
+        "Förresemöte i Stockholm",
+        "Zamzam-vatten (5 L hem)",
+      ],
+      excludeNotes: ["Reseförsäkring", "Lunch", "Personliga utflykter"],
+      tiers: [
+        { name: "Vuxen: 4-bädd", roomType: "QUAD", ageCategory: "ADULT", ageMin: 12, ageMax: 99, pricePerPerson: 19900, available: 16 },
+        { name: "Vuxen: 3-bädd", roomType: "TRIPLE", ageCategory: "ADULT", ageMin: 12, ageMax: 99, pricePerPerson: 20900, available: 12 },
+        { name: "Vuxen: 2-bädd", roomType: "DOUBLE", ageCategory: "ADULT", ageMin: 12, ageMax: 99, pricePerPerson: 21900, available: 12 },
+        { name: "Barn: 4-bädd", roomType: "QUAD", ageCategory: "CHILD", ageMin: 2, ageMax: 11, pricePerPerson: 16900, available: 8 },
+        { name: "Barn: 3-bädd", roomType: "TRIPLE", ageCategory: "CHILD", ageMin: 2, ageMax: 11, pricePerPerson: 17900, available: 6 },
+        { name: "Spädbarn", roomType: "QUAD", ageCategory: "INFANT", ageMin: 0, ageMax: 1, pricePerPerson: 4900, available: 4 },
+      ],
+    },
+    {
+      slug: "omra-sommarlov-2026",
+      type: "OMRA",
+      title: "Omra Sommarlov 2026",
+      subtitle: "Tio dagar i samband med skolornas sommarlov",
+      summary: "Sommarens Omra-resa. Boka tidigt — platserna går snabbt.",
+      description: "Vår mest populära Omra-resa, anpassad för familjer som vill resa under sommarlovet.",
+      departCity: "Stockholm",
+      departCities: ["Stockholm", "Göteborg", "Malmö"],
+      city: "Mecka + Medina",
+      startDate: new Date("2026-07-31"),
+      endDate: new Date("2026-08-10"),
+      durationDays: 11,
+      nightsMakkah: 6,
+      nightsMadinah: 4,
+      status: "PUBLISHED",
+      hotelMakkah: "Pullman ZamZam Makkah",
+      hotelMadinah: "Madinah Hilton",
+      distHaramM: 250,
+      distNabawiM: 220,
+      inclusions: [
+        "Omra-visum",
+        "Direktflyg Stockholm-Jeddah-Stockholm",
+        "9 nätters hotellboende",
+        "Buss-transfers",
+        "Frukost och middag",
+        "Svensk reseledare",
+        "Religiös vägledning",
+        "Förresemöte",
+        "Zamzam-vatten (5 L)",
+      ],
+      excludeNotes: ["Reseförsäkring", "Lunch", "Personliga utflykter"],
+      tiers: [
+        { name: "Vuxen: 4-bädd", roomType: "QUAD", ageCategory: "ADULT", ageMin: 12, ageMax: 99, pricePerPerson: 20500, available: 20 },
+        { name: "Vuxen: 3-bädd", roomType: "TRIPLE", ageCategory: "ADULT", ageMin: 12, ageMax: 99, pricePerPerson: 21500, available: 18 },
+        { name: "Vuxen: 2-bädd", roomType: "DOUBLE", ageCategory: "ADULT", ageMin: 12, ageMax: 99, pricePerPerson: 22900, available: 12 },
+        { name: "Barn: 4-bädd", roomType: "QUAD", ageCategory: "CHILD", ageMin: 2, ageMax: 11, pricePerPerson: 17500, available: 10 },
+        { name: "Barn: 3-bädd", roomType: "TRIPLE", ageCategory: "CHILD", ageMin: 2, ageMax: 11, pricePerPerson: 18500, available: 8 },
+        { name: "Spädbarn", roomType: "QUAD", ageCategory: "INFANT", ageMin: 0, ageMax: 1, pricePerPerson: 5500, available: 6 },
+      ],
+    },
+    {
+      slug: "hajj-2027",
+      type: "HAJJ",
+      title: "Hajj 2027 — Dhul Hijja 1449",
+      subtitle: "Komplett Hajj-resa med saudisk partner",
+      summary: "Vår årliga Hajj-resa. Begränsade platser via Saudiarabiens kvotsystem. Anmäl intresse tidigt.",
+      description:
+        "Komplett Hajj-paket via vår etablerade saudiska partner. Visum, flyg, hotell, tält i Mina och Arafat enligt Nusuk-standard, buss, måltider, och svensk reseledare hela vägen.",
+      departCity: "Stockholm",
+      departCities: ["Stockholm", "Göteborg"],
+      city: "Mecka + Medina",
+      startDate: new Date("2027-05-25"),
+      endDate: new Date("2027-06-15"),
+      durationDays: 22,
+      nightsMakkah: 12,
+      nightsMadinah: 8,
+      status: "PUBLISHED",
+      hotelMakkah: "Swissôtel Al Maqam",
+      hotelMadinah: "Anwar Al Madinah Movenpick",
+      distHaramM: 200,
+      distNabawiM: 150,
+      inclusions: [
+        "Saudiskt Hajj-visum",
+        "Direktflyg",
+        "Hotell i Mecka och Medina",
+        "Tält i Mina och Arafat (Nusuk)",
+        "Bussar och alla transfers",
+        "Måltider efter program",
+        "Svensk reseledare",
+        "Religiös guide",
+        "Förresemöte",
+        "Akut-stöd dygnet runt under resan",
+      ],
+      excludeNotes: ["Reseförsäkring", "Personliga utflykter", "Tilläggsoffer"],
+      tiers: [
+        { name: "Vuxen: 4-bädd", roomType: "QUAD", ageCategory: "ADULT", ageMin: 12, ageMax: 99, pricePerPerson: 89000, available: 8 },
+        { name: "Vuxen: 3-bädd", roomType: "TRIPLE", ageCategory: "ADULT", ageMin: 12, ageMax: 99, pricePerPerson: 99000, available: 6 },
+        { name: "Vuxen: 2-bädd", roomType: "DOUBLE", ageCategory: "ADULT", ageMin: 12, ageMax: 99, pricePerPerson: 119000, available: 4 },
+        { name: "Barn: 4-bädd", roomType: "QUAD", ageCategory: "CHILD", ageMin: 2, ageMax: 11, pricePerPerson: 79000, available: 4 },
+      ],
+    },
+  ];
+
+  for (const p of packages) {
+    const { tiers, ...rest } = p;
+    const existing = await prisma.package.findUnique({ where: { slug: rest.slug } });
+    if (existing) {
+      console.log(`  Package ${rest.slug} exists, skipping.`);
+      continue;
+    }
+    const created = await prisma.package.create({ data: rest });
+    for (const t of tiers) {
+      await prisma.packageTier.create({ data: { ...t, packageId: created.id } });
+    }
+    console.log(`  Created package ${rest.slug}`);
+  }
+
+  console.log("Seeding done.");
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

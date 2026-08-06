@@ -1,0 +1,39 @@
+name: Server command
+
+# Kör ett skalkommando på produktionsservern som deploy-användaren.
+# Används för drift utan manuell SSH: diagnostik, backup-jobb, restore m.m.
+# Endast personer med skrivrätt i repot kan starta den — samma behörighet
+# som redan krävs för att deploya godtycklig kod via deploy.yml.
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "Skalkommando att köra på servern"
+        required: true
+        type: string
+
+concurrency:
+  group: server-cmd
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+      - name: Run command on server
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -o ConnectTimeout=20 \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            ${{ toJSON(github.event.inputs.command) }}

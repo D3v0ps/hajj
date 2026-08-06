@@ -1,0 +1,573 @@
+// Hadj Omra Resor — datamodell
+// Postgres via Prisma. Schema följer designdokumentets entiteter:
+// users, packages, bookings, travelers, documents, payments, messages
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -------- AUTH (Auth.js v5 schema) --------
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  passwordHash  String?
+  phone         String?
+  personnummer  String?
+  role          UserRole  @default(CUSTOMER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts  Account[]
+  sessions  Session[]
+  travelers Traveler[]
+  bookings  Booking[]
+  documents Document[]
+  messages  Message[]
+  passwordResetTokens     PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  auditLogs               AuditLog[]
+  travelerProfiles        TravelerProfile[]
+  recordedPayments        TravelerPayment[]
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+  STAFF
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// -------- DOMÄN: PAKET --------
+
+model Package {
+  id           String        @id @default(cuid())
+  slug         String        @unique
+  type         PackageType
+  title        String
+  subtitle     String?
+  summary      String?
+  description  String?
+  city         String?
+  departCity   String?
+  departCities String[]
+  startDate    DateTime?
+  endDate      DateTime?
+  durationDays Int?
+  nightsMakkah Int?
+  nightsMadinah Int?
+  groupSize    Int?
+  status       PackageStatus @default(DRAFT)
+  inclusions   String[]
+  excludeNotes String[]
+  notes        String?
+  hotelMakkah  String?
+  hotelMadinah String?
+  distHaramM   Int?
+  distNabawiM  Int?
+  imageUrl     String?
+  // Digital resväska / travel pack — strukturerad info som kunden ser i portalen.
+  flightOutbound   Json?
+  flightReturn     Json?
+  hotels           Json?
+  transfers        Json?
+  itinerary        Json?
+  leaderName       String?
+  leaderPhone      String?
+  emergencyContact String?
+  gatheringPoint   String?
+  gatheringTime    String?
+  whatsappLink     String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  tiers      PackageTier[]
+  bookings   Booking[]
+  emailSends EmailSend[]
+
+  @@index([status, type, startDate])
+}
+
+enum PackageType {
+  HAJJ
+  OMRA
+  HADJ_BADAL
+  VISUM
+}
+
+enum PackageStatus {
+  DRAFT
+  PUBLISHED
+  SOLD_OUT
+  ARCHIVED
+}
+
+model PackageTier {
+  id        String      @id @default(cuid())
+  packageId String
+  name      String
+  roomType  RoomType
+  ageCategory AgeCategory @default(ADULT)
+  ageMin    Int         @default(12)
+  ageMax    Int         @default(99)
+  pricePerPerson Int
+  available Int         @default(0)
+  notes     String?
+
+  package  Package   @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+}
+
+enum AgeCategory {
+  ADULT
+  CHILD
+  INFANT
+}
+
+enum RoomType {
+  DOUBLE
+  TRIPLE
+  QUAD
+  QUINTUPLE
+  FAMILY
+}
+
+// -------- DOMÄN: BOKNING --------
+
+model Booking {
+  id            String        @id @default(cuid())
+  reference     String        @unique @default(cuid())
+  userId        String
+  packageId     String
+  tierId        String?
+  status        BookingStatus @default(DRAFT)
+  step          Int           @default(1)
+  travelerCount Int           @default(1)
+  adultCount    Int           @default(1)
+  childCount    Int           @default(0)
+  infantCount   Int           @default(0)
+  tierQuantities Json?
+  departureCity String?
+  totalAmount   Int           @default(0)
+  depositAmount Int           @default(5000)
+  notes         String?
+  contactPhone  String?
+  contactEmail  String?
+  termsAcceptedAt   DateTime?
+  termsVersion      String?
+  refundRequestedAt DateTime?
+  refundReason      String?
+  refundStatus      RefundStatus @default(NONE)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  submittedAt   DateTime?
+
+  // Restrict: skydda finansiell historik. En User med bokningar kan inte
+  // raderas av misstag (radera/anonymisera bokningar separat vid behov).
+  user      User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  package   Package      @relation(fields: [packageId], references: [id])
+  tier      PackageTier? @relation(fields: [tierId], references: [id])
+  travelers  Traveler[]
+  payments   Payment[]
+  messages   Message[]
+  emailSends EmailSend[]
+
+  @@index([userId])
+  @@index([packageId])
+  @@index([status])
+  @@index([refundStatus])
+}
+
+enum RefundStatus {
+  NONE
+  REQUESTED
+  APPROVED
+  REJECTED
+  PROCESSED
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actorEmail String?
+  action     String
+  targetType String?
+  targetId   String?
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([action, createdAt])
+  @@index([targetType, targetId])
+}
+
+enum BookingStatus {
+  DRAFT
+  SUBMITTED
+  REVIEW
+  CONFIRMED
+  PAID_DEPOSIT
+  PAID_FULL
+  COMPLETED
+  CANCELLED
+}
+
+model Traveler {
+  id              String   @id @default(cuid())
+  userId          String
+  bookingId       String?
+  firstName       String
+  lastName        String
+  email           String?
+  phone           String?
+  address         String?
+  personnummer    String?
+  passportNo      String?
+  passportExp     DateTime?
+  passIssueDate   DateTime?
+  passIssuePlace  String?
+  birthDate       DateTime?
+  gender          String?
+  nationality     String?
+  civilStatus     String?
+  occupation      String?
+  countryOfOrigin String?
+  birthCountry    String?
+  birthCity       String?
+  residenceCity   String?
+  ageCategory     AgeCategory @default(ADULT)
+  roomAssignment  String?
+  flightOut       String?
+  flightReturn    String?
+  isMahram        Boolean  @default(false)
+  needsAssist     Boolean  @default(false)
+  // Denormaliserad cache = SUM(payments.amount). Uppdateras transaktionellt
+  // när admin lägger till/tar bort betalningar. Lista-/summa-vyer läser denna.
+  amountPaid      Int      @default(0)
+  notes           String?
+  profileId       String?
+  createdAt       DateTime @default(now())
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking   Booking?          @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  profile   TravelerProfile?  @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  documents Document[]
+  payments  TravelerPayment[]
+
+  @@index([userId])
+  @@index([bookingId])
+  @@index([ageCategory])
+  @@index([profileId])
+  @@index([amountPaid])
+}
+
+model TravelerPayment {
+  id           String   @id @default(cuid())
+  travelerId   String
+  amount       Int
+  method       String?   // "Kontant", "Swish", "Bankgiro", "Klarna", "Kort", "Faktura", "Annat"
+  paidAt       DateTime  @default(now())
+  note         String?
+  recordedById String?   // admin som registrerade betalningen
+  createdAt    DateTime  @default(now())
+
+  traveler   Traveler @relation(fields: [travelerId], references: [id], onDelete: Cascade)
+  recordedBy User?    @relation(fields: [recordedById], references: [id], onDelete: SetNull)
+
+  @@index([travelerId])
+  @@index([paidAt])
+}
+
+model TravelerProfile {
+  id              String   @id @default(cuid())
+  userId          String
+  firstName       String
+  lastName        String
+  email           String?
+  phone           String?
+  address         String?
+  personnummer    String?
+  passportNo      String?
+  passportExp     DateTime?
+  passIssueDate   DateTime?
+  passIssuePlace  String?
+  birthDate       DateTime?
+  gender          String?
+  nationality     String?
+  civilStatus     String?
+  occupation      String?
+  birthCountry    String?
+  birthCity       String?
+  ageCategory     AgeCategory @default(ADULT)
+  relationship    String?      // "make", "fru", "barn", "förälder", "syskon"
+  isSelf          Boolean      @default(false)
+  notes           String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  travelers Traveler[]
+
+  @@index([userId])
+  @@index([userId, isSelf])
+}
+
+// -------- DOMÄN: DOKUMENT --------
+
+model Document {
+  id         String       @id @default(cuid())
+  userId     String
+  travelerId String?
+  type       DocumentType
+  filename   String
+  filepath   String
+  mimetype   String
+  sizeBytes  Int
+  status     DocumentStatus @default(PENDING)
+  reviewNote String?
+  uploadedAt DateTime     @default(now())
+  reviewedAt DateTime?
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  traveler Traveler? @relation(fields: [travelerId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([travelerId])
+  @@index([status])
+}
+
+enum DocumentType {
+  PASSPORT
+  PASSPORT_PHOTO
+  RESIDENCE_PERMIT
+  VACCINATION
+  OTHER
+}
+
+enum DocumentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  NEEDS_INFO
+}
+
+// -------- DOMÄN: BETALNING --------
+
+model Payment {
+  id          String        @id @default(cuid())
+  bookingId   String
+  amount      Int
+  method      PaymentMethod
+  status      PaymentStatus @default(PENDING)
+  reference   String?
+  providerRef String?  @unique
+  paidAt      DateTime?
+  createdAt   DateTime      @default(now())
+  metadata    Json?
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([status])
+}
+
+enum PaymentMethod {
+  SWISH
+  KLARNA
+  CARD
+  BANKGIRO
+  INVOICE
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// -------- DOMÄN: MEDDELANDEN --------
+
+model Message {
+  id         String        @id @default(cuid())
+  userId     String
+  bookingId  String?
+  direction  MessageDirection
+  subject    String?
+  body       String
+  isInternal Boolean       @default(false)
+  authorName String?
+  readAt     DateTime?
+  createdAt  DateTime      @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([bookingId])
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+// -------- DOMÄN: E-POSTMALLAR & UTSKICK --------
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  subject   String
+  body      String
+  category  EmailCategory
+  variables String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sends EmailSend[]
+}
+
+enum EmailCategory {
+  BOOKING_CONFIRM
+  PAYMENT_REQUEST
+  PAYMENT_REMINDER
+  TRIP_INFO
+  PRE_DEPARTURE
+  VISA_STATUS
+  GENERAL
+}
+
+model EmailSend {
+  id           String     @id @default(cuid())
+  templateId   String?
+  recipientEmail String
+  recipientName  String?
+  subject      String
+  body         String
+  status       EmailSendStatus @default(QUEUED)
+  providerRef  String?
+  kind         String?
+  sentAt       DateTime?
+  errorMessage String?
+  bookingId    String?
+  packageId    String?
+  sentById     String?
+  createdAt    DateTime   @default(now())
+
+  template EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  booking  Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  package  Package?       @relation(fields: [packageId], references: [id], onDelete: SetNull)
+
+  @@index([templateId])
+  @@index([bookingId])
+  @@index([status])
+  @@index([kind])
+}
+
+enum EmailSendStatus {
+  QUEUED
+  SENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+// -------- DOMÄN: LEADS (quote form) --------
+
+model Lead {
+  id            String     @id @default(cuid())
+  name          String
+  email         String
+  phone         String?
+  departureCity String?
+  travelType    PackageType?
+  preferredDate DateTime?
+  travelers     Int?
+  message       String?
+  source        String?
+  status        LeadStatus @default(NEW)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CONVERTED
+  CLOSED
+}

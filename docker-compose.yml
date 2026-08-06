@@ -1,0 +1,143 @@
+name: hajj
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hajj
+      POSTGRES_USER: hajj
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hajj -d hajj"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+
+  app:
+    image: ${APP_IMAGE:-ghcr.io/d3v0ps/hajj:latest}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://hajj:${POSTGRES_PASSWORD}@postgres:5432/hajj?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET must be set}
+      AUTH_URL: https://${DOMAIN:-hajj.karimkhalil.se}
+      APP_URL: https://${DOMAIN:-hajj.karimkhalil.se}
+      AUTH_TRUST_HOST: "true"
+      RUN_SEED: ${RUN_SEED:-1}
+      # SETUP_MODE default 0 — /setup öppnas bara om uttryckligen satt till 1.
+      SETUP_MODE: ${SETUP_MODE:-0}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      SITE_ORG_NR: ${SITE_ORG_NR:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      SITE_EMAIL_FROM: ${SITE_EMAIL_FROM:-Hadj Omra Resor <no-reply@hajj.karimkhalil.se>}
+      WORKER_TOKEN: ${WORKER_TOKEN:-}
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+      - web
+    volumes:
+      - app-uploads:/app/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 8s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1536M
+
+  worker:
+    image: alpine:3.20
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      WORKER_TOKEN: ${WORKER_TOKEN:-}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db-backups:/backups
+    networks:
+      - internal
+    # Tre uppgifter i parallel-loopar:
+    #  1) töm mejlkön var 60:e sekund (transaktionella mejl + bulkutskick)
+    #  2) nattlig pg_dump (02:30 Europe/Stockholm) → /backups med 14 dagars rotation
+    #  3) (framtid) påminnelsejobb — placeholder, ej aktiverat
+    command: >
+      sh -c "
+        apk add --no-cache curl postgresql16-client tzdata >/dev/null 2>&1;
+        ln -sf /usr/share/zoneinfo/Europe/Stockholm /etc/localtime;
+        echo '[worker] startad';
+        (
+          while true; do
+            sleep 60;
+            if [ -n \"$$WORKER_TOKEN\" ]; then
+              curl -fsS -m 30 -H \"Authorization: Bearer $$WORKER_TOKEN\" http://app:3000/api/cron/email-worker > /dev/null 2>&1 || true;
+            fi;
+          done
+        ) &
+        (
+          while true; do
+            NOW=$$(date +%H%M);
+            if [ \"$$NOW\" = \"0230\" ]; then
+              STAMP=$$(date +%Y%m%d-%H%M);
+              PGPASSWORD=$$POSTGRES_PASSWORD pg_dump -h postgres -U hajj -d hajj -Fc -f /backups/hajj-$$STAMP.dump 2>>/backups/backup.log && echo \"[backup] $$STAMP ok\" >> /backups/backup.log || echo \"[backup] $$STAMP failed\" >> /backups/backup.log;
+              find /backups -maxdepth 1 -name 'hajj-*.dump' -mtime +14 -delete 2>/dev/null;
+              sleep 70;
+            fi;
+            if [ \"$$NOW\" = \"0400\" ] && [ -n \"$$WORKER_TOKEN\" ]; then
+              curl -fsS -m 60 -H \"Authorization: Bearer $$WORKER_TOKEN\" http://app:3000/api/cron/reminders > /dev/null 2>&1 || true;
+              sleep 70;
+            fi;
+            sleep 50;
+          done
+        ) &
+        wait
+      "
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:-hajj.karimkhalil.se}
+      ACME_EMAIL: ${ACME_EMAIL:-info@hajj.karimkhalil.se}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - web
+    depends_on:
+      app:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  app-uploads:
+  caddy-data:
+  caddy-config:
+  db-backups:
+
+networks:
+  internal:
+  web:
