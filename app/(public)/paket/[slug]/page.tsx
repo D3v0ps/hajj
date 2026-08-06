@@ -39,7 +39,7 @@ export default async function PackageDetailPage({ params }: { params: Params }) 
   const departCities = pkg.departCities.length > 0 ? pkg.departCities : pkg.departCity ? [pkg.departCity] : [];
   const fmtDate = (d: Date | null) => (d ? new Date(d).toLocaleDateString("sv-SE") : "—");
 
-  // ── Strukturerad data ────────────────────────────────────────────────
+  // ── Strukturerad data ────────────────────────────────────
   // Lägsta pris bland alla tiers → Offer.price. Vi använder Math.min så vi
   // täcker även fall där den enda tiern är barn/spädbarn.
   const lowestPrice =
@@ -121,19 +121,21 @@ export default async function PackageDetailPage({ params }: { params: Params }) 
 
   return (
     <>
+      {/* `<` escapas så att innehåll från admin (titel/beskrivning) aldrig kan
+          bryta sig ur <script>-taggen (t.ex. via "</script>" i texten). */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd).replace(/</g, "\\u003c") }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd).replace(/</g, "\\u003c") }}
       />
       {pkg.status !== "PUBLISHED" && (
         <div style={{ background: "#fff8e1", borderBottom: "1px solid var(--c-gold)", padding: "10px 0", fontSize: 13 }}>
           <div className="container">
             🔒 <strong>Förhandsvisning</strong> — den här resan är{" "}
-            {pkg.status === "DRAFT" ? "ett utkast" : pkg.status === "SOLD_OUT" ? "markerad som slutsåld" : "arkiverad"} och
+            {pkg.status === "DRAFT" ? "ett utkast" : pkg.status === "SOLD_OUT" ? "markerad som slutsåld" : "arkiverad"} och
             syns inte publikt än. Sätt status till “Publicerat” i admin för att visa den för kunder.
           </div>
         </div>

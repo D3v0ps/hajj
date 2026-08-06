@@ -207,6 +207,19 @@ export async function saveTierQuantities(bookingId: string, formData: FormData):
 
   if (total === 0) flashError(bookingId, "Välj minst en resenär (ange antal).");
 
+  // Skydd när kunden gått tillbaka från steg 3: antalet får inte sänkas under
+  // vad som redan är registrerat per ålderskategori — då skulle priset räknas
+  // på färre personer än de som faktiskt ligger i bokningen. Ta bort resenärer
+  // i steg 3 först, sedan går det att sänka antalet.
+  const reg = { ADULT: 0, CHILD: 0, INFANT: 0 };
+  for (const t of booking.travelers) reg[t.ageCategory] += 1;
+  if (adults < reg.ADULT || children < reg.CHILD || infants < reg.INFANT) {
+    flashError(
+      bookingId,
+      `Du har redan registrerat ${reg.ADULT} vuxna, ${reg.CHILD} barn och ${reg.INFANT} spädbarn — antalet kan inte vara lägre. Gå till resenärssteget och ta bort resenärer först.`,
+    );
+  }
+
   const departureCity = String(formData.get("departureCity") ?? "").trim() || null;
 
   await prisma.booking.update({
